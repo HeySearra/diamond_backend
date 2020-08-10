@@ -1,0 +1,19 @@
+django.db.utils.DataError: CharField超长，save时出错
+django.db.utils.DataError: CharField超长，save时出错
+django.db.utils.IntegrityError: 键重复，save时出错。同一对象多次save会更新而不会出错。
+django.core.exceptions.ObjectDoesNotExist: 找不到项，get时出错。推荐使用.filter(...).exists()返回bool。
+TypeError: 键类型错误等等，save时出错。例如把birthday属性赋了int值。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
