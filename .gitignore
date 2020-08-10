@@ -1,0 +1,17 @@
+.idea
+__pycache__/
+frontend
+migrations
+
+*.py[cod]
+*$py.class
+
+**/*.zip
+**/*.rar
+
+build.sh
+run.sh
+Cuby/Cuby/settings.py
+
+Cuby/logging/**
+Cuby/uwsgi.ini
