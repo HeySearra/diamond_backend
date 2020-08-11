@@ -14,20 +14,20 @@ class User(models.Model):
     email = models.EmailField(null=True, unique=True, verbose_name='邮箱', max_length=BASIC_DATA_MAX_LEN)
     password = models.CharField(verbose_name='密码', max_length=BASIC_DATA_MAX_LEN)
     name = models.CharField(verbose_name='姓名', max_length=BASIC_DATA_MAX_LEN)
-    
+
     # mini fields
     gender = models.CharField(blank=True, verbose_name='性别', max_length=MINI_DATA_MAX_LEN, choices=GENDER_CHS,
                               default='0')
     identity = models.CharField(blank=True, verbose_name='身份', max_length=MINI_DATA_MAX_LEN, choices=IDENTITY_CHS,
                                 default='user')
-    
+
     # extended fields
     intro = models.CharField(blank=True, verbose_name='简介', max_length=EXT_DATA_MAX_LEN, default='')
     job = models.CharField(blank=True, verbose_name='职业', max_length=EXT_DATA_MAX_LEN, default='')
     school = models.CharField(blank=True, verbose_name='学校', max_length=EXT_DATA_MAX_LEN, default='')
     company = models.CharField(blank=True, verbose_name='公司', max_length=EXT_DATA_MAX_LEN, default='')
     session_key = models.CharField(blank=True, verbose_name='session键', max_length=EXT_DATA_MAX_LEN, default='')
-    
+
     # other fields
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     view_day = models.IntegerField(blank=True, verbose_name='最近一天浏览次数', default=0)
@@ -48,7 +48,7 @@ class User(models.Model):
     file_size = models.IntegerField(blank=True, verbose_name='上传资源总大小', default=0)
     point = models.IntegerField(blank=True, verbose_name='积分', default=0)
     profile_photo = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
-    
+
     def verify_vip(self) -> bool:
         if self.vip_date < date.today():
             self.identity = 'user'
@@ -152,7 +152,7 @@ class EmailRecord(models.Model):
     code = models.CharField(max_length=20, verbose_name='验证码')
     email = models.EmailField(max_length=50, verbose_name='用户邮箱')
     send_time = models.DateTimeField(default=datetime.now, verbose_name='发送时间', null=True, blank=True)
-    exprie_time = models.DateTimeField(null=True)
+    expire_time = models.DateTimeField(null=True)
     email_type = models.CharField(choices=(('register', '注册邮件'), ('forget', '找回密码')), max_length=10)
 
     class Meta:

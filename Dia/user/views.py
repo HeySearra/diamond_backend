@@ -3,6 +3,7 @@ import os
 import random
 import string
 
+
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from easydict import EasyDict
@@ -23,7 +24,7 @@ class Register(View):
         E = EasyDict()
         E.uk = -1
         E.acc, E.pwd, E.name, E.uni = 1, 2, 3, 4
-        
+
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'account', 'password', 'name'}:
             return E.uk,
@@ -33,7 +34,7 @@ class Register(View):
             return E.pwd,
         if not CHECK_NAME(kwargs['name']):
             return E.name,
-        
+
         kwargs.update({'email' if '@' in kwargs['account'] else 'tel': kwargs['account']})
         kwargs.pop('account')
         kwargs.update({'profile_photo': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
@@ -68,20 +69,20 @@ class Login(View):
                 except:
                     return 0, -1
             return 0, 0
-        
+
         E = EasyDict()
         E.uk = -1
         E.exist, E.pwd, E.max_wrong, E.block = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'account', 'password'}:
             return 0, E.uk
-        
+
         u = (User.objects.filter(email=kwargs['account']) if '@' in kwargs['account']
              else User.objects.filter(tel=kwargs['account']))
         if not u.exists():
             return 0, E.exist
         u = u.get()
-        
+
         if u.login_date != date.today():
             u.login_date = date.today()
             u.point += 5
@@ -90,13 +91,13 @@ class Login(View):
                 u.save()
             except:
                 return u.wrong_count, E.uk
-        
+
         if u.blocked:
             return u.wrong_count, E.block
-        
+
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.max_wrong
-        
+
         if u.password != kwargs['password']:
             u.wrong_count += 1
             try:
@@ -104,7 +105,7 @@ class Login(View):
             except:
                 return 0, -1
             return u.wrong_count, E.pwd
-        
+
         u.verify_vip()
         request.session['is_login'] = True
         request.session['uid'] = u.id
@@ -117,7 +118,7 @@ class Login(View):
         except:
             return u.wrong_count, E.uk
         return u.wrong_count, 0
-    
+
     @JSR('status')
     def get(self, request):
         if request.session.get('is_login', None):
@@ -133,16 +134,16 @@ class Member(View):
         E = EasyDict()
         E.uk = -1
         E.exist = 1
-        
+
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'time'}:
             return E.uk
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return E.exist
         u = u.get()
-        
+
         if u.vip_time < date.today():
             u.vip_time = date.today()
         u.vip_time = u.vip_time + relativedelta(months=int(kwargs['time']))
@@ -154,7 +155,7 @@ class Member(View):
         request.session['identity'] = 'vip'
         request.save()
         return 0
-    
+
     @JSR('date', 'is_member')
     def get(self, request):
         if dict(request.GET).keys() != {'uid'}:
@@ -206,17 +207,17 @@ class ChangeAccount(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'account', 'password'}:
             return E.uk,
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return E.uk,
         u = u.get()
-        
+
         if not CHECK_ACC(kwargs['account']):
             return E.acc,
         if u.password != kwargs['password']:
             return E.pwd,
-        
+
         attr = 'email' if '@' in kwargs['account'] else 'tel'
         if User.objects.filter(**{attr: kwargs['account']}).exists():
             return E.exist,
@@ -237,19 +238,19 @@ class ChangePassword(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'old_password', 'new_password'}:
             return E.uk
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return E.uk
         u = u.get()
-        
+
         if kwargs['old_password'] != u.password:
             return E.wr_pwd
         if kwargs['old_password'] == kwargs['new_password']:
             return E.same_pwd
         if not CHECK_PWD(kwargs['new_password']):
             return E.ill_pwd
-        
+
         u.password = kwargs['new_password']
         try:
             u.save()
@@ -268,7 +269,7 @@ class FollowList(View):
             each = int(request.GET.get('each'))
         except ValueError:
             return [], 0
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return [], 0
@@ -277,7 +278,7 @@ class FollowList(View):
         follow_set = Follow.objects.filter(follower=u).all().order_by('id')[(page - 1) * each: page * each]
         li = [u.followed.id for u in follow_set]
         return li, len(li)
-    
+
     @JSR('status')
     def post(self, request):
         # 关注或取关
@@ -289,7 +290,7 @@ class FollowList(View):
         if not uf.exists():
             return 1,
         uf = uf.get()
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return 1,
@@ -317,7 +318,7 @@ class FanList(View):
             each = int(request.GET.get('each'))
         except ValueError:
             return [], 0
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return [], 0
@@ -368,7 +369,7 @@ class UserInfo(View):
         E = EasyDict()
         E.uk = -1
         E.name, E.school, E.company, E.job, E.intro = 1, 2, 3, 4, 5
-        
+
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction', 'src'}:
             return E.uk,
@@ -376,7 +377,7 @@ class UserInfo(View):
         if not u.exists():
             return E.uk,
         u = u.get()
-        
+
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         if str(kwargs['sex']) not in GENDER_DICT.keys():
@@ -391,7 +392,7 @@ class UserInfo(View):
             return E.intro,
         u.name = kwargs['name']
         u.gender = kwargs['sex']
-        
+
         bir = kwargs['birthday']
         for ch in (_ for _ in bir if not _.isdigit() and _ != '-'):
             bir = bir.split(ch)[0]
@@ -400,13 +401,13 @@ class UserInfo(View):
         u.company = kwargs['company']
         u.job = kwargs['job']
         u.intro = kwargs['introduction']
-        
+
         try:
             u.save()
         except:
             return E.uk,
         return 0,
-    
+
     @JSR('uid', 'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction')
     def get(self, request):
         u = User.objects.filter(id=request.session['uid'])
