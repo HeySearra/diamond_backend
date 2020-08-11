@@ -42,7 +42,7 @@ def send_code(email, email_type):
     ver_code.code = code_num
     ver_code.email = email
     ver_code.send_time = datetime.now()
-    ver_code.exprie_time = datetime.now()
+    ver_code.expire_time = datetime.now()
     ver_code.email_type = email_type
 
     # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
@@ -89,7 +89,7 @@ class Register(View):
         if not er:
             return E.code
         er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['acc']).get()
-        if datetime.now() - er.exprie_time > 0:
+        if datetime.now() - er.expire_time > 0:
             try:
                 u = User.objects.create(**kwargs)
             except IntegrityError:

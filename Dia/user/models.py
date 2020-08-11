@@ -149,7 +149,7 @@ class EmailRecord(models.Model):
     code = models.CharField(max_length=20, verbose_name='验证码')
     email = models.EmailField(max_length=50, verbose_name='用户邮箱')
     send_time = models.DateTimeField(default=datetime.now, verbose_name='发送时间', null=True, blank=True)
-    exprie_time = models.DateTimeField(null=True)
+    expire_time = models.DateTimeField(null=True)
     email_type = models.CharField(choices=(('register', '注册邮件'), ('forget', '找回密码')), max_length=10)
 
     class Meta:
