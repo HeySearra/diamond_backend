@@ -35,7 +35,7 @@ def JSR(*keys):
             prev_time = time.time()
             values = req_func(*args, **kw)
             time_cost = time.time() - prev_time
-            values = list(values) if isinstance(values, tuple) else [values]
+            values = list(values) if isinstance(values, (tuple, list)) else [values]
             [values.append('') for _ in range(len(keys) - len(values))]
             ret_dict = dict(zip(keys, values))
             if debug:
@@ -52,12 +52,12 @@ def JSR(*keys):
 def single_value_jsr(request):
     def wrapper(*args, **kw):
         return JsonResponse({'status': request(*args, **kw)})
-    
+
     return wrapper
 
 
 def dict_jsr(request):
     def wrapper(*args, **kw):
         return JsonResponse(request(*args, **kw))
-    
+
     return wrapper

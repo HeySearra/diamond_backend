@@ -1,3 +1,4 @@
+import datetime
 import re
 import json
 import base64
@@ -23,4 +24,9 @@ def str_to_data(s: str):
 
 def parse_datetime(datetime):
     return [int(x) for x in filter(lambda s: len(s) <= 4, re.split('[-:/ .]', str(datetime)))]
+
+
+def get_time():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 

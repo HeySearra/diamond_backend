@@ -14,6 +14,7 @@ from django.db.models import Q
 from email.header import Header
 from user.models import User, Follow, EmailRecord, Message
 from user.hypers import *
+from utils.cast import encode, decode
 from utils.response import JSR
 
 
@@ -160,7 +161,7 @@ class Login(View):
 
         u.verify_vip()
         request.session['is_login'] = True
-        request.session['uid'] = u.id
+        request.session['uid'] = encode(u.id)
         request.session['name'] = u.name
         request.session['identity'] = u.identity
         request.session.save()
@@ -284,7 +285,7 @@ class Member(View):
         if kwargs.keys() != {'time'}:
             return E.uk
 
-        u = User.objects.filter(id=request.session['uid'])
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return E.exist
         u = u.get()
@@ -309,7 +310,7 @@ class Member(View):
             uid = int(request.GET.get('uid'))
         except:
             return '', False
-        u = User.objects.filter(id=uid)
+        u = User.objects.filter(id=int(decode(uid)))
         if not u.exists():
             return '', False
         u = u.get()
@@ -598,7 +599,7 @@ class UserInfoCard(View):
             return [], '', False, '', '', ''
         u = u.get()
         uid = request.session.get('uid', None)
-        if uid != None:
+        if uid is not None:
             user = User.objects.get(id=uid)
             is_follow = 1 if Follow.objects.filter(follower=user, followed=u) else 0
         else:
