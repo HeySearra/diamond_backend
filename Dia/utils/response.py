@@ -1,5 +1,6 @@
 import json
 import time
+import functools
 from django.http import JsonResponse
 from django.contrib.sessions.backends.db import SessionStore
 from colorama import Fore, Back
@@ -12,6 +13,7 @@ from collections import OrderedDict
 
 def JSR(*keys):
     def decorator(req_func):
+        @functools.wraps(req_func)
         def wrapper(*args, **kw):
             debug = meta_config.DEBUG and len(args) == 2
             if debug:
