@@ -156,3 +156,13 @@ class EmailRecord(models.Model):
         verbose_name = '邮件验证码'
         verbose_name_plural = verbose_name
 
+
+class Message(models.Model):
+    uid = models.IntegerField(verbose_name='接收者id')
+    title = models.CharField(max_length=64, verbose_name='标题')
+    content = models.TextField(blank=False, verbose_name='消息内容', max_length=201)
+    is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)
+    is_dnd = models.BooleanField(blank=True, verbose_name='消息是否免打扰', default=False)
+    portrait_url = models.CharField(max_length=512, verbose_name='头像url', default='')
+    time = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
+    type = models.CharField(blank=False, verbose_name='消息类型')

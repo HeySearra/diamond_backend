@@ -10,8 +10,9 @@ from dateutil.relativedelta import relativedelta
 from easydict import EasyDict
 from django.views import View
 from django.db.utils import IntegrityError, DataError
+from django.db.models import Q
 from email.header import Header
-from user.models import User, Follow, EmailRecord
+from user.models import User, Follow, EmailRecord, Message
 from user.hypers import *
 from utils.response import JSR
 
@@ -183,13 +184,92 @@ class RegisterCode(View):
     @JSR('status')
     def get(self, request):
         if dict(request.GET).keys() != {'acc'}:
-            return 1, False
+            return 1
         try:
             acc = str(request.GET.get('acc'))
         except:
-            return -1, False
+            return -1
 
         send_code(acc, 'register')
+        return 0
+
+
+class UnreadCount(View):
+    @JSR('count', 'status')
+    def get(self, request):
+        u = User.objects.filter(id=request.session['uid'])
+        if not u.exists():
+            return 0, -1
+        u = u.get()
+        count = Message.objects.filter(Q(uid=u.id) | Q(is_read=False)).count()
+        return count, 0
+
+
+class AskMessage(View):
+    @JSR('status', 'msg', 'cur_time')
+    def get(self, request):
+        if dict(request.GET).keys() != {'page', 'each'}:
+            return 1, [], 0
+        try:
+            page = int(request.GET.get('page'))
+            each = int(request.GET.get('each'))
+        except ValueError:
+            return -1, [], ''
+
+        u = User.objects.filter(id=request.session['uid'])
+        if not u.exists():
+            return -1, [], ''
+        u = u.get()
+        messages = Message.objects.filter(uid=u.id).order_by('id')[(page - 1) * each: page * each]
+        msg = []
+        for message in messages:
+            msg.append({
+                'mid': message.id,
+                'is_read': message.is_read,
+                'is_dnd': message.is_dnd,
+                'title': message.title,
+                'portrait_url': message.portrait_url,
+                'content': message.content,
+                'time': datetime.strptime(str(message.time), "%Y-%m-%d %H:%M:%S"),
+                'type': message.type,
+            })
+        return 0, msg, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S")
+
+
+class SetMsgRead(View):
+    @JSR('status')
+    def post(self, request):
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'mid'}:
+            return 1
+        msg = Message.objects.filter(id=kwargs['mid'])
+        if not msg.exists():
+            return -1
+        msg = msg.get()
+        msg.is_read = True
+        msg.save()
+        return 0
+
+
+class SetAllMsgRead(View):
+    @JSR('status')
+    def post(self, request):
+        msg = Message.objects.all()
+        for m in msg:
+            m.is_read = True
+            m.save()
+        return 0
+
+
+class SetDnd(View):
+    @JSR('status')
+    def post(self, request):
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'type', 'is_dnd'}:
+            return 1
+        msg = Message.objects.filter(type=kwargs['type'])
+        for m in msg:
+            m.is_dnd = kwargs['is_dnd']
         return 0
 
 
