@@ -1,9 +1,0 @@
-import os
-
-from Dia.settings import MEDIA_ROOT
-
-MAX_TITLE_LEN = 32
-MAX_CONTENT_LEN = 100000
-MAX_COL_WORDS = 20
-FNAME_DEFAULT_LEN = 20
-DEFAULT_IMG_ROOT = os.path.join(MEDIA_ROOT, 'img')

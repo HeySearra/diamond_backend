@@ -2,20 +2,66 @@ import json
 import os
 import random
 import string
+import smtplib
 
-
+from email.mime.text import MIMEText
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from easydict import EasyDict
 from django.views import View
 from django.db.utils import IntegrityError, DataError
-
-from mainpage.models import Complain, Message
-from resource.hypers import DEFAULT_FILE_ROOT
-from user.models import User, Follow
+from email.header import Header
+from user.models import User, Follow, EmailRecord
 from user.hypers import *
 from utils.response import JSR
-from article.models import Article
+
+
+def send_code(email, email_type):
+    # 发信方的信息：发信邮箱，QQ 邮箱授权码
+    from_addr = 'diadoc@163.com'
+    password = 'UTXGEJFQTCJNDAHQ'
+
+    # 收信方邮箱
+    to_addr = email
+
+    # 发信服务器
+    smtp_server = 'smtp.163.com'
+
+    # 生成随机验证码
+    code_list = []
+    for i in range(10):  # 0~9
+        code_list.append(str(i))
+    # for i in range(65, 91):  # A-Z
+    #     code_list.append(chr(i))
+    # for i in range(97, 123):  # a-z
+    #     code_list.append(chr(i))
+    code = random.sample(code_list, 6)  # 随机取6位数
+    code_num = ''.join(code)
+    # 数据库保存验证码！！！！！！！！！！！
+    ver_code = EmailRecord()
+    ver_code.code = code_num
+    ver_code.email = email
+    ver_code.send_time = datetime.now()
+    ver_code.exprie_time = datetime.now()
+    ver_code.email_type = email_type
+
+    # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
+    msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
+
+    # 邮件头信息
+    msg['From'] = Header(from_addr)
+    msg['To'] = Header(to_addr)
+    msg['Subject'] = Header('你好')
+
+    # 开启发信服务，这里使用的是加密传输
+    server = smtplib.SMTP_SSL(host='smtp.163.com')
+    server.connect(smtp_server, 465)
+    # 登录发信邮箱
+    server.login(from_addr, password)
+    # 发送邮件
+    server.sendmail(from_addr, to_addr, msg.as_string())
+    # 关闭服务器
+    server.quit()
 
 
 class Register(View):
@@ -23,36 +69,42 @@ class Register(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.acc, E.pwd, E.name, E.uni = 1, 2, 3, 4
+        E.key, E.acc, E.pwd, E.code, E.name, E.uni = 1, 2, 3, 4, 5, 6
 
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'account', 'password', 'name'}:
-            return E.uk,
-        if not CHECK_ACC(kwargs['account']):
+        if kwargs.keys() != {'acc', 'ver_code', 'pwd', 'name'}:
+            return E.key,
+        if not CHECK_ACC(kwargs['acc']):
             return E.acc,
-        if not CHECK_PWD(kwargs['password']):
+        if not CHECK_PWD(kwargs['pwd']):
             return E.pwd,
         if not CHECK_NAME(kwargs['name']):
             return E.name,
-
-        kwargs.update({'email' if '@' in kwargs['account'] else 'tel': kwargs['account']})
-        kwargs.pop('account')
+        kwargs.update({'email': kwargs['acc']})
+        kwargs.pop('acc')
         kwargs.update({'profile_photo': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
         kwargs.update({'point': 5})
 
-        try:
-            u = User.objects.create(**kwargs)
-        except IntegrityError:
-            return E.uni,  # 字段unique未满足
-        except DataError:
-            return E.uk,  # 诸如某个CharField超过了max_len的错误
-        except:
-            return E.uk,
-        request.session['is_login'] = True
-        request.session['uid'] = u.id
-        print(u.profile_photo.path)
-        request.session.save()
-        return 0,
+        er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['acc']).exists()
+        if not er:
+            return E.code
+        er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['acc']).get()
+        if datetime.now() - er.exprie_time > 0:
+            try:
+                u = User.objects.create(**kwargs)
+            except IntegrityError:
+                return E.uni,  # 字段unique未满足
+            except DataError:
+                return E.uk,  # 诸如某个CharField超过了max_len的错误
+            except:
+                return E.uk,
+            request.session['is_login'] = True
+            request.session['uid'] = u.id
+            print(u.profile_photo.path)
+            request.session.save()
+            return 0
+
+        return E.code
 
 
 class Login(View):
@@ -74,11 +126,10 @@ class Login(View):
         E.uk = -1
         E.exist, E.pwd, E.max_wrong, E.block = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'account', 'password'}:
+        if kwargs.keys() != {'acc', 'pwd'}:
             return 0, E.uk
 
-        u = (User.objects.filter(email=kwargs['account']) if '@' in kwargs['account']
-             else User.objects.filter(tel=kwargs['account']))
+        u = User.objects.filter(email=kwargs['acc'])
         if not u.exists():
             return 0, E.exist
         u = u.get()
@@ -98,7 +149,7 @@ class Login(View):
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.max_wrong
 
-        if u.password != kwargs['password']:
+        if u.password != kwargs['pwd']:
             u.wrong_count += 1
             try:
                 u.save()
@@ -126,6 +177,20 @@ class Login(View):
             return 0
         else:
             return -1
+
+
+class RegisterCode(View):
+    @JSR('status')
+    def get(self, request):
+        if dict(request.GET).keys() != {'acc'}:
+            return 1, False
+        try:
+            acc = str(request.GET.get('acc'))
+        except:
+            return -1, False
+
+        send_code(acc, 'register')
+        return 0
 
 
 class Member(View):
@@ -472,21 +537,6 @@ class UserInfoCard(View):
         return info, u.name, u.verify_vip(), u.intro, u.profile_photo.path, is_follow
 
 
-class ComplainUser(View):
-    @JSR('status', 'wrong_msg')
-    def post(self, request):
-        kwargs: dict = json.loads(request.body)
-        u = User.objects.filter(id=request.session['uid']).get()
-        if kwargs.keys() != {'aid', 'reason'}:
-            return -1, '参数错误'
-        if not User.objects.filter(id=kwargs['aid']).exists():
-            return 1, '文章不存在'
-        article = User.objects.filter(id=kwargs['aid']).get()
-        m = Complain(owner=u, content=kwargs['reason'], article=article)
-        m.save()
-        return 0, ''
-
-
 class StatisticsCard(View):
     @JSR('views', 'points', 'stars', 'likes')
     def get(self, request):
@@ -499,19 +549,6 @@ class StatisticsCard(View):
             return u.view_day, u.point, u.star_count, u.like_count
         else:
             return 0, 0, 0, 0
-
-
-class ArticleViewCard(View):
-    @JSR('article')
-    def get(self, request):
-        if dict(request.GET).keys() != {'atc_num'}:
-            return []
-        try:
-            atc_num = int(request.GET.get('atc_num'))
-        except:
-            return []
-        article = Article.objects.all().order_by('-view_day')[0:atc_num]
-        return [{'title': i.title, 'simple_content': i.abstract, 'new_view': i.view_day, 'aid': i.id} for i in article]
 
 
 class ChangeProfile(View):
@@ -532,7 +569,9 @@ class ChangeProfile(View):
         if u.file_size + file.size > MAX_UPLOADED_FSIZE:
             return '', errc.toobig, '上传头像的大小超过了限制(1MB)'
 
-        file_name = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)]) + '.' + str(file.name).split(".")[-1]
+        file_name = ''.join(
+            [random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)]) + '.' + \
+                    str(file.name).split(".")[-1]
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
@@ -543,141 +582,72 @@ class ChangeProfile(View):
             return '', errc.unknown, '头像保存失败'
         return file_path, 0, ''
 
-
-class GetMessage(View):
-    @JSR('amount', 'message', 'dict')
-    def get(self, request):
-        if dict(request.GET).keys() != {'page', 'each'}:
-            return 0, [], []
-        try:
-            uid = int(request.session['uid'])
-            page = int(request.GET.get('page'))
-            each = int(request.GET.get('each'))
-        except:
-            return 0, [], []
-        mes = Message.objects.filter(owner_id=uid).order_by('-time')
-        amount = mes.count()
-        mes = mes[(page - 1) * each: page * each]
-        a = []
-        li = []
-        for i in mes:
-            if i.article_comment:
-                b = i.article_comment
-                if b.fa_comment and b.fa_comment.author.id != uid:
-                    content = b.author.name + " 回复了您的评论 " + b.fa_comment.content + " ：" + b.content
-                else:
-                    content = b.author.name + " 评论了您的文章 " + b.fa_article.title + " ：" + b.content
-                a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'aid': b.id})
-                li.append({'aid': b.fa_article_id})
-            elif i.resource_comment:
-                b = i.resource_comment
-                if b.fa_comment and b.fa_comment.author.id != uid:
-                    content = b.author.name + " 回复了您的评论 " + b.fa_comment.content + " ：" + b.content
-                else:
-                    content = b.author.name + " 评论了您的资源 " + b.fa_resource.title + " ：" + b.content
-                a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'rid': b.id})
-                li.append({'rid': b.fa_resource_id})
-            else:
-                b = i.complain
-                content = "您的举报已被处理：" + b.content + " 处理结果：" + "通过" if b.result else "不通过"
-                a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'mid': b.id})
-
-        return amount, a, li
+# class GetMessage(View):
+#     @JSR('amount', 'message', 'dict')
+#     def get(self, request):
+#         if dict(request.GET).keys() != {'page', 'each'}:
+#             return 0, [], []
+#         try:
+#             uid = int(request.session['uid'])
+#             page = int(request.GET.get('page'))
+#             each = int(request.GET.get('each'))
+#         except:
+#             return 0, [], []
+#         mes = Message.objects.filter(owner_id=uid).order_by('-time')
+#         amount = mes.count()
+#         mes = mes[(page - 1) * each: page * each]
+#         a = []
+#         li = []
+#         for i in mes:
+#             if i.article_comment:
+#                 b = i.article_comment
+#                 if b.fa_comment and b.fa_comment.author.id != uid:
+#                     content = b.author.name + " 回复了您的评论 " + b.fa_comment.content + " ：" + b.content
+#                 else:
+#                     content = b.author.name + " 评论了您的文章 " + b.fa_article.title + " ：" + b.content
+#                 a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'aid': b.id})
+#                 li.append({'aid': b.fa_article_id})
+#             elif i.resource_comment:
+#                 b = i.resource_comment
+#                 if b.fa_comment and b.fa_comment.author.id != uid:
+#                     content = b.author.name + " 回复了您的评论 " + b.fa_comment.content + " ：" + b.content
+#                 else:
+#                     content = b.author.name + " 评论了您的资源 " + b.fa_resource.title + " ：" + b.content
+#                 a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'rid': b.id})
+#                 li.append({'rid': b.fa_resource_id})
+#             else:
+#                 b = i.complain
+#                 content = "您的举报已被处理：" + b.content + " 处理结果：" + "通过" if b.result else "不通过"
+#                 a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'mid': b.id})
+#
+#         return amount, a, li
 
 
 # class GetComplainInfo(View):
 #     @JSR('time', 'condition', 'id')
 #     def get(self, request):
 #
-
-class ComplainList(View):
-    @JSR('amount', 'list')
-    def get(self, request):
-        if dict(request.GET).keys() != {'page', 'each'}:
-            return 0, []
-        try:
-            page = int(request.GET.get('page'))
-            each = int(request.GET.get('each'))
-        except:
-            return 0, []
-        m = Complain.objects.all().order_by('-create_time')
-        amount = m.count()
-        m = m[(page - 1) * each: page * each]
-        return amount, [i.id for i in m]
-
-
-class DealComplain(View):
-    @JSR('amount', 'list')
-    def get(self, request):
-        if dict(request.GET).keys() != {'page', 'each'}:
-            return 0, []
-        try:
-            page = int(request.GET.get('page'))
-            each = int(request.GET.get('each'))
-        except:
-            return 0, []
-        m = Complain.objects.all().order_by('-create_time')
-        amount = m.count()
-        m = m[(page - 1) * each: page * each]
-        return amount, [i.id for i in m]
-
-    @JSR('status', 'wrong_msg')
-    def post(self, request):
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'mid', 'condition', 'reason'}:
-            return -1, ''
-        m = Complain.objects.filter(id='mid')
-        if not m.exists():
-            return -1, ''
-        m = m.get()
-        if kwargs['condition']:
-            if m.article_comment:
-                a = m.article_comment
-                a.blocked = True
-                a.save()
-            elif m.resource_comment:
-                a = m.resource_comment
-                a.blocked = True
-                a.save()
-            elif m.article:
-                a = m.article
-                a.blocked = True
-                a.save()
-            elif m.resource:
-                a = m.resource
-                a.blocked = True
-                a.save()
-            elif m.user:
-                a = m.user
-                a.blocked = True
-                a.save()
-            m.result = True
-        else:
-            m.result = False
-        m.save()
-        Message.objects.create(owner=m.owner, complain=m)
-        return 0, ''
-
-
-class GetNews(View):
-    @JSR('amount', 'list')
-    def get(self, request):
-        if dict(request.GET).keys() != {'page', 'each'}:
-            return 0, []
-        try:
-            page = int(request.GET.get('page'))
-            each = int(request.GET.get('each'))
-        except:
-            return 0, []
-        u = Follow.objects.filter(follower_id=request.session['uid'])
-        a = []
-        for i in u:
-            e = i.followed
-            a = a + [q for q in e.article_author.filter(recycled=False, blocked=False)]
-            a = a + [q for q in e.resource_author.filter(recycled=False, blocked=False)]
-        a = sorted(a, key=lambda e: e.create_time, reverse=False)
-        b = [{'aid' if isinstance(q, Article) else 'rid': q.id} for q in a]
-        amount = len(b)
-        b = b[(page - 1) * each: page * each]
-        return amount, b
-
+#
+#
+# class GetNews(View):
+#     @JSR('amount', 'list')
+#     def get(self, request):
+#         if dict(request.GET).keys() != {'page', 'each'}:
+#             return 0, []
+#         try:
+#             page = int(request.GET.get('page'))
+#             each = int(request.GET.get('each'))
+#         except:
+#             return 0, []
+#         u = Follow.objects.filter(follower_id=request.session['uid'])
+#         a = []
+#         for i in u:
+#             e = i.followed
+#             a = a + [q for q in e.article_author.filter(recycled=False, blocked=False)]
+#             a = a + [q for q in e.resource_author.filter(recycled=False, blocked=False)]
+#         a = sorted(a, key=lambda e: e.create_time, reverse=False)
+#         b = [{'aid' if isinstance(q, Article) else 'rid': q.id} for q in a]
+#         amount = len(b)
+#         b = b[(page - 1) * each: page * each]
+#         return amount, b
+#

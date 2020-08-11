@@ -53,7 +53,7 @@ _CHECK_TEL = lambda tel: all([
     re.match(_TEL_REG, tel),
 ])
 
-CHECK_ACC = lambda acc: _CHECK_EMAIL(acc) if '@' in acc else _CHECK_TEL(acc)
+CHECK_ACC = lambda acc: _CHECK_EMAIL(acc)
 
 CHECK_PWD = lambda pwd: all([
     PWD_MIN_LEN <= len(pwd) <= PWD_MAX_LEN,
