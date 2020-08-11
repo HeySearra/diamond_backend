@@ -1,5 +1,16 @@
 import re
 import json
+import base64
+
+
+def encode(s):
+    return base64.b64encode(str(s).encode()).decode(encoding="utf-8")
+
+
+def decode(s):
+    if isinstance(s, bytes):
+        s = s.decode()
+    return base64.b64decode(s).decode(encoding="utf-8")
 
 
 def data_to_str(data: object):
