@@ -11,6 +11,32 @@ from teamwork.models import *
 from teamwork.hypers import *
 
 
+class NewFromFold(View):
+    @JSR('tid', 'status')
+    def post(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth, E.root = 1, 2, 3
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'fid'}:
+            return E.key
+        if not request.session['is_login']:
+            return E.auth
+        try:
+            user = User.objects.get(id=int(decode(request.session['uid'])))
+            entity = Entity.objects.get(id=int(decode(kwargs['fid'])))
+        except:
+            return E.uk
+        if not entity.is_user_root():
+            return E.root
+        try:
+            team = Team.objects.create(root=entity)
+            Member.objects.create(member=user, team=team, auth='owner')
+        except:
+            return E.uk
+        return team.id, 0
+
+
 class Invitation(View):
     @JSR('status')
     def post(self, request):
@@ -33,12 +59,8 @@ class Invitation(View):
             return E.auth
         if Member.objects.filter(user=user2, team=team).exists():
             return E.exist
-        new_member = Member()
-        new_member.member = user2
-        new_member.auth = 'member'
-        new_member.team = team
         try:
-            new_member.save()
+            new_member = Member.objects.create(member=user2, team=team, author='member')
         except:
             return E.uk
         return 0
@@ -213,14 +235,14 @@ class New(View):
             return E.uk
 
 
-class ChangeInfo(View):
+class EditInfo(View):
     @JSR('status')
     def post(self, request):
         E = EasyDict()
         E.uk = -1
         E.key, E.auth, E.tid = 1, 2, 3
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'tid'}:
+        if kwargs.keys() != {'tid', 'name', 'intro', 'img'}:
             return E.key
         if not request.session['is_login']:
             return E.auth
@@ -228,8 +250,13 @@ class ChangeInfo(View):
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
         except:
             return E.tid
-        # do sth.
-        # ...
+        team.name = kwargs['name']
+        team.intro = kwargs['intro']
+        team.img = kwargs['img']
+        try:
+            team.save()
+        except:
+            return E.uk
         return 0
 
 
