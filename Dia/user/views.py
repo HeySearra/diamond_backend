@@ -3,6 +3,7 @@ import os
 import random
 import string
 import smtplib
+import hashlib
 
 from email.mime.text import MIMEText
 from datetime import datetime, date, timedelta
@@ -12,7 +13,8 @@ from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
-from user.models import User, EmailRecord, Message, Collection
+from user.models import User, EmailRecord, Message
+from entity.models import Collection
 from user.hypers import *
 from utils.cast import encode, decode, get_time
 from utils.response import JSR
@@ -48,7 +50,10 @@ def send_code(email, email_type):
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now()+timedelta(minutes=5)
         ver_code.email_type = email_type
-
+        try:
+            ver_code.save()
+        except:
+            return False
         # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
         msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
         msg['Subject'] = Header('金刚石文档注册验证码')
@@ -62,6 +67,10 @@ def send_code(email, email_type):
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now() + timedelta(minutes=60)
         ver_code.email_type = email_type
+        try:
+            ver_code.save()
+        except:
+            return False
         msg = MIMEText('找回密码的链接为:/forget/set?acc='+acc+'&key='+code_num + code_num, 'plain', 'utf-8')
         msg['Subject'] = Header('金刚石文档找回密码')
 
@@ -78,6 +87,14 @@ def send_code(email, email_type):
     server.sendmail(from_addr, to_addr, msg.as_string())
     # 关闭服务器
     server.quit()
+    return True
+
+
+def hash_password(pwd):
+    m = hashlib.md5()
+    m.update(pwd.encode('utf-8'))
+    m.update(b"It's DiaDoc!")
+    return m.digest()
 
 
 class SearchUser(View):
@@ -117,15 +134,17 @@ class Register(View):
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         kwargs.update({'email': kwargs['acc']})
+        kwargs.update({'password': hash_password(kwargs['pwd'])})
         kwargs.pop('acc')
+        kwargs.pop('pwd')
         kwargs.update({'profile_photo': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
-        kwargs.update({'point': 5})
 
-        er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['acc']).exists()
-        if not er:
+        er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['email'])
+        if not er.exists():
             return E.code
-        er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['acc']).get()
-        if datetime.now() - er.expire_time > 0:
+        er = er.get()
+        kwargs.pop('ver_code')
+        if datetime.now() < er.expire_time:
             try:
                 u = User.objects.create(**kwargs)
             except IntegrityError:
@@ -137,9 +156,21 @@ class Register(View):
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)
             print(u.profile_photo.path)
-            return 0
+            return 0,
 
         return E.code
+
+    @JSR('status')
+    def get(self, request):
+        try:
+            acc = str(request.GET.get('acc'))
+        except:
+            return 1,
+
+        if send_code(acc, 'register'):
+            return 0,
+        else:
+            return -1,
 
 
 class Login(View):
@@ -179,7 +210,7 @@ class Login(View):
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.many
 
-        if u.password != kwargs['pwd']:
+        if u.password != hash_password(kwargs['pwd']):
             u.wrong_count += 1
             try:
                 u.save()
@@ -207,21 +238,6 @@ class Login(View):
             return 0
         else:
             return -1
-
-
-class RegisterCode(View):
-    @JSR('status')
-    def get(self, request):
-        if dict(request.GET).keys() != {'acc'}:
-            return 1
-        try:
-            acc = str(request.GET.get('acc'))
-        except:
-            return -1
-
-        send_code(acc, 'register')
-        return 0
-
 
 class FindPwd(View):
     @JSR('status')
@@ -251,7 +267,7 @@ class SetPwd(View):
         if not EmailRecord.objects.filter(code=kwargs['key']).exists():
             return 4,
         er = EmailRecord.objects.filter(Q(acc=kwargs['acc']) | Q(code=kwargs['key'])).get()
-        u.password = kwargs['pwd']
+        u.password = hash_password(kwargs['pwd'])
         u.save()
         return 0,
 
@@ -493,7 +509,7 @@ class ChangePwd(View):
         if not CHECK_PWD(kwargs['new_pwd']):
             return E.ill_pwd
 
-        u.password = kwargs['new_pwd']
+        u.password = hash_password(kwargs['new_pwd'])
         try:
             u.save()
         except:
