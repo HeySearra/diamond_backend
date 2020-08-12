@@ -49,6 +49,10 @@ class Entity(models.Model):
             q.extend(ff for ff in f.sons.all() if ff.is_fold())
             ret.append(func(f))
         return ret
+
+    @property
+    def all_sons(self):
+        return self.bfs_apply(lambda _: _)[1:]
     
     @staticmethod
     def _dfs(f, func, ret):
@@ -82,6 +86,10 @@ class Entity(models.Model):
         r = self.root
         # todo
     
+    def root_team(self):
+        r = self.root
+        # todo
+    
     def sons_dup_name(self, name):
         return self.sons.filter(name=name).exists()
     
@@ -93,7 +101,7 @@ class Entity(models.Model):
             return False
         return True
     
-    def make_replica(self, user, dest):
+    def replicate(self, user, dest):
         new_ent = Entity.objects.create(
             name=self.name,
             type=self.type,
@@ -104,6 +112,6 @@ class Entity(models.Model):
         )
         return new_ent
     
-    @property
-    def all_sons(self):
-        return self.bfs_apply(lambda _: _)[1:]
+    def move(self, dest):
+        self.father = dest
+        self.save()
