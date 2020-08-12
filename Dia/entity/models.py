@@ -67,13 +67,13 @@ class Entity(models.Model):
         return ret
     
     @property
-    def path(self):
+    def path(self, root_begins=True):
         p = []
         f = self.father
         while f is not None:
             p.append(f)
             f = f.father
-        return reversed(p)
+        return reversed(p) if root_begins else p
     
     @property
     def root(self):
