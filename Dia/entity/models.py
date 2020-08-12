@@ -8,12 +8,13 @@ from django.template.defaultfilters import striptags
 
 from entity.hypers import *
 from utils.cast import encode, decode
+from meta_config import MB
 
 
 class Entity(models.Model):
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
-    content = RichTextField(default='')
+    content = RichTextField(default='', max_length=1 * MB)
     
     @property
     def plain_content(self):
