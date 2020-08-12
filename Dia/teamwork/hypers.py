@@ -4,6 +4,7 @@ TEAM_AUTH_CHS = (
     ('member', '普通成员'),
 )
 TEAM_AUTH_DICT = {e[0]: e[1] for e in TEAM_AUTH_CHS}
+AUTH_MAX_LENGTH = 20
 
 AUTH_CHS = (
     ('write', '可编辑'),
