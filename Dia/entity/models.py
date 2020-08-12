@@ -7,14 +7,14 @@ from django.db import models
 from django.template.defaultfilters import striptags
 
 from entity.hypers import *
+from meta_config import KB
 from utils.cast import encode, decode
-from meta_config import MB
 
 
 class Entity(models.Model):
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
-    content = RichTextField(default='', max_length=1 * MB)
+    content = RichTextField(default='', max_length=32 * KB)
     
     @property
     def plain_content(self):
@@ -90,12 +90,12 @@ class Entity(models.Model):
         while f.father is not None:
             f = f.father
         return f
-
+    
     def is_user_root(self):
-        ...    # todo
-
+        ...  # todo
+    
     def is_team_root(self):
-        ...    # todo
+        ...  # todo
     
     @property
     def root_user(self):
