@@ -5,7 +5,7 @@ import string
 import smtplib
 
 from email.mime.text import MIMEText
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
 from easydict import EasyDict
 from django.views import View
@@ -14,7 +14,7 @@ from django.db.models import Q
 from email.header import Header
 from user.models import User, Follow, EmailRecord, Message
 from user.hypers import *
-from utils.cast import encode, decode
+from utils.cast import encode, decode, get_time
 from utils.response import JSR
 
 
@@ -33,27 +33,41 @@ def send_code(email, email_type):
     code_list = []
     for i in range(10):  # 0~9
         code_list.append(str(i))
-    # for i in range(65, 91):  # A-Z
-    #     code_list.append(chr(i))
-    # for i in range(97, 123):  # a-z
-    #     code_list.append(chr(i))
-    code = random.sample(code_list, 6)  # 随机取6位数
-    code_num = ''.join(code)
-    # 数据库保存验证码！！！！！！！！！！！
-    ver_code = EmailRecord()
-    ver_code.code = code_num
-    ver_code.email = email
-    ver_code.send_time = datetime.now()
-    ver_code.expire_time = datetime.now()
-    ver_code.email_type = email_type
+    key_list = []
+    for i in range(65, 91):  # A-Z
+        key_list.append(chr(i))
+    for i in range(97, 123):  # a-z
+        key_list.append(chr(i))
+    if email_type == 'register':
+        code = random.sample(code_list, 6)  # 随机取6位数
+        code_num = ''.join(code)
+        # 数据库保存验证码！！！！！！！！！！！
+        ver_code = EmailRecord()
+        ver_code.code = code_num
+        ver_code.email = email
+        ver_code.send_time = datetime.now()
+        ver_code.expire_time = datetime.now()+timedelta(minutes=5)
+        ver_code.email_type = email_type
 
-    # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
-    msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
+        # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
+        msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
+        msg['Subject'] = Header('金刚石文档注册验证码')
+    else:
+        code = random.sample(key_list, 10)
+        code_num = ''.join(code)
+
+        ver_code = EmailRecord()
+        ver_code.code = '/forget/set?acc='+acc+'&key='+code_num
+        ver_code.email = email
+        ver_code.send_time = datetime.now()
+        ver_code.expire_time = datetime.now() + timedelta(minutes=60)
+        ver_code.email_type = email_type
+        msg = MIMEText('找回密码的链接为:/forget/set?acc='+acc+'&key='+code_num + code_num, 'plain', 'utf-8')
+        msg['Subject'] = Header('金刚石文档找回密码')
 
     # 邮件头信息
     msg['From'] = Header(from_addr)
     msg['To'] = Header(to_addr)
-    msg['Subject'] = Header('你好')
 
     # 开启发信服务，这里使用的是加密传输
     server = smtplib.SMTP_SSL(host='smtp.163.com')
@@ -64,6 +78,26 @@ def send_code(email, email_type):
     server.sendmail(from_addr, to_addr, msg.as_string())
     # 关闭服务器
     server.quit()
+
+
+class SearchUser(View):
+    @JSR('list', 'status')
+    def post(self, request):
+        if not request.session['is_login']:
+            return [], 2
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'key'}:
+            return [], 1
+        us = User.objects.filter(name__icontains=kwargs['key'])
+        ulist = []
+        for u in us:
+            ulist.append({
+                'name': u.name,
+                'portrait': u.profile_photo,
+                'acc': u.email,
+                'uid': encode(u.id)
+            })
+        return ulist, 0
 
 
 class Register(View):
@@ -103,7 +137,6 @@ class Register(View):
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)
             print(u.profile_photo.path)
-            request.session.save()
             return 0
 
         return E.code
@@ -113,10 +146,9 @@ class Login(View):
     @JSR('count', 'status')
     def post(self, request):
         if request.session.get('is_login', None):
-            u = User.objects.get(request.session['uid'])
+            u = User.objects.get(decode(request.session['uid']))
             if u.login_date != date.today():
                 u.login_date = date.today()
-                u.point += 5
                 u.wrong_count = 0
                 try:
                     u.save()
@@ -126,10 +158,10 @@ class Login(View):
 
         E = EasyDict()
         E.uk = -1
-        E.exist, E.pwd, E.max_wrong, E.block = 1, 2, 3, 4
+        E.key, E.exist, E.pwd, E.many = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'pwd'}:
-            return 0, E.uk
+            return 0, E.key
 
         u = User.objects.filter(email=kwargs['acc'])
         if not u.exists():
@@ -138,18 +170,14 @@ class Login(View):
 
         if u.login_date != date.today():
             u.login_date = date.today()
-            u.point += 5
             u.wrong_count = 0
             try:
                 u.save()
             except:
                 return u.wrong_count, E.uk
 
-        if u.blocked:
-            return u.wrong_count, E.block
-
         if u.wrong_count == MAX_WRONG_PWD:
-            return u.wrong_count, E.max_wrong
+            return u.wrong_count, E.many
 
         if u.password != kwargs['pwd']:
             u.wrong_count += 1
@@ -195,46 +223,95 @@ class RegisterCode(View):
         return 0
 
 
+class FindPwd(View):
+    @JSR('status')
+    def get(self, request):
+        if dict(request.GET).keys() != {'acc'}:
+            return 1
+        try:
+            acc = str(request.GET.get('acc'))
+        except:
+            return -1
+        send_code(acc, 'forget')
+        return 0
+
+
+class SetPwd(View):
+    @JSR('status')
+    def post(self,  request):
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'acc', 'pwd', 'key'}:
+            return 1,
+        u = User.objects.filter(email=kwargs['acc'])
+        if not u.exists():
+            return 2,
+        u = u.get()
+        if not CHECK_PWD(kwargs['pwd']):
+            return 3,
+        if not EmailRecord.objects.filter(code=kwargs['key']).exists():
+            return 4,
+        er = EmailRecord.objects.filter(Q(acc=kwargs['acc']) | Q(code=kwargs['key'])).get()
+        u.password = kwargs['pwd']
+        u.save()
+        return 0,
+
+
 class UnreadCount(View):
     @JSR('count', 'status')
     def get(self, request):
-        u = User.objects.filter(id=request.session['uid'])
+        u = User.objects.filter(id=decode(request.session['uid']))
         if not u.exists():
             return 0, -1
         u = u.get()
-        count = Message.objects.filter(Q(uid=u.id) | Q(is_read=False)).count()
+        count = Message.objects.filter(Q(user=u.id) | Q(is_read=False)).count()
         return count, 0
 
 
-class AskMessage(View):
-    @JSR('status', 'msg', 'cur_time')
+class AskMessageList(View):
+    @JSR('status', 'cur_dtdt', 'list')
     def get(self, request):
         if dict(request.GET).keys() != {'page', 'each'}:
-            return 1, [], 0
+            return 1, [], ''
         try:
             page = int(request.GET.get('page'))
             each = int(request.GET.get('each'))
         except ValueError:
             return -1, [], ''
 
-        u = User.objects.filter(id=request.session['uid'])
+        u = User.objects.filter(id=decode(request.session['uid']))
         if not u.exists():
             return -1, [], ''
         u = u.get()
-        messages = Message.objects.filter(uid=u.id).order_by('id')[(page - 1) * each: page * each]
+        messages = Message.objects.filter(user=u.id).order_by('id')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
             msg.append({
-                'mid': message.id,
-                'is_read': message.is_read,
-                'is_dnd': message.is_dnd,
-                'title': message.title,
-                'portrait_url': message.portrait_url,
-                'content': message.content,
-                'time': datetime.strptime(str(message.time), "%Y-%m-%d %H:%M:%S"),
-                'type': message.type,
+                'mid': encode(message.id),
+                'dtdt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
             })
-        return 0, msg, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S")
+        return 0, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S"), msg
+
+
+class AskMessageInfo(View):
+    @JSR('status', 'is_read', 'is_dnd', 'name', 'po', 'content', 'cur_dtdt', 'dt')
+    def get(self, request):
+        if dict(request.GET).keys() != {'mid'}:
+            return 1, []*7
+        try:
+            mid = int(decode(request.GET.get('page')))
+        except ValueError:
+            return -1, []*7
+
+        u = User.objects.filter(id=decode(request.session['uid']))
+
+        if not u.exists():
+            return -1, []*7
+        u = u.get()
+        msg = Message.objects.filter(user=u.id)
+        if not msg.exists():
+            return -1, [] * 7
+        msg = msg.get()
+        return 0, msg.is_read, u.is_dnd, msg.title, msg.portrait_url, msg.content, get_time(), msg.dt
 
 
 class SetMsgRead(View):
@@ -242,14 +319,14 @@ class SetMsgRead(View):
     def post(self, request):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'mid'}:
-            return 1
-        msg = Message.objects.filter(id=kwargs['mid'])
+            return 1,
+        msg = Message.objects.filter(id=decode(kwargs['mid']))
         if not msg.exists():
-            return -1
+            return -1,
         msg = msg.get()
         msg.is_read = True
         msg.save()
-        return 0
+        return 0,
 
 
 class SetAllMsgRead(View):
@@ -259,19 +336,32 @@ class SetAllMsgRead(View):
         for m in msg:
             m.is_read = True
             m.save()
-        return 0
+        return 0,
 
 
 class SetDnd(View):
     @JSR('status')
     def post(self, request):
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'type', 'is_dnd'}:
-            return 1
-        msg = Message.objects.filter(type=kwargs['type'])
-        for m in msg:
-            m.is_dnd = kwargs['is_dnd']
-        return 0
+        if kwargs.keys() != {'is_dnd'}:
+            return 1,
+        u = User.objects.filter(id=decode(request.session['uid']))
+        if not u.exists():
+            return -1,
+        u = u.get()
+        u.is_dnd = kwargs['is_dnd']
+        u.save()
+        return 0,
+
+
+class AskDnd(View):
+    @JSR('status', 'is_dnd')
+    def post(self, request):
+        u = User.objects.filter(id=decode(request.session['uid']))
+        if not u.exists():
+            return -1, False
+        u = u.get()
+        return 0, u.is_dnd
 
 
 class Member(View):
@@ -323,25 +413,19 @@ class Member(View):
 
 
 class SimpleUserInfo(View):
-    @JSR('name', 'portrait', 'is_member', 'account', 'uid')
+    @JSR('name', 'portrait', 'acc', 'uid', 'status')
     def get(self, request):
+        if not request.session['is_login']:
+            return '', '', '', '', 2
         try:
-            uid = int(request.session.get('uid', None))
+            uid = int(decode(request.session.get('uid', None)))
         except:
-            return '', '', False, '', ''
+            return '', '', '', '', -1
         u = User.objects.filter(id=uid)
         if not u.exists():
-            return '', '', False, '', ''
+            return '', '', '', '', -1
         u = u.get()
-        if u.login_date != date.today():
-            u.login_date = date.today()
-            u.point += 5
-            u.wrong_count = 0
-            try:
-                u.save()
-            except:
-                return '', '', False, '', ''
-        return u.name, u.profile_photo.path, u.verify_vip(), u.email if u.email is not None else u.tel, u.id
+        return u.name, u.profile_photo.path, u.email, encode(u.id), 0
 
 
 class ChangeAccount(View):
