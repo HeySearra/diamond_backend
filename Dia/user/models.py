@@ -20,7 +20,6 @@ class User(models.Model):
     # other fields
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
-    vip_date = models.DateField(blank=True, verbose_name='会员到期时间', default=date(1900, 1, 1))
     create_time = models.DateTimeField(blank=True, verbose_name='创建时间', auto_now_add=True)
     profile_photo = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
 
@@ -31,96 +30,6 @@ class User(models.Model):
         else:
             self.identity = 'vip'
         return self.identity == 'vip'
-
-    # def get_data_day(self):
-    #     atc = Article.objects.filter(author=self, recycled=False, blocked=False)
-    #     self.like_day = 0
-    #     self.view_day = 0
-    #     self.star_day = 0
-    #     self.comment_day = 0
-    #     self.point_day = 0
-    #     for a in atc:
-    #         if a.like_date == date.today() - timedelta(days=1):
-    #             self.like_day += a.like_date
-    #         if a.view_date == date.today() - timedelta(days=1):
-    #             self.view_day += a.view_date
-    #         if a.star_date == date.today() - timedelta(days=1):
-    #             self.star_day += a.star_date
-    #         if a.comment_date == date.today() - timedelta(days=1):
-    #             self.comment_day += a.comment_view
-    #         if a.like_date != date.today():
-    #             a.like_day = 0
-    #         if a.view_date != date.today():
-    #             a.view_day = 0
-    #         if a.star_date != date.today():
-    #             a.star_day = 0
-    #         if a.comment_date != date.today():
-    #             a.comment_day = 0
-    #         self.view_day += a.view_day
-    #         self.star_day += a.star_day
-    #         self.like_day += a.like_day
-    #         self.comment_day += a.comment_day
-    #         a.save()
-    #     res = Resource.objects.filter(author=self, blocked=False)
-    #     for a in res:
-    #         if a.like_date == date.today() - timedelta(days=1):
-    #             self.like_day += a.like_date
-    #         if a.view_date == date.today() - timedelta(days=1):
-    #             self.view_day += a.view_date
-    #         if a.star_date == date.today() - timedelta(days=1):
-    #             self.star_day += a.star_date
-    #         if a.comment_date == date.today() - timedelta(days=1):
-    #             self.comment_day += a.comment_view
-    #         if a.like_date != date.today():
-    #             a.like_day = 0
-    #         if a.view_date != date.today():
-    #             a.view_day = 0
-    #         if a.star_date != date.today():
-    #             a.star_day = 0
-    #         if a.comment_date != date.today():
-    #             a.comment_day = 0
-    #         if a.point_date != date.today():
-    #             a.point_day = 0
-    #         self.view_day += a.view_day
-    #         self.star_day += a.star_day
-    #         self.like_day += a.like_day
-    #         self.comment_day += a.comment_day
-    #         self.point_day += a.point_day
-    #         a.save()
-    #     self.save()
-    #
-    # def get_data_count(self):
-    #     atc = Article.objects.filter(author=self, recycled=False, blocked=False)
-    #     self.like_count = 0
-    #     self.view_count = 0
-    #     self.star_count = 0
-    #     self.comment_count = 0
-    #     self.point_count = 0
-    #     for a in atc:
-    #         self.like_count += a.who_like.all().count()
-    #         self.view_count = a.views
-    #         self.star_count = a.who_star.all().count()
-    #         self.comment_count = a.comment_article.count()
-    #     res = Resource.objects.filter(author=self, blocked=False)
-    #     for a in res:
-    #         self.like_count += a.who_like.all().count()
-    #         self.view_count = a.views
-    #         self.star_count = a.who_star.all().count()
-    #         self.comment_count = a.comment_resource.count()
-    #         self.point = a.who_buy.all().count() * a.points
-    #     self.save()
-
-
-class Detail(models.Model):
-    point = models.IntegerField(verbose_name="积分变动", default=0)
-    reason = models.CharField(verbose_name="理由", max_length=256)
-    time = models.DateTimeField(verbose_name="时间", auto_now_add=True)
-    owner = models.ForeignKey('user.User', on_delete=models.CASCADE)
-
-
-class Follow(models.Model):
-    followed = models.ForeignKey(User, related_name='followed', on_delete=models.CASCADE)
-    follower = models.ForeignKey(User, related_name='follower', on_delete=models.CASCADE)
 
 
 class EmailRecord(models.Model):
