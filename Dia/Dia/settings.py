@@ -46,10 +46,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'entity',
     'user',
-    'article',
-    'resource',
-    'mainpage',
+    'teamwork',
+    'misc',
+    
 ]
 
 # 列表有序加载，顺序不能错
