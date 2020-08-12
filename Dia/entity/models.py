@@ -1,8 +1,10 @@
+from collections import deque
 from datetime import datetime
 from typing import Callable
-from collections import deque
 
+from ckeditor.fields import RichTextField
 from django.db import models
+from django.template.defaultfilters import striptags
 
 from entity.hypers import *
 from utils.cast import encode, decode
@@ -11,7 +13,11 @@ from utils.cast import encode, decode
 class Entity(models.Model):
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
-    content = models.TextField(default='')
+    content = RichTextField(default='')
+    
+    @property
+    def plain_content(self):
+        return striptags(self.content)
     
     father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.CASCADE)
     creator = models.ForeignKey(null=False, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
