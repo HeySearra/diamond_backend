@@ -12,7 +12,7 @@ from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
-from user.models import User, Follow, EmailRecord, Message
+from user.models import User, EmailRecord, Message, Collection
 from user.hypers import *
 from utils.cast import encode, decode, get_time
 from utils.response import JSR
@@ -146,7 +146,7 @@ class Login(View):
     @JSR('count', 'status')
     def post(self, request):
         if request.session.get('is_login', None):
-            u = User.objects.get(decode(request.session['uid']))
+            u = User.objects.get(int(decode(request.session['uid'])))
             if u.login_date != date.today():
                 u.login_date = date.today()
                 u.wrong_count = 0
@@ -259,37 +259,37 @@ class SetPwd(View):
 class UnreadCount(View):
     @JSR('count', 'status')
     def get(self, request):
-        u = User.objects.filter(id=decode(request.session['uid']))
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return 0, -1
         u = u.get()
-        count = Message.objects.filter(Q(user=u.id) | Q(is_read=False)).count()
+        count = Message.objects.filter(Q(user_id=u.id) | Q(is_read=False)).count()
         return count, 0
 
 
 class AskMessageList(View):
-    @JSR('status', 'cur_dtdt', 'list')
+    @JSR('status', 'cur_dtdt', 'amount', 'list')
     def get(self, request):
         if dict(request.GET).keys() != {'page', 'each'}:
-            return 1, [], ''
+            return 1, [], 0, ''
         try:
             page = int(request.GET.get('page'))
             each = int(request.GET.get('each'))
         except ValueError:
-            return -1, [], ''
+            return -1, [], 0, ''
 
-        u = User.objects.filter(id=decode(request.session['uid']))
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
-            return -1, [], ''
+            return -1, [], 0, ''
         u = u.get()
-        messages = Message.objects.filter(user=u.id).order_by('id')[(page - 1) * each: page * each]
+        messages = Message.objects.filter(user_id=u.id).order_by('id')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
             msg.append({
                 'mid': encode(message.id),
                 'dtdt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
             })
-        return 0, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S"), msg
+        return 0, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S"), len(msg), msg
 
 
 class AskMessageInfo(View):
@@ -298,16 +298,16 @@ class AskMessageInfo(View):
         if dict(request.GET).keys() != {'mid'}:
             return 1, []*7
         try:
-            mid = int(decode(request.GET.get('page')))
+            mid = int(decode(request.GET.get('mid')))
         except ValueError:
             return -1, []*7
 
-        u = User.objects.filter(id=decode(request.session['uid']))
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
 
         if not u.exists():
             return -1, []*7
         u = u.get()
-        msg = Message.objects.filter(user=u.id)
+        msg = Message.objects.filter(id=mid)
         if not msg.exists():
             return -1, [] * 7
         msg = msg.get()
@@ -320,7 +320,7 @@ class SetMsgRead(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'mid'}:
             return 1,
-        msg = Message.objects.filter(id=decode(kwargs['mid']))
+        msg = Message.objects.filter(id=int(decode(kwargs['mid'])))
         if not msg.exists():
             return -1,
         msg = msg.get()
@@ -345,7 +345,7 @@ class SetDnd(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'is_dnd'}:
             return 1,
-        u = User.objects.filter(id=decode(request.session['uid']))
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return -1,
         u = u.get()
@@ -357,11 +357,54 @@ class SetDnd(View):
 class AskDnd(View):
     @JSR('status', 'is_dnd')
     def post(self, request):
-        u = User.objects.filter(id=decode(request.session['uid']))
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return -1, False
         u = u.get()
         return 0, u.is_dnd
+
+
+class StarCondition(View):
+    @JSR('is_starred', 'status')
+    def get(self, request):
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
+        if not u.exists():
+            return False, -1
+        u = u.get()
+        if dict(request.GET).keys() != {'id', 'type'}:
+            return False, 1
+        try:
+            did = int(decode(request.GET.get('id')))
+        except:
+            return False, -1
+        is_starred = False
+        if not Collection.objects.filter(Q(user_id=u.id) | Q(ent_id=did)).exists():
+            is_starred = True
+        return is_starred, 0
+
+
+class Star(View):
+    @JSR('status')
+    def post(self, request):
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
+        if not u.exists():
+            return -1
+        u = u.get()
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'id', 'type', 'is_starred'}:
+            return 1,
+        if kwargs['is_starred']:
+            try:
+                Collection().objects.filter(id=int(decode(request.session['uid']))).delete()
+            except:
+                return -1,
+        star = Collection()
+        star.user = u
+        star.ent = int(decode(kwargs['id']))
+        star.type = kwargs['type']
+        star.dt = get_time()
+        star.save()
+        return 0
 
 
 class Member(View):
@@ -428,169 +471,34 @@ class SimpleUserInfo(View):
         return u.name, u.profile_photo.path, u.email, encode(u.id), 0
 
 
-class ChangeAccount(View):
+class ChangePwd(View):
     @JSR('status')
     def post(self, request):
+        if not request.session['is_login']:
+            return 2
         E = EasyDict()
         E.uk = -1
-        E.pwd, E.acc, E.exist = 1, 2, 3
+        E.key, E.wr_pwd, E.ill_pwd = 1, 2, 3
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'account', 'password'}:
-            return E.uk,
-
-        u = User.objects.filter(id=request.session['uid'])
-        if not u.exists():
-            return E.uk,
-        u = u.get()
-
-        if not CHECK_ACC(kwargs['account']):
-            return E.acc,
-        if u.password != kwargs['password']:
-            return E.pwd,
-
-        attr = 'email' if '@' in kwargs['account'] else 'tel'
-        if User.objects.filter(**{attr: kwargs['account']}).exists():
-            return E.exist,
-        setattr(u, attr, kwargs['account'])
-        try:
-            u.save()
-        except:
-            return E.uk,
-        return 0,
-
-
-class ChangePassword(View):
-    @JSR('status')
-    def post(self, request):
-        E = EasyDict()
-        E.uk = -1
-        E.wr_pwd, E.same_pwd, E.ill_pwd = 1, 2, 3
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'old_password', 'new_password'}:
-            return E.uk
+        if kwargs.keys() != {'old_pwd', 'new_pwd'}:
+            return E.key
 
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return E.uk
         u = u.get()
 
-        if kwargs['old_password'] != u.password:
+        if kwargs['old_pwd'] != u.password:
             return E.wr_pwd
-        if kwargs['old_password'] == kwargs['new_password']:
-            return E.same_pwd
-        if not CHECK_PWD(kwargs['new_password']):
+        if not CHECK_PWD(kwargs['new_pwd']):
             return E.ill_pwd
 
-        u.password = kwargs['new_password']
+        u.password = kwargs['new_pwd']
         try:
             u.save()
         except:
             return E.uk
         return 0
-
-
-class FollowList(View):
-    @JSR('uid', 'amount')
-    def get(self, request):
-        if dict(request.GET).keys() != {'page', 'each'}:
-            return [], 0
-        try:
-            page = int(request.GET.get('page'))
-            each = int(request.GET.get('each'))
-        except ValueError:
-            return [], 0
-
-        u = User.objects.filter(id=request.session['uid'])
-        if not u.exists():
-            return [], 0
-        u = u.get()
-
-        follow_set = Follow.objects.filter(follower=u).all().order_by('id')[(page - 1) * each: page * each]
-        li = [u.followed.id for u in follow_set]
-        return li, len(li)
-
-    @JSR('status')
-    def post(self, request):
-        # 关注或取关
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'uid', 'condition'}:
-            return -1
-        uid = kwargs['uid']
-        uf = User.objects.filter(id=uid)
-        if not uf.exists():
-            return 1,
-        uf = uf.get()
-
-        u = User.objects.filter(id=request.session['uid'])
-        if not u.exists():
-            return 1,
-        u = u.get()
-
-        if uid == request.session['uid']:
-            return 2,
-        if Follow.objects.filter(follower=u, followed=uf).exists():
-            Follow.objects.filter(follower=u, followed=uf).delete()
-        else:
-            f = Follow()
-            f.followed = uf
-            f.follower = u
-            f.save()
-        return 0,
-
-
-class FanList(View):
-    @JSR('uid', 'status')
-    def get(self, request):
-        if dict(request.GET).keys() != {'page', 'each'}:
-            return [], 0
-        try:
-            page = int(request.GET.get('page'))
-            each = int(request.GET.get('each'))
-        except ValueError:
-            return [], 0
-
-        u = User.objects.filter(id=request.session['uid'])
-        if not u.exists():
-            return [], 0
-        u = u.get()
-
-        follow_set = Follow.objects.filter(followed=u).order_by('id')[(page - 1) * each: page * each]
-        li = [u.follower.id for u in follow_set]
-        return li, len(li)
-
-
-class FansAndFollows(View):
-    @JSR('fans', 'follows')
-    def get(self, request):
-        if dict(request.GET).keys() != {'uid'}:
-            return 0, 0
-        try:
-            uid = int(request.GET.get('uid'))
-        except:
-            return 0, 0
-        u = User.objects.filter(id=uid)
-        if not u.exists():
-            return 0, 0
-        u = u.get()
-        return Follow.objects.filter(followed=u).count(), Follow.objects.filter(follower=u).count()
-
-
-class UserAllData(View):
-    @JSR('views', 'views_inc', 'likes', 'likes_inc', 'comments', 'comments_inc')
-    def get(self, request):
-        if dict(request.GET).keys() != {'uid'}:
-            return tuple([0] * 6)
-        try:
-            uid = int(request.GET.get('uid'))
-        except:
-            return tuple([0] * 6)
-        user = User.objects.filter(id=uid)
-        if not user.exists():
-            return tuple([0] * 6)
-        user.get()
-        user.get_data_day()
-        user.get_data_count()
-        return user.view_count, user.view_day, user.like_count, user.like_day, user.comment_count, user.comment_day
 
 
 class UserInfo(View):
@@ -645,61 +553,6 @@ class UserInfo(View):
             return '', '', 2, '', '', '', '', ''
         u = u.get()
         return u.id, u.name, int(u.gender), u.birthday.strftime('%Y-%m-%d'), u.school, u.company, u.job, u.intro
-
-
-class SideUserInfo(View):
-    @JSR('name', 'portrait', 'is_member', 'introduction', 'condition')
-    def get(self, request):
-        print(dict(request.GET).keys())
-        if dict(request.GET).keys() != {'uid'}:
-            return '', '', False, '', ''
-        try:
-            uid = int(request.GET.get('uid'))
-        except:
-            return '', '', False, '', ''
-        u = User.objects.filter(id=uid)
-        if not u.exists():
-            return '', '', False, '', ''
-        u = u.get()
-        if request.session.get('is_login', None):
-            me = User.objects.get(id=request.session['uid'])
-            condition = 1 if Follow.objects.filter(follower=me, followed=u).exists() else 0
-        else:
-            condition = -1
-        return u.name, u.profile_photo.path, u.verify_vip(), u.intro, condition
-
-
-class UserInfoCard(View):
-    @JSR('info', 'name', 'is_member', 'introduction', 'src', 'is_follow')
-    def get(self, request):
-        if dict(request.GET).keys() != {'uid'}:
-            return [], '', False, '', '', ''
-        try:
-            uid = int(request.GET.get('uid'))
-        except:
-            return [], '', False, '', '', ''
-        u = User.objects.filter(id=uid)
-        if not u.exists():
-            return [], '', False, '', '', ''
-        u = u.get()
-        uid = request.session.get('uid', None)
-        if uid is not None:
-            user = User.objects.get(id=uid)
-            is_follow = 1 if Follow.objects.filter(follower=user, followed=u) else 0
-        else:
-            is_follow = -1
-        info = []
-        if u.birthday != date(1900, 1, 1):
-            info.append({'key': '生日', 'value': u.birthday.strftime("%Y-%m-%d")})
-        if u.gender != '0':
-            info.append({'key': '性别', 'value': u.get_gender_display()})
-        if u.school != '':
-            info.append({'key': '学校', 'value': u.school})
-        if u.company != '':
-            info.append({'key': '公司', 'value': u.company})
-        if u.job != '':
-            info.append({'key': '职位', 'value': u.job})
-        return info, u.name, u.verify_vip(), u.intro, u.profile_photo.path, is_follow
 
 
 class StatisticsCard(View):

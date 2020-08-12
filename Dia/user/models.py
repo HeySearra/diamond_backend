@@ -45,11 +45,17 @@ class EmailRecord(models.Model):
 
 
 class Message(models.Model):
-    user = models.ForeignKey('user.User', related_name='id', on_delete=models.CASCADE)
+    user = models.ForeignKey('user.User', related_name='user', on_delete=models.CASCADE)
     title = models.CharField(max_length=64, verbose_name='标题')
     content = models.TextField(blank=False, verbose_name='消息内容', max_length=201)
     is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)
     portrait_url = models.CharField(max_length=512, verbose_name='头像url', default='')
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
-    type = models.CharField(blank=False, verbose_name='消息类型')
+    type = models.CharField(max_length=20, blank=False, verbose_name='消息类型')
 
+
+class Collection(models.Model):
+    user = models.ForeignKey('user.User', related_name='user', on_delete=models.CASCADE)
+    ent = models.ForeignKey('entity.Entity', related_name='ent', on_delete=models.CASCADE)
+    type = models.CharField(blank=True, verbose_name='类型')
+    dt = models.DateTimeField(default=datetime.now, verbose_name='文件收藏时间')
