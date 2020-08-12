@@ -101,7 +101,7 @@ class Register(View):
             except:
                 return E.uk,
             request.session['is_login'] = True
-            request.session['uid'] = u.id
+            request.session['uid'] = encode(u.id)
             print(u.profile_photo.path)
             request.session.save()
             return 0
