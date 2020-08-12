@@ -89,6 +89,12 @@ class Entity(models.Model):
         while f.father is not None:
             f = f.father
         return f
+
+    def is_user_root(self):
+        ...    # todo
+
+    def is_team_root(self):
+        ...    # todo
     
     @property
     def root_user(self):
