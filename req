@@ -1,0 +1,7 @@
+pymysql
+mysqlclient
+django-cors-headers
+python-dateutil
+colorama
+easydict
+django-ckeditor
