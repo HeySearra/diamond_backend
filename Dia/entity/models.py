@@ -41,27 +41,29 @@ class Entity(models.Model):
     def for_each(self, func: Callable):
         return [func(e) for e in self.sons.all()]
     
-    def bfs_apply(self, func: Callable):
-        ret = [func(self)]
-        q = deque(f for f in self.sons.all() if f.is_fold())
+    def bfs_apply(self, func: Callable, cond: Callable = lambda _: True):
+        ret = [func(self)] if cond(self) else []
+        q = deque(f for f in self.sons.all())
         while len(q):
             f = q.popleft()
-            q.extend(ff for ff in f.sons.all() if ff.is_fold())
-            ret.append(func(f))
+            q.extend(ff for ff in f.sons.all())
+            if cond(f):
+                ret.append(func(f))
         return ret
-
+    
     @property
-    def all_sons(self):
-        return self.bfs_apply(lambda _: _)[1:]
+    def subtree(self, include_self=False):
+        return self.bfs_apply(func=lambda _: _)[0 if include_self else 1:]
     
     @staticmethod
-    def _dfs(f, func, ret):
-        ret.append(func(f))
-        [Entity._dfs(ff, func, ret) for ff in f.sons.all() if ff.is_fold()]
+    def _dfs(f, func, cond, ret):
+        if cond(f):
+            ret.append(func(f))
+        [Entity._dfs(ff, func, cond, ret) for ff in f.sons.all()]
     
-    def dfs_apply(self, func: Callable):
+    def dfs_apply(self, func: Callable, cond: Callable = lambda _: True):
         ret = []
-        Entity._dfs(self, func, ret)
+        Entity._dfs(self, func, cond, ret)
         return ret
     
     @property
@@ -82,13 +84,23 @@ class Entity(models.Model):
             f = f.father
         return f
     
+    @property
     def root_user(self):
         r = self.root
         # todo
     
+    @property
     def root_team(self):
         r = self.root
         # todo
+    
+    def can_convert_to_team(self):
+        r = self.root_user
+        return all((
+            r is not None,
+            self.father is not None,
+            r.id == self.father.id
+        ))
     
     def sons_dup_name(self, name):
         return self.sons.filter(name=name).exists()
@@ -114,4 +126,8 @@ class Entity(models.Model):
     
     def move(self, dest):
         self.father = dest
-        self.save()
+        try:
+            self.save()
+        except:
+            return False
+        return True
