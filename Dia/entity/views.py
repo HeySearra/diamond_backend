@@ -72,6 +72,12 @@ class WorkbenchRecentView(View):
         } for l in ls]
 
 
+class WorkbenchStar(View):
+    @JSR('status', 'list')
+    def get(self, request):
+        return 0, []
+
+
 class DocEdit(View):
     @JSR('status')
     def post(self, request):
@@ -246,12 +252,18 @@ class FSNew(View):
         if u is None:
             return '', E.au
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'pfid', 'type'}:
+        if kwargs.keys() != {'name', 'pfid', 'type'} and kwargs.keys() != {'name', 'type'}:
             return '', E.k
+
+        if kwargs.keys() == {'name', 'type'}:
+            kwargs['pfid'] = 0
         
         name, pfid, type = kwargs['name'], kwargs['pfid'], kwargs['type']
-        
-        fa = Entity.get_via_encoded_id(pfid)
+
+        if pfid == 0:
+            fa = u.root
+        else:
+            fa = Entity.get_via_encoded_id(pfid)
         if fa is None:
             return '', E.no_fa
         
