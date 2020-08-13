@@ -20,13 +20,13 @@ from utils.cast import encode, decode, get_time
 from utils.response import JSR
 
 
-def send_code(email, email_type):
+def send_code(acc, email_type):
     # 发信方的信息：发信邮箱，QQ 邮箱授权码
     from_addr = 'diadoc@163.com'
     password = 'UTXGEJFQTCJNDAHQ'
 
     # 收信方邮箱
-    to_addr = email
+    to_addr = acc
 
     # 发信服务器
     smtp_server = 'smtp.163.com'
@@ -46,7 +46,7 @@ def send_code(email, email_type):
         # 数据库保存验证码！！！！！！！！！！！
         ver_code = EmailRecord()
         ver_code.code = code_num
-        ver_code.email = email
+        ver_code.acc = acc
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now()+timedelta(minutes=5)
         ver_code.email_type = email_type
@@ -63,7 +63,7 @@ def send_code(email, email_type):
 
         ver_code = EmailRecord()
         ver_code.code = '/forget/set?acc='+acc+'&key='+code_num
-        ver_code.email = email
+        ver_code.acc = acc
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now() + timedelta(minutes=60)
         ver_code.email_type = email_type
@@ -133,13 +133,9 @@ class Register(View):
             return E.pwd,
         if not CHECK_NAME(kwargs['name']):
             return E.name,
-        kwargs.update({'email': kwargs['acc']})
-        kwargs.update({'password': hash_password(kwargs['pwd'])})
-        kwargs.pop('acc')
-        kwargs.pop('pwd')
+        kwargs.update({'pwd': hash_password(kwargs['pwd'])})
         kwargs.update({'profile_photo': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
-
-        er = EmailRecord.objects.filter(code=kwargs['ver_code'], email=kwargs['email'])
+        er = EmailRecord.objects.filter(code=kwargs['ver_code'], acc=kwargs['acc'])
         if not er.exists():
             return E.code
         er = er.get()
@@ -149,7 +145,8 @@ class Register(View):
                 u = User.objects.create(**kwargs)
             except IntegrityError:
                 return E.uni,  # 字段unique未满足
-            except DataError:
+            except DataError as e:
+                print(e)
                 return E.uk,  # 诸如某个CharField超过了max_len的错误
             except:
                 return E.uk,
@@ -218,13 +215,10 @@ class Login(View):
                 return 0, -1
             return u.wrong_count, E.pwd
 
-        u.verify_vip()
         request.session['is_login'] = True
         request.session['uid'] = encode(u.id)
         request.session['name'] = u.name
-        request.session['identity'] = u.identity
         request.session.save()
-        u.session_key = request.session.session_key
         try:
             u.save()
         except:
@@ -234,10 +228,12 @@ class Login(View):
     @JSR('status')
     def get(self, request):
         if request.session.get('is_login', None):
-            request.session.flush()
+            request.session['is_login'] = False
+            # request.session.flush()
             return 0
         else:
             return -1
+
 
 class FindPwd(View):
     @JSR('status')
@@ -369,8 +365,6 @@ class SetDnd(View):
         u.save()
         return 0,
 
-
-class AskDnd(View):
     @JSR('status', 'is_dnd')
     def post(self, request):
         u = User.objects.filter(id=int(decode(request.session['uid'])))
@@ -380,55 +374,7 @@ class AskDnd(View):
         return 0, u.is_dnd
 
 
-class Member(View):
-    @JSR('status')
-    def post(self, request):
-        E = EasyDict()
-        E.uk = -1
-        E.exist = 1
-
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'time'}:
-            return E.uk
-
-        u = User.objects.filter(id=int(decode(request.session['uid'])))
-        if not u.exists():
-            return E.exist
-        u = u.get()
-
-        if u.vip_time < date.today():
-            u.vip_time = date.today()
-        u.vip_time = u.vip_time + relativedelta(months=int(kwargs['time']))
-        u.identity = 'vip'
-        try:
-            u.save()
-        except:
-            return E.uk
-        request.session['identity'] = 'vip'
-        request.save()
-        return 0
-
-    @JSR('date', 'is_member')
-    def get(self, request):
-        if dict(request.GET).keys() != {'uid'}:
-            return '', False
-        try:
-            uid = int(request.GET.get('uid'))
-        except:
-            return '', False
-        u = User.objects.filter(id=int(decode(uid)))
-        if not u.exists():
-            return '', False
-        u = u.get()
-        is_vip = u.verify_vip()
-        try:
-            u.save()
-        except:
-            return '', False
-        return u.vip_date.strftime("%Y-%m-%d") if is_vip else '', is_vip
-
-
-class SimpleUserInfo(View):
+class UserInfo(View):
     @JSR('name', 'portrait', 'acc', 'uid', 'status')
     def get(self, request):
         if not request.session['is_login']:
@@ -442,6 +388,32 @@ class SimpleUserInfo(View):
             return '', '', '', '', -1
         u = u.get()
         return u.name, u.profile_photo.path, u.email, encode(u.id), 0
+
+
+class EditInfo(View):
+    @JSR('status')
+    def post(self, request):
+        if not request.session['is_login']:
+            return 2,
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'name', 'img'}:
+            return 1,
+        if not CHECK_NAME(kwargs['name']):
+            return 3,
+        file = request.FILES.get("file", None)
+        if not file:
+            return 4
+        try:
+            uid = int(decode(request.session.get('uid', None)))
+        except:
+            return -1
+        u = User.objects.filter(id=uid)
+        if not u.exists():
+            return -1
+        u = u.get()
+        u.name = kwargs['name']
+        #  修改头像
+        u.save()
 
 
 class ChangePwd(View):
@@ -473,93 +445,24 @@ class ChangePwd(View):
             return E.uk
         return 0
 
-#
-# class UserInfo(View):
-#     @JSR('status')
-#     def post(self, request):
-#         E = EasyDict()
-#         E.uk = -1
-#         E.name, E.school, E.company, E.job, E.intro = 1, 2, 3, 4, 5
-#
-#         kwargs: dict = json.loads(request.body)
-#         if kwargs.keys() != {'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction', 'src'}:
-#             return E.uk,
-#         u = User.objects.filter(id=request.session['uid'])
-#         if not u.exists():
-#             return E.uk,
-#         u = u.get()
-#
-#         if not CHECK_NAME(kwargs['name']):
-#             return E.name,
-#         if str(kwargs['sex']) not in GENDER_DICT.keys():
-#             return E.uk,
-#         if not CHECK_DESCS(kwargs['school']):
-#             return E.school,
-#         if not CHECK_DESCS(kwargs['company']):
-#             return E.company,
-#         if not CHECK_DESCS(kwargs['job']):
-#             return E.job,
-#         if not CHECK_DESCS(kwargs['introduction']):
-#             return E.intro,
-#         u.name = kwargs['name']
-#         u.gender = kwargs['sex']
-#
-#         bir = kwargs['birthday']
-#         for ch in (_ for _ in bir if not _.isdigit() and _ != '-'):
-#             bir = bir.split(ch)[0]
-#         u.birthday = datetime.strptime(bir, '%Y-%m-%d').date()
-#         u.school = kwargs['school']
-#         u.company = kwargs['company']
-#         u.job = kwargs['job']
-#         u.intro = kwargs['introduction']
-#
-#         try:
-#             u.save()
-#         except:
-#             return E.uk,
-#         return 0,
-#
-#     @JSR('uid', 'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction')
-#     def get(self, request):
-#         u = User.objects.filter(id=request.session['uid'])
-#         if not u.exists():
-#             return '', '', 2, '', '', '', '', ''
-#         u = u.get()
-#         return u.id, u.name, int(u.gender), u.birthday.strftime('%Y-%m-%d'), u.school, u.company, u.job, u.intro
-
-#
-# class StatisticsCard(View):
-#     @JSR('views', 'points', 'stars', 'likes')
-#     def get(self, request):
-#         uid = request.session.get('uid', None)
-#         if uid:
-#             u = User.objects.filter(id=uid).get()
-#             if u.login_date != date.today():
-#                 u.get_data_day()
-#                 u.get_data_count()
-#             return u.view_day, u.point, u.star_count, u.like_count
-#         else:
-#             return 0, 0, 0, 0
-#
-
 
 class ChangeProfile(View):
     @JSR('src', 'status')
     def post(self, request):
         errc = EasyDict()
         errc.unknown = -1
-        errc.toobig = 1
+        errc.toobig = 3
 
-        file = request.FILES.get("profile", None)
+        file = request.FILES.get("file", None)
         if not file:
-            return '', errc.unknown, '获取图片失败'
-        u = User.objects.filter(id=request.session['uid'])
+            return '', errc.unknown
+        u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
-            return '', errc.unknown, '获取用户失败'
+            return '', errc.unknown
         u = u.get()
 
         if u.file_size + file.size > MAX_UPLOADED_FSIZE:
-            return '', errc.toobig, '上传头像的大小超过了限制(1MB)'
+            return '', errc.toobig
 
         file_name = ''.join(
             [random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)]) + '.' + \
@@ -571,75 +474,5 @@ class ChangeProfile(View):
         try:
             u.save()
         except:
-            return '', errc.unknown, '头像保存失败'
-        return file_path, 0, ''
-
-# class GetMessage(View):
-#     @JSR('amount', 'message', 'dict')
-#     def get(self, request):
-#         if dict(request.GET).keys() != {'page', 'each'}:
-#             return 0, [], []
-#         try:
-#             uid = int(request.session['uid'])
-#             page = int(request.GET.get('page'))
-#             each = int(request.GET.get('each'))
-#         except:
-#             return 0, [], []
-#         mes = Message.objects.filter(owner_id=uid).order_by('-time')
-#         amount = mes.count()
-#         mes = mes[(page - 1) * each: page * each]
-#         a = []
-#         li = []
-#         for i in mes:
-#             if i.article_comment:
-#                 b = i.article_comment
-#                 if b.fa_comment and b.fa_comment.author.id != uid:
-#                     content = b.author.name + " 回复了您的评论 " + b.fa_comment.content + " ：" + b.content
-#                 else:
-#                     content = b.author.name + " 评论了您的文章 " + b.fa_article.title + " ：" + b.content
-#                 a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'aid': b.id})
-#                 li.append({'aid': b.fa_article_id})
-#             elif i.resource_comment:
-#                 b = i.resource_comment
-#                 if b.fa_comment and b.fa_comment.author.id != uid:
-#                     content = b.author.name + " 回复了您的评论 " + b.fa_comment.content + " ：" + b.content
-#                 else:
-#                     content = b.author.name + " 评论了您的资源 " + b.fa_resource.title + " ：" + b.content
-#                 a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'rid': b.id})
-#                 li.append({'rid': b.fa_resource_id})
-#             else:
-#                 b = i.complain
-#                 content = "您的举报已被处理：" + b.content + " 处理结果：" + "通过" if b.result else "不通过"
-#                 a.append({'time': i.time.strftime("%Y-%m-%d %H-%M-%S"), 'content': content, 'condition': i.condition, 'mid': b.id})
-#
-#         return amount, a, li
-
-
-# class GetComplainInfo(View):
-#     @JSR('time', 'condition', 'id')
-#     def get(self, request):
-#
-#
-#
-# class GetNews(View):
-#     @JSR('amount', 'list')
-#     def get(self, request):
-#         if dict(request.GET).keys() != {'page', 'each'}:
-#             return 0, []
-#         try:
-#             page = int(request.GET.get('page'))
-#             each = int(request.GET.get('each'))
-#         except:
-#             return 0, []
-#         u = Follow.objects.filter(follower_id=request.session['uid'])
-#         a = []
-#         for i in u:
-#             e = i.followed
-#             a = a + [q for q in e.article_author.filter(recycled=False, blocked=False)]
-#             a = a + [q for q in e.resource_author.filter(recycled=False, blocked=False)]
-#         a = sorted(a, key=lambda e: e.create_time, reverse=False)
-#         b = [{'aid' if isinstance(q, Article) else 'rid': q.id} for q in a]
-#         amount = len(b)
-#         b = b[(page - 1) * each: page * each]
-#         return amount, b
-#
+            return '', errc.unknown
+        return file_path, 0
