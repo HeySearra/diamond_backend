@@ -239,7 +239,7 @@ class Register(View):
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         kwargs.update({'pwd': hash_password(kwargs['pwd'])})
-        kwargs.update({'profile_photo': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
+        kwargs.update({'profile': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
         er = EmailRecord.objects.filter(code=kwargs['ver_code'], acc=kwargs['acc'])
         if not er.exists():
             return E.code
@@ -282,7 +282,6 @@ class Register(View):
 class Login(View):
     @JSR('count', 'status')
     def post(self, request):
-        request.session.flush()
         if request.session.get('is_login', None):
             u = User.objects.get(int(decode(request.session['uid'])))
             if u.login_date != date.today():
