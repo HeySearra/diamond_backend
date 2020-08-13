@@ -239,7 +239,7 @@ class Register(View):
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         kwargs.update({'pwd': hash_password(kwargs['pwd'])})
-        kwargs.update({'profile': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
+        kwargs.update({'portrait': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
         er = EmailRecord.objects.filter(code=kwargs['ver_code'], acc=kwargs['acc'])
         if not er.exists():
             return E.code
@@ -263,8 +263,8 @@ class Register(View):
             request.session['uid'] = encode(u.id)
             # print(u.portrait.path)
             return 0,
-
-        return E.code
+        else:
+            return 7
 
     @JSR('status')
     def get(self, request):
@@ -283,8 +283,11 @@ class Login(View):
     @JSR('count', 'status')
     def post(self, request):
         # request.session.flush()
-        if request.session.get('is_login', None):
-            u = User.objects.get(int(decode(request.session['uid'])))
+        if request.session.get('is_login', None):  # 已登录
+            try:
+                u = User.objects.get(id=int(decode(request.session['uid'])))
+            except:
+                return 0, -1
             if u.login_date != date.today():
                 u.login_date = date.today()
                 u.wrong_count = 0
@@ -497,6 +500,7 @@ class UserInfo(View):
         if not u.exists():
             return '', '', '', '', -1
         u = u.get()
+        print(u.portrait.path)
         return u.name, u.portrait.path, u.email, encode(u.id), 0
 
 
@@ -580,7 +584,7 @@ class ChangeProfile(View):
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        u.profile = file_path
+        u.portrait = file_path
         try:
             u.save()
         except:
