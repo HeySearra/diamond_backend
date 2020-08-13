@@ -114,7 +114,7 @@ def send_comment_message(comment=(), su=User(), mu=User()):
     m.sender = su
     m.title = su.name + " 评论了您的文档："  # + comment.doc.title
     m.content = comment.content
-    m.portrait = su.portrait.path
+    m.portrait = su.portrait
     m.related_id = comment.id
     m.type = 'doc'
     try:
@@ -217,7 +217,7 @@ class SearchUser(View):
         for u in us:
             ulist.append({
                 'name': u.name,
-                'portrait': u.portrait.path,
+                'portrait': u.portrait,
                 'acc': u.email,
                 'uid': encode(u.id)
             })
@@ -493,8 +493,7 @@ class SetDnd(View):
 class UserInfo(View):
     @JSR('name', 'portrait', 'acc', 'uid', 'status')
     def get(self, request):
-        request.session.flush()
-        if not request.session['is_login']:
+        if not request.session.get('is_login', None):
             return '', '', '', '', 2
         try:
             uid = int(decode(request.session.get('uid', None)))
@@ -504,7 +503,7 @@ class UserInfo(View):
         if not u.exists():
             return '', '', '', '', -1
         u = u.get()
-        return u.name, u.portrait.path, u.acc, encode(u.id), 0
+        return u.name, u.portrait, u.acc, encode(u.id), 0
 
 
 class UserEditInfo(View):
@@ -587,9 +586,9 @@ class ChangeProfile(View):
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        u.portrait = file_path
+        u.portrait = os.path.join(BASE_DIR, file_path)
         try:
             u.save()
         except:
             return '', errc.unknown
-        return u.portrait.path, 0
+        return u.portrait, 0

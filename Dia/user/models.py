@@ -28,7 +28,7 @@ class User(models.Model):
     # other fields
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
-    portrait = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
+    portrait = models.CharField(blank=True, verbose_name="头像路径", max_length=256, default='')
 
 
 class EmailRecord(models.Model):
