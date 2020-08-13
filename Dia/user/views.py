@@ -500,8 +500,7 @@ class UserInfo(View):
         if not u.exists():
             return '', '', '', '', -1
         u = u.get()
-        print(u.portrait.path)
-        return u.name, u.portrait.path, u.email, encode(u.id), 0
+        return u.name, u.portrait.path, u.acc, encode(u.id), 0
 
 
 class EditInfo(View):
