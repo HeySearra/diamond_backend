@@ -21,7 +21,6 @@ from utils.response import JSR
 from entity.models import Entity
 
 
-
 def send_code(acc, email_type):
     # 发信方的信息：发信邮箱，QQ 邮箱授权码
     from_addr = 'diadoc@163.com'

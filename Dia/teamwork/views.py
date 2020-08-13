@@ -44,13 +44,13 @@ class Invitation(View):
         E.uk = -1
         E.key, E.auth, E.typo, E.exist = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'tid', 'uid'}:
+        if kwargs.keys() != {'tid', 'account'}:
             return E.key
         if not request.session['is_login']:
             return E.auth
         try:
             user1 = User.objects.get(id=int(decode(request.session['uid'])))
-            user2 = User.objects.get(id=int(decode(kwargs['uid'])))
+            user2 = User.objects.get(acc=kwargs['account'])
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
             auth = Member.objects.get(user=user1, team=team).auth
         except:
@@ -60,7 +60,7 @@ class Invitation(View):
         if Member.objects.filter(user=user2, team=team).exists():
             return E.exist
         try:
-            new_member = Member.objects.create(member=user2, team=team, author='member')
+            Member.objects.create(member=user2, team=team, author='member')
         except:
             return E.uk
         return 0
