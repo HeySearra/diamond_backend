@@ -9,16 +9,18 @@ from django.template.defaultfilters import striptags
 from entity.hypers import *
 from meta_config import KB
 from utils.cast import encode, decode
+from record.models import CreateRecord, WriteRecord, ReadRecord
 
 
 class Entity(models.Model):
     
     @staticmethod
     def get_via_encoded_id(encoded_id):
-        return Entity.objects.get(id=int(decode(encoded_id)))
+        e = Entity.objects.filter(id=int(decode(encoded_id)))
+        return e.get() if e.exists() else None
     
     @property
-    def encoded_id(self):
+    def encoded_id(self) -> str:
         return encode(self.id)
     
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
@@ -35,11 +37,30 @@ class Entity(models.Model):
     # editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
     # edit_dt = models.DateTimeField(default=datetime.now)
     row = models.IntegerField(default=-1)
+
+    @property
+    def creator(self):
+        r = CreateRecord.objects.filter(ent=self)
+        return r.get().user if r.exists() else None
+
+    @property
+    def create_dt(self):
+        r = CreateRecord.objects.filter(ent=self)
+        return r.get().dt if r.exists() else None
+
+    @property
+    def editor(self):
+        r = WriteRecord.objects.filter(ent=self)
+        return r.get().user if r.exists() else None
+
+    @property
+    def edit_dt(self):
+        r = WriteRecord.objects.filter(ent=self)
+        return r.get().dt if r.exists() else None
     
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
-    
     
     def is_fold(self):
         return self.type == 'fold'
@@ -117,14 +138,6 @@ class Entity(models.Model):
     
     def sons_dup_name(self, name):
         return self.sons.filter(name=name).exists()
-    
-    def touch(self, user):
-        self.editor, self.edit_dt = user, datetime.now()
-        try:
-            self.save()
-        except:
-            return False
-        return True
     
     def replicate(self, user, dest):
         new_ent = Entity.objects.create(

@@ -1,6 +1,8 @@
 from django.db import models
 
 # Create your models here.
+from django.db.models import QuerySet
+
 from entity.models import Entity
 from teamwork.hypers import *
 from user.models import User
@@ -10,7 +12,8 @@ from utils.cast import encode, decode
 class Team(models.Model):
     @staticmethod
     def get_via_encoded_id(encoded_id):
-        return Team.objects.get(id=int(decode(encoded_id)))
+        t: QuerySet = Team.objects.filter(id=int(decode(encoded_id)))
+        return t.get() if t.exists() else None
 
     @property
     def encoded_id(self):
@@ -29,7 +32,8 @@ class Team(models.Model):
 class Member(models.Model):
     @staticmethod
     def get_via_encoded_id(encoded_id):
-        return Member.objects.get(id=int(decode(encoded_id)))
+        m: QuerySet = Member.objects.filter(id=int(decode(encoded_id)))
+        return m.get() if m.exists() else None
 
     @property
     def encoded_id(self):
