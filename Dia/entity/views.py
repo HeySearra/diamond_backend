@@ -329,6 +329,7 @@ class FSDelete(View):
             return E.no_id
         
         e.is_deleted = True
+        e.delete_dt = datetime.now()
         e.save()
         
         return 0
