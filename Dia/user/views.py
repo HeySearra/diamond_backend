@@ -282,7 +282,6 @@ class Register(View):
 class Login(View):
     @JSR('count', 'status')
     def post(self, request):
-        # request.session.flush()
         if request.session.get('is_login', None):  # 已登录
             try:
                 u = User.objects.get(id=int(decode(request.session['uid'])))
@@ -321,7 +320,7 @@ class Login(View):
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.many
         print(4.5)
-        if u.pwd != hash_password(kwargs['pwd']):
+        if u.pwd != str(hash_password(kwargs['pwd'])):
             print(5)
             u.wrong_count += 1
             try:
