@@ -41,7 +41,7 @@ def JSR(*keys):
             ret_dict = dict(zip(keys, values))
             if debug:
                 c = Fore.RED if ret_dict.get('status', 0) else Fore.GREEN
-                print(c + f'[{req_type}] ret: {pformat(ret_dict)}')
+                print(c + f'[{req_type}] ret of {func_name}: {pformat(ret_dict)}')
                 print(c + f'[{req_type}] time of {func_name}: {time_cost:.2f}s')
             return JsonResponse(ret_dict)
 

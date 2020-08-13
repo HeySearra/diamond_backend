@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 from entity.models import Entity
 from fusion.models import Collection, Links
-from record.models import record, CreateRecord, WriteRecord
+from record.models import record, CreateRecord, WriteRecord, record_create
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from utils.cast import encode, decode, cur_time
@@ -60,10 +60,9 @@ class WorkbenchRecentView(View):
         kwargs: dict = request.GET
         if kwargs.keys() != {}.keys():
             return E.k
-
         ls = u.read_records.all()[:15]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
-
+        print(ls)
         return 0, cur_time(), [{
             'name': l.name,
             'dt': l.create_dt,
@@ -272,6 +271,7 @@ class FSNew(View):
             e.save()
         except:
             return '', E.u
+        record_create(u, e)
         return e.encoded_id, 0
 
 
@@ -349,7 +349,8 @@ class FSFather(View):
         kwargs = request.GET
         if kwargs.keys() != {'id', 'type'}:
             return E.k, ''
-
+        print(kwargs)
+        print("=================", kwargs.get('id'))
         e = Entity.get_via_encoded_id(kwargs.get('id'))
         if e is None or e.father is None:
             return E.no, ''
