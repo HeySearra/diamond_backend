@@ -13,12 +13,113 @@ from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
+from teamwork.models import Team
 from user.models import User, EmailRecord, Message
 from fusion.models import Collection
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
 from utils.response import JSR
 from entity.models import Entity
+
+
+def send_team_invite_message(team = Team(), su = User(), mu = User()):
+    # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = su
+    m.sender = su
+    m.title = su.name + " 邀请你加入团队：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'join'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_out_message(team = Team(), mu=User()):
+    # mu: 被踢出的
+    m = Message()
+    m.owner = mu
+    m.title = "您已被移出团队：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'out'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_dismiss_message(team=Team(), mu=User()):
+    # mu: 团队解散
+    m = Message()
+    m.owner = mu
+    m.title = "团队已解散：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'dismiss'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_accept_message(team = Team(), su = User(), mu = User(), if_accept=True):
+    # tid:团队id，su:发起邀请的用户，mu:处理邀请的用户，if_accept:是否接受邀请
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = su
+    m.sender = mu
+    m.title = mu.name + " 接受" if if_accept else " 拒绝" + "了您的团队邀请：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'accept'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_admin_message(team = Team(), su = User(), mu = User()):
+    # tid:团队id，su:发起添加管理员的用户，mu：刚被设为管理员的用户
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = su.name + " 将你设为团队管理员：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'admin'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_comment_message(comment = (), su = User(), mu = User()):
+    # tid:团队id，su:发表评论的用户，mu：文档的拥有者
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    # 这里没有写完，注释的地方需要完善
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = su.name + " 评论了您的文档：" # + comment.doc.title
+    m.content = comment.content
+    m.portrait = su.portrait.path
+    m.related_id = comment.id
+    m.type = 'doc'
+    try:
+        m.save()
+    except:
+        return False
+    return True
 
 
 def send_code(acc, email_type):
@@ -114,7 +215,7 @@ class SearchUser(View):
         for u in us:
             ulist.append({
                 'name': u.name,
-                'portrait': u.profile_photo,
+                'portrait': u.portrait,
                 'acc': u.email,
                 'uid': encode(u.id)
             })
@@ -160,7 +261,7 @@ class Register(View):
                 return E.uk,
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)
-            print(u.profile_photo.path)
+            print(u.portrait.path)
             return 0,
 
         return E.code
@@ -395,7 +496,7 @@ class UserInfo(View):
         if not u.exists():
             return '', '', '', '', -1
         u = u.get()
-        return u.name, u.profile_photo.path, u.email, encode(u.id), 0
+        return u.name, u.portrait.path, u.email, encode(u.id), 0
 
 
 class EditInfo(View):
