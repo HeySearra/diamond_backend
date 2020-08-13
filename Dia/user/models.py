@@ -28,7 +28,7 @@ class User(models.Model):
     # other fields
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
-    profile = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
+    portrait = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
 
 
 class EmailRecord(models.Model):
@@ -42,7 +42,7 @@ class EmailRecord(models.Model):
         return encode(self.id)
 
     code = models.CharField(max_length=20, verbose_name='验证码')
-    acc = models.EmailField(max_length=50, verbose_name='用户邮箱', null=True, unique=True, default='')
+    acc = models.EmailField(max_length=50, verbose_name='用户邮箱', null=True, default='')
     send_time = models.DateTimeField(default=datetime.now, verbose_name='发送时间', null=True, blank=True)
     expire_time = models.DateTimeField(null=True)
     email_type = models.CharField(choices=(('register', '注册邮件'), ('forget', '找回密码')), max_length=10)
