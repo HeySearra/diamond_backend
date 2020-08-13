@@ -1,7 +1,6 @@
 import os
 from datetime import date, datetime, timedelta
 from django.db import models
-
 from user.hypers import *
 
 
@@ -46,8 +45,3 @@ class Message(models.Model):
     type = models.CharField(max_length=20, blank=False, verbose_name='消息类型')
 
 
-class Collection(models.Model):
-    user = models.ForeignKey('user.User', related_name='related_collection', on_delete=models.CASCADE)
-    ent = models.ForeignKey('entity.Entity', related_name='ent', on_delete=models.CASCADE)
-    type = models.CharField(blank=True, verbose_name='类型', max_length=20)
-    dt = models.DateTimeField(default=datetime.now, verbose_name='文件收藏时间')

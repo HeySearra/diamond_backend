@@ -12,7 +12,7 @@ from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
-from user.models import User, EmailRecord, Message, Collection
+from user.models import User, EmailRecord, Message
 from user.hypers import *
 from utils.cast import encode, decode, get_time
 from utils.response import JSR
@@ -364,49 +364,6 @@ class AskDnd(View):
         return 0, u.is_dnd
 
 
-class StarCondition(View):
-    @JSR('is_starred', 'status')
-    def get(self, request):
-        u = User.objects.filter(id=int(decode(request.session['uid'])))
-        if not u.exists():
-            return False, -1
-        u = u.get()
-        if dict(request.GET).keys() != {'id', 'type'}:
-            return False, 1
-        try:
-            did = int(decode(request.GET.get('id')))
-        except:
-            return False, -1
-        is_starred = False
-        if not Collection.objects.filter(Q(user_id=u.id) | Q(ent_id=did)).exists():
-            is_starred = True
-        return is_starred, 0
-
-
-class Star(View):
-    @JSR('status')
-    def post(self, request):
-        u = User.objects.filter(id=int(decode(request.session['uid'])))
-        if not u.exists():
-            return -1
-        u = u.get()
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'id', 'type', 'is_starred'}:
-            return 1,
-        if kwargs['is_starred']:
-            try:
-                Collection().objects.filter(id=int(decode(request.session['uid']))).delete()
-            except:
-                return -1,
-        star = Collection()
-        star.user = u
-        star.ent = int(decode(kwargs['id']))
-        star.type = kwargs['type']
-        star.dt = get_time()
-        star.save()
-        return 0
-
-
 class Member(View):
     @JSR('status')
     def post(self, request):
@@ -500,77 +457,78 @@ class ChangePwd(View):
             return E.uk
         return 0
 
+#
+# class UserInfo(View):
+#     @JSR('status')
+#     def post(self, request):
+#         E = EasyDict()
+#         E.uk = -1
+#         E.name, E.school, E.company, E.job, E.intro = 1, 2, 3, 4, 5
+#
+#         kwargs: dict = json.loads(request.body)
+#         if kwargs.keys() != {'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction', 'src'}:
+#             return E.uk,
+#         u = User.objects.filter(id=request.session['uid'])
+#         if not u.exists():
+#             return E.uk,
+#         u = u.get()
+#
+#         if not CHECK_NAME(kwargs['name']):
+#             return E.name,
+#         if str(kwargs['sex']) not in GENDER_DICT.keys():
+#             return E.uk,
+#         if not CHECK_DESCS(kwargs['school']):
+#             return E.school,
+#         if not CHECK_DESCS(kwargs['company']):
+#             return E.company,
+#         if not CHECK_DESCS(kwargs['job']):
+#             return E.job,
+#         if not CHECK_DESCS(kwargs['introduction']):
+#             return E.intro,
+#         u.name = kwargs['name']
+#         u.gender = kwargs['sex']
+#
+#         bir = kwargs['birthday']
+#         for ch in (_ for _ in bir if not _.isdigit() and _ != '-'):
+#             bir = bir.split(ch)[0]
+#         u.birthday = datetime.strptime(bir, '%Y-%m-%d').date()
+#         u.school = kwargs['school']
+#         u.company = kwargs['company']
+#         u.job = kwargs['job']
+#         u.intro = kwargs['introduction']
+#
+#         try:
+#             u.save()
+#         except:
+#             return E.uk,
+#         return 0,
+#
+#     @JSR('uid', 'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction')
+#     def get(self, request):
+#         u = User.objects.filter(id=request.session['uid'])
+#         if not u.exists():
+#             return '', '', 2, '', '', '', '', ''
+#         u = u.get()
+#         return u.id, u.name, int(u.gender), u.birthday.strftime('%Y-%m-%d'), u.school, u.company, u.job, u.intro
 
-class UserInfo(View):
-    @JSR('status')
-    def post(self, request):
-        E = EasyDict()
-        E.uk = -1
-        E.name, E.school, E.company, E.job, E.intro = 1, 2, 3, 4, 5
-
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction', 'src'}:
-            return E.uk,
-        u = User.objects.filter(id=request.session['uid'])
-        if not u.exists():
-            return E.uk,
-        u = u.get()
-
-        if not CHECK_NAME(kwargs['name']):
-            return E.name,
-        if str(kwargs['sex']) not in GENDER_DICT.keys():
-            return E.uk,
-        if not CHECK_DESCS(kwargs['school']):
-            return E.school,
-        if not CHECK_DESCS(kwargs['company']):
-            return E.company,
-        if not CHECK_DESCS(kwargs['job']):
-            return E.job,
-        if not CHECK_DESCS(kwargs['introduction']):
-            return E.intro,
-        u.name = kwargs['name']
-        u.gender = kwargs['sex']
-
-        bir = kwargs['birthday']
-        for ch in (_ for _ in bir if not _.isdigit() and _ != '-'):
-            bir = bir.split(ch)[0]
-        u.birthday = datetime.strptime(bir, '%Y-%m-%d').date()
-        u.school = kwargs['school']
-        u.company = kwargs['company']
-        u.job = kwargs['job']
-        u.intro = kwargs['introduction']
-
-        try:
-            u.save()
-        except:
-            return E.uk,
-        return 0,
-
-    @JSR('uid', 'name', 'sex', 'birthday', 'school', 'company', 'job', 'introduction')
-    def get(self, request):
-        u = User.objects.filter(id=request.session['uid'])
-        if not u.exists():
-            return '', '', 2, '', '', '', '', ''
-        u = u.get()
-        return u.id, u.name, int(u.gender), u.birthday.strftime('%Y-%m-%d'), u.school, u.company, u.job, u.intro
-
-
-class StatisticsCard(View):
-    @JSR('views', 'points', 'stars', 'likes')
-    def get(self, request):
-        uid = request.session.get('uid', None)
-        if uid:
-            u = User.objects.filter(id=uid).get()
-            if u.login_date != date.today():
-                u.get_data_day()
-                u.get_data_count()
-            return u.view_day, u.point, u.star_count, u.like_count
-        else:
-            return 0, 0, 0, 0
+#
+# class StatisticsCard(View):
+#     @JSR('views', 'points', 'stars', 'likes')
+#     def get(self, request):
+#         uid = request.session.get('uid', None)
+#         if uid:
+#             u = User.objects.filter(id=uid).get()
+#             if u.login_date != date.today():
+#                 u.get_data_day()
+#                 u.get_data_count()
+#             return u.view_day, u.point, u.star_count, u.like_count
+#         else:
+#             return 0, 0, 0, 0
+#
 
 
 class ChangeProfile(View):
-    @JSR('src', 'status', 'wrong_msg')
+    @JSR('src', 'status')
     def post(self, request):
         errc = EasyDict()
         errc.unknown = -1
