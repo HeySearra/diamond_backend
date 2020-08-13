@@ -27,11 +27,13 @@ class NewFromFold(View):
             entity = Entity.objects.get(id=int(decode(kwargs['fid'])))
         except:
             return E.uk
-        if not entity.is_user_root():
+        if not entity.can_convert_to_team():
             return E.root
         try:
             team = Team.objects.create(root=entity)
             Member.objects.create(member=user, team=team, auth='owner')
+            entity.father = None
+            entity.save()
         except:
             return E.uk
         return team.id, 0
