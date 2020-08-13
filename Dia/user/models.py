@@ -59,10 +59,14 @@ class Message(models.Model):
     def encoded_id(self):
         return encode(self.id)
 
-    user = models.ForeignKey('user.User', related_name='related_message', on_delete=models.CASCADE)
-    title = models.CharField(max_length=64, verbose_name='标题')
+    user1 = models.ForeignKey(to='user.User', related_name='invite_message', on_delete=models.CASCADE)
+    team = models.ForeignKey(to='teamwork.Team', related_name='team_message', on_delete=models.CASCADE)
+    doc = models.ForeignKey(to='entity.Entity', related_name='entity_message', on_delete=models.CASCADE)
+    user2 = models.ForeignKey('user.User', related_name='received_message', on_delete=models.CASCADE)
+    title = models.CharField(max_length=64, verbose_name='消息标题')
+    name = models.CharField(max_length=64, verbose_name='团队名或文档标题')
     content = models.TextField(blank=False, verbose_name='消息内容', max_length=201)
     is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)
-    portrait = models.CharField(max_length=512, verbose_name='头像url', default='')
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
     type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type)
+
