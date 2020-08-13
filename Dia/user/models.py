@@ -38,6 +38,6 @@ class Message(models.Model):
     is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)
     portrait = models.CharField(max_length=512, verbose_name='头像url', default='')
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
-    type = models.CharField(max_length=20, blank=False, verbose_name='消息类型')
+    type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type)
 
 

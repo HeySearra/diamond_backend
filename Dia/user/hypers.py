@@ -15,6 +15,13 @@ IDENTITY_CHS = (
     ('vip', '会员'),
     ('admin', '管理员'),
 )
+MESSAGE_type = (
+    ('join', '被邀请加入团队'),
+    ('accept', '对方接受或拒绝加入团队的邀请'),
+    ('out', '踢出团队'),
+    ('dismiss', '解散团队'),
+    ('doc', '文档新增评论'),
+)
 IDENTITY_DICT = {e[0]: e[1] for e in IDENTITY_CHS}
 DEFAULT_PROFILE_ROOT = 'profile'
 MAX_UPLOADED_FSIZE = 1024 * 1024
