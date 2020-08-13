@@ -1,9 +1,20 @@
-from datetime import date, datetime
+from datetime import datetime
+
 from django.db import models
+
 from user.hypers import *
+from utils.cast import encode, decode
 
 
 class User(models.Model):
+    @staticmethod
+    def get_via_encoded_id(encoded_id):
+        return User.objects.get(id=int(decode(encoded_id)))
+
+    @property
+    def encoded_id(self):
+        return encode(self.id)
+
     # basic fields
     acc = models.EmailField(unique=True, verbose_name='账号', max_length=BASIC_DATA_MAX_LEN)
     pwd = models.CharField(verbose_name='密码', max_length=BASIC_DATA_MAX_LEN)
@@ -20,6 +31,14 @@ class User(models.Model):
 
 
 class EmailRecord(models.Model):
+    @staticmethod
+    def get_via_encoded_id(encoded_id):
+        return EmailRecord.objects.get(id=int(decode(encoded_id)))
+
+    @property
+    def encoded_id(self):
+        return encode(self.id)
+
     code = models.CharField(max_length=20, verbose_name='验证码')
     acc = models.EmailField(max_length=50, verbose_name='用户邮箱')
     send_time = models.DateTimeField(default=datetime.now, verbose_name='发送时间', null=True, blank=True)
@@ -32,6 +51,14 @@ class EmailRecord(models.Model):
 
 
 class Message(models.Model):
+    @staticmethod
+    def get_via_encoded_id(encoded_id):
+        return Message.objects.get(id=int(decode(encoded_id)))
+
+    @property
+    def encoded_id(self):
+        return encode(self.id)
+
     user = models.ForeignKey('user.User', related_name='related_message', on_delete=models.CASCADE)
     title = models.CharField(max_length=64, verbose_name='标题')
     content = models.TextField(blank=False, verbose_name='消息内容', max_length=201)
@@ -39,5 +66,3 @@ class Message(models.Model):
     portrait = models.CharField(max_length=512, verbose_name='头像url', default='')
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
     type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type)
-
-

@@ -12,6 +12,15 @@ from utils.cast import encode, decode
 
 
 class Entity(models.Model):
+    
+    @staticmethod
+    def get_via_encoded_id(encoded_id):
+        return Entity.objects.get(id=int(decode(encoded_id)))
+    
+    @property
+    def encoded_id(self):
+        return encode(self.id)
+    
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
     content = RichTextField(default='', max_length=32 * KB)
@@ -30,14 +39,6 @@ class Entity(models.Model):
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
-    
-    @staticmethod
-    def get_ent_via_encoded_id(encoded_id):
-        return Entity.objects.get(id=int(decode(encoded_id)))
-    
-    @property
-    def encoded_id(self):
-        return encode(self.id)
     
     def is_fold(self):
         return self.type == 'fold'
