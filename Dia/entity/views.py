@@ -12,6 +12,7 @@ from django.db.models import Q
 from utils.cast import encode, decode, cur_time
 from utils.response import JSR
 from entity.hypers import *
+from user.models import *
 
 
 class FSNew(View):
@@ -25,13 +26,13 @@ class FSNew(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'name', 'pfid', 'type'}:
             return '', E.k
-        
+
         name, pfid, type = kwargs['name'], kwargs['pfid'], kwargs['type']
-        
+
         fa = Entity.get_via_encoded_id(pfid)
         if fa is None:
             return '', E.no_fa
-        
+
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
@@ -55,7 +56,7 @@ class FSelem(View):
             each = int(request.GET.get('each'))
         except ValueError:
             return -1, [], 0, ''
-    
+
         u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return -1, [], 0, ''

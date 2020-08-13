@@ -196,8 +196,8 @@ class Delete(View):
         except:
             return E.tid
         try:
-            u = User.objects.get(id=int(decode(request.session['uid'])))
-            owner = Member.objects.get(member=u, team=team)
+            user = User.objects.get(id=int(decode(request.session['uid'])))
+            owner = Member.objects.get(member=user, team=team)
         except:
             return E.auth
         if owner.auth != 'owner':
@@ -310,7 +310,7 @@ class InvitationConfirm(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'jid', 'result'}:
             return E.key
-
+        # ..todo
         return 0
 
 
@@ -340,3 +340,29 @@ class Identity(View):
             return 'none', 0
         return identity, 0
 
+
+class Quit(View):
+    @JSR('status')
+    def post(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth, E.tid, E.exist = 1, 2, 3, 4
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'tid'}:
+            return E.key
+        if not request.session['is_login']:
+            return E.auth
+        try:
+            team = Team.objects.get(id=int(decode(kwargs['tid'])))
+            user = User.objects.get(id=int(decode(request.session['uid'])))
+        except:
+            return E.tid
+        try:
+            m = Member.objects.get(team=team, member=user)
+        except:
+            return E.exist
+        try:
+            m.delete()
+        except:
+            return E.uk
+        return 0

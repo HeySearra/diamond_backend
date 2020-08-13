@@ -32,26 +32,26 @@ urlpatterns = [
     path('msg/ar', SetMsgRead.as_view(), name='msg_ar'),
     path('msg/ar_all', SetAllMsgRead.as_view(), name='msg_ar_all'),
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰
-    
+
     # 文件系统
-    path('fs/new', FSNew.as_view(), name='fs_new'), # 请求新建文件or夹
-    path('fs/fold/elem', .as_view(), name='fs_fold_elem'), # 请求文件夹下的所有条目
-    path('fs/recycle/elem', .as_view(), name='fs_recycle_elem'), # 请求回收站下的所有条目
-    path('fs/father', .as_view(), name='fs_father'), # 请求文件or夹的上级文件夹
-    path('fs/doc/info', .as_view(), name='fs_doc_info'), # 请求文档预览信息（弹窗）
-    path('fs/fold/info', .as_view(), name='fs_fold_info'), # 请求文件夹预览信息（弹窗）
-    path('fs/rename', .as_view(), name='fs_rename') # 修改文件, / 文件夹名称（重命名）
-    path('fs/link/new', .as_view(), name='fs_link_new'), # 请求新建快捷方式到桌面
-    path('fs/move', .as_view(), name='fs_move'), # 移动文档或文件夹
-    path('fs/copy', .as_view(), name='fs_copy'), # 复制文档
-    path('fs/delete', .as_view(), name='fs_delete'), # 删除文档or文件夹
-    path('fs/delete_link', .as_view(), name='fs_delete_link'), # 从桌面移除快捷方式
-    path('fs/star', .as_view(), name='fs_star'), # 收藏文件or夹
-    path('fs/user/root', .as_view(), name='fs_user_root'), # 请求个人根文件夹fid
-    path('fs/team/root', .as_view(), name='fs_team_root'), # 请求团队根文件夹fid
-    path('fs/recycle/recover', .as_view(), name='fs_recycle_recover'), # 恢复回收站的内容
-    path('fs/recycle/delete', .as_view(), name='fs_recycle_delete'), # 彻底删除回收站的内容
-    path('fs/recycle/clear', .as_view(), name='fs_recycle_clear'), # 彻底删回收站库
+    # path('fs/new', FSNew.as_view(), name='fs_new'), # 请求新建文件or夹
+    # path('fs/fold/elem', .as_view(), name='fs_fold_elem'), # 请求文件夹下的所有条目
+    # path('fs/recycle/elem', .as_view(), name='fs_recycle_elem'), # 请求回收站下的所有条目
+    # path('fs/father', .as_view(), name='fs_father'), # 请求文件or夹的上级文件夹
+    # path('fs/doc/info', .as_view(), name='fs_doc_info'), # 请求文档预览信息（弹窗）
+    # path('fs/fold/info', .as_view(), name='fs_fold_info'), # 请求文件夹预览信息（弹窗）
+    # path('fs/rename', .as_view(), name='fs_rename') # 修改文件, / 文件夹名称（重命名）
+    # path('fs/link/new', .as_view(), name='fs_link_new'), # 请求新建快捷方式到桌面
+    # path('fs/move', .as_view(), name='fs_move'), # 移动文档或文件夹
+    # path('fs/copy', .as_view(), name='fs_copy'), # 复制文档
+    # path('fs/delete', .as_view(), name='fs_delete'), # 删除文档or文件夹
+    # path('fs/delete_link', .as_view(), name='fs_delete_link'), # 从桌面移除快捷方式
+    # path('fs/star', .as_view(), name='fs_star'), # 收藏文件or夹
+    # path('fs/user/root', .as_view(), name='fs_user_root'), # 请求个人根文件夹fid
+    # path('fs/team/root', .as_view(), name='fs_team_root'), # 请求团队根文件夹fid
+    # path('fs/recycle/recover', .as_view(), name='fs_recycle_recover'), # 恢复回收站的内容
+    # path('fs/recycle/delete', .as_view(), name='fs_recycle_delete'), # 彻底删除回收站的内容
+    # path('fs/recycle/clear', .as_view(), name='fs_recycle_clear'), # 彻底删回收站库
 
     # 团队相关
     path('team/new_from_fold', NewFromFold.as_view(), name='team_new_from_fold'),
@@ -64,7 +64,7 @@ urlpatterns = [
     path('team/edit_info', EditInfo.as_view(), name='team_edit_info'),
     path('team/all', All.as_view(), name='team_all'),
     path('team/identity', Identity.as_view(), name='team_identity'),
-
+    path('team/quit', Quit.as_view(), name='team_quit'),
 
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),
 ]
