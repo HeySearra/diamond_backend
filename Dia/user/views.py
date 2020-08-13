@@ -259,16 +259,8 @@ class Register(View):
             except:
                 print(111)
                 return E.uk,
-            try:
-                request.session['is_login'] = True
-                print(1)
-            except:
-                return E.uk
-            try:
-                request.session['uid'] = encode(u.id)
-                print(2)
-            except:
-                return E.uk
+            request.session['is_login'] = True
+            request.session['uid'] = encode(u.id)
             # print(u.portrait.path)
             return 0,
 
@@ -496,20 +488,15 @@ class UserInfo(View):
     @JSR('name', 'portrait', 'acc', 'uid', 'status')
     def get(self, request):
         if not request.session['is_login']:
-            print(1)
             return '', '', '', '', 2
         try:
-            print(2)
             uid = int(decode(request.session.get('uid', None)))
         except:
-            print(3)
             return '', '', '', '', -1
         u = User.objects.filter(id=uid)
         if not u.exists():
-            print(4)
             return '', '', '', '', -1
         u = u.get()
-        print(5)
         return u.name, u.portrait.path, u.email, encode(u.id), 0
 
 
