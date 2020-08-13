@@ -183,7 +183,6 @@ class Entity(models.Model):
         :param p: User类型
         :return: 是否是第一批写权限者。
         """
-        t: Team
         u, t = self.backtrace_root_user, self.backtrace_root_team
         if u is not None:
             return u.id == p.id
