@@ -33,12 +33,15 @@ class WorkbenchCreate(View):
             each = request.GET.get('each')
         except:
             return E.k
-        
+
+        page, each = int(kwargs['page']), int(kwargs['each'])
+
+
         page, each = int(page), int(each)
-        
+
         ls = u.create_records.all()[(page - 1) * each: page * each]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
-        
+
         return 0, cur_time(), [{
             'type': l.type,
             'pfid': l.father.encoded_id,
@@ -59,6 +62,9 @@ class WorkbenchRecentView(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
+        kwargs: dict = dict(request.GET)
+        if kwargs.keys() != {}.keys():
+            return E.k
         
         ls = u.read_records.all()[:15]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
@@ -155,7 +161,7 @@ class DocAll(View):
             did = request.GET.get('did')
         except:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
@@ -177,7 +183,7 @@ class DocInfo(View):
             did = request.GET.get('did')
         except:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
@@ -319,7 +325,7 @@ class FSRecycleElem(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, '', []
-        
+
         fs = u.create_records.filter(ent__is_deleted=True)
         
         ret = [{
@@ -347,7 +353,7 @@ class FSFather(View):
         except:
             return E.k, ''
         
-        e = Entity.get_via_encoded_id(id)
+        e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None or e.father is None:
             return E.no, ''
         
@@ -374,7 +380,7 @@ class FSDocInfo(View):
         e = Entity.get_via_encoded_id(did)
         if e is None or e.father is None:
             return E.no
-        
+
         return (
             0, e.name, len(e.plain_content),
             e.creator.encoded_id, e.creator.name,
@@ -399,10 +405,10 @@ class FSFoldInfo(View):
         except:
             return E.k
         
-        e = Entity.get_via_encoded_id(did)
+        e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None or e.father is None:
             return E.no
-        
+
         return (
             0, e.name,
             e.creator.encoded_id, e.creator.name,
@@ -425,7 +431,7 @@ class FSRename(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'name'}:
             return E.k
-        
+
         name = kwargs['name']
         if not CHECK_ENAME(name):
             return E.too_long
@@ -604,7 +610,7 @@ class FSUserRoot(View):
         if u is None:
             return E.au
         # todo: 更多权限判断
-        
+
         return 0, u.root.encoded_id
 
 

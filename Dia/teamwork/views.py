@@ -138,13 +138,14 @@ class Info(View):
     @JSR('status', 'name', 'intro', 'portrait', 'create_dt', 'doc_num',
          'cuid', 'cname', 'norm', 'admin')
     def get(self, request):
+        print(request.GET)
         E = EasyDict()
         E.uk = -1
         E.key, E.auth, E.tid = 1, 2, 3
         if dict(request.GET).keys() != {'tid'}:
             return E.key, '', '', '', '', 0, '', '', [], []
         uid = int(decode(request.session['uid']))
-        tid = int(decode(request.GET['tid']))
+        tid = int(decode(request.GET.get('tid')))
         try:
             user = User.objects.get(id=uid)
         except:
@@ -158,9 +159,9 @@ class Info(View):
             return E.tid, '', '', '', '', 0, '', '', [], []
         name = team.name
         intro = team.intro
-        portrait = team.img
+        portrait = team.img.path if team.img else ''
         create_dt = team.create_dt
-        doc_num = len(team.root.subtree(True))
+        doc_num = len(team.root.subtree)
         cuid = ''
         cname = ''
         norm = []
@@ -239,7 +240,7 @@ class New(View):
         return 0
 
 
-class EditInfo(View):
+class TeamEditInfo(View):
     @JSR('status')
     def post(self, request):
         E = EasyDict()
@@ -329,7 +330,7 @@ class Identity(View):
         if not request.session['is_login']:
             return 'none', E.auth
         uid = int(decode(request.session['uid']))
-        tid = int(decode(request.GET['tid']))
+        tid = int(decode(request.GET.get('tid')))
         try:
             user = User.objects.get(id=uid)
         except:
