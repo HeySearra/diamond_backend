@@ -23,14 +23,6 @@ class User(models.Model):
     create_time = models.DateTimeField(blank=True, verbose_name='创建时间', auto_now_add=True)
     profile_photo = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
 
-    def verify_vip(self) -> bool:
-        if self.vip_date < date.today():
-            self.identity = 'user'
-            self.save()
-        else:
-            self.identity = 'vip'
-        return self.identity == 'vip'
-
 
 class EmailRecord(models.Model):
     code = models.CharField(max_length=20, verbose_name='验证码')

@@ -228,8 +228,8 @@ class New(View):
             return E.name
         try:
             # 创建新根文件夹
-            # root = Entity.objects.create(name=kwargs['name'])
-            team = Team.objects.create(name=kwargs['name'])  # root=root
+            root = Entity.objects.create(name=kwargs['name'])
+            team = Team.objects.create(name=kwargs['name'], root=root)
             Member.objects.create(team=team, member=owner, auth='owner')
         except:
             return E.uk
