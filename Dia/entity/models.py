@@ -34,7 +34,7 @@ class Entity(models.Model):
     @property
     def plain_content(self):
         return striptags(self.content)
-    
+        
     father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.SET_NULL)
     # creator = models.ForeignKey(null=True, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
     # create_dt = models.DateTimeField(auto_now_add=True)
@@ -45,22 +45,22 @@ class Entity(models.Model):
     @property
     def creator(self):
         r = CreateRecord.objects.filter(ent=self)
-        return r.get().user if r.exists() else None
+        return r.first().user if r.exists() else None
 
     @property
     def create_dt(self):
         r = CreateRecord.objects.filter(ent=self)
-        return r.get().dt if r.exists() else None
+        return r.first().dt if r.exists() else None
 
     @property
     def editor(self):
         r = WriteRecord.objects.filter(ent=self)
-        return r.get().user if r.exists() else None
+        return r.first().user if r.exists() else None
 
     @property
     def edit_dt(self):
         r = WriteRecord.objects.filter(ent=self)
-        return r.get().dt if r.exists() else None
+        return r.first().dt if r.exists() else None
     
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
@@ -72,8 +72,8 @@ class Entity(models.Model):
     def is_doc(self):
         return self.type == 'doc'
     
-    def for_each(self, func: Callable):
-        return [func(e) for e in self.sons.all()]
+    def for_each(self, func: Callable, cond: Callable = lambda _: True):
+        return [func(e) for e in self.sons.all() if cond(e)]
     
     def bfs_apply(self, func: Callable, cond: Callable = lambda _: True):
         ret = [func(self)] if cond(self) else []
@@ -180,6 +180,10 @@ class Entity(models.Model):
         return True
 
     def first_person(self, p):
+        """
+        :param p: User类型
+        :return: 是否是第一批写权限者。
+        """
         t: Team
         u, t = self.backtrace_root_user, self.backtrace_root_team
         if u is not None:
