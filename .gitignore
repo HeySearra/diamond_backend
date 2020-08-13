@@ -9,9 +9,10 @@ migrations
 **/*.zip
 **/*.rar
 
-build.sh
-run.sh
-Cuby/Cuby/settings.py
+# Dia/Dia/settings.py
 
-Cuby/logging/**
-Cuby/uwsgi.ini
+Dia/logging/**
+Dia/uwsgi.ini
+
+upload/
+
