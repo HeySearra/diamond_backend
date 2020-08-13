@@ -14,7 +14,7 @@ from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
 from user.models import User, EmailRecord, Message
-from misc.models import Collection
+from fusion.models import Collection
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
 from utils.response import JSR

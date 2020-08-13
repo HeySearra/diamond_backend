@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'user',
     'teamwork',
     'record',
+    'fusion',
     'misc',
     
 ]

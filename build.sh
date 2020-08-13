@@ -1,11 +1,3 @@
-#mysql -u root -p
-#ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
-
-#mysql -u root
-#drop database Diadb;
-#CREATE DATABASE Diadb default character set utf8mb4 COLLATE = utf8mb4_unicode_ci;
-#quit;
-
 if [ "${DJ_CONDA_ENV}" ];then
   dj_name=${DJ_CONDA_ENV}
 else
@@ -29,7 +21,7 @@ do
   pack=${PWD##*/}
   cd "${cwd}" || exit
   python manage.py makemigrations "${pack}"
-  echo "make ""${pack}"
+  echo "=> make ""${pack}"
 done;
 python manage.py migrate
 echo "=> db migrated successfully, run server..."
