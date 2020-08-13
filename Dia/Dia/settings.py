@@ -23,7 +23,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT + '/static/'),
 )
 
-MEDIA_ROOT = '/home/cu/dia/py/dia-backend/dia/frontend/dist/static/upload'
+MEDIA_ROOT = 'store'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/

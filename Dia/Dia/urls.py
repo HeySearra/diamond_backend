@@ -23,7 +23,7 @@ urlpatterns = [
     path('user/forget/send_email', FindPwd.as_view(), name='forget_send_email'),  # 找回密码
     path('user/forget/set_pwd', SetPwd.as_view(), name='forget_set_pwd'),  # 找回密码设置新密码
     path('user/change_password', ChangePwd.as_view(), name='user_change_password'),  # 修改密码
-    path('user/change_profile', ChangeProfile.as_view(), name='user_change_profile'),
+    path('upload/port', ChangeProfile.as_view(), name='user_change_profile'),
 
     # 消息
     path('msg/unread_count', UnreadCount.as_view(), name='msg_unread_count'),

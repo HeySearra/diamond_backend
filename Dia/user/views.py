@@ -575,7 +575,7 @@ class ChangeProfile(View):
             return '', errc.unknown
         u = u.get()
 
-        if u.file_size + file.size > MAX_UPLOADED_FSIZE:
+        if file.size > MAX_UPLOADED_FSIZE:
             return '', errc.toobig
 
         file_name = ''.join(
