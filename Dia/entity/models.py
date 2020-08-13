@@ -30,15 +30,16 @@ class Entity(models.Model):
         return striptags(self.content)
     
     father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.CASCADE)
-    creator = models.ForeignKey(null=False, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
-    create_dt = models.DateTimeField(auto_now_add=True)
-    editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
-    edit_dt = models.DateTimeField(default=datetime.now)
+    # creator = models.ForeignKey(null=True, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
+    # create_dt = models.DateTimeField(auto_now_add=True)
+    # editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
+    # edit_dt = models.DateTimeField(default=datetime.now)
     row = models.IntegerField(default=-1)
     
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
+    
     
     def is_fold(self):
         return self.type == 'fold'

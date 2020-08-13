@@ -11,6 +11,7 @@ from typing import List
 from collections import OrderedDict
 
 
+# todo: auto decoder of id
 def JSR(*keys):
     def decorator(req_func):
         @functools.wraps(req_func)

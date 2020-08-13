@@ -26,7 +26,7 @@ def parse_datetime(datetime):
     return [int(x) for x in filter(lambda s: len(s) <= 4, re.split('[-:/ .]', str(datetime)))]
 
 
-def get_time():
+def cur_time():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
