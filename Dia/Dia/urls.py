@@ -34,7 +34,7 @@ urlpatterns = [
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰
     
     # 文件系统
-    path('fs/new', .as_view(), name='fs_new'), # 请求新建文件or夹
+    path('fs/new', FSNew.as_view(), name='fs_new'), # 请求新建文件or夹
     path('fs/fold/elem', .as_view(), name='fs_fold_elem'), # 请求文件夹下的所有条目
     path('fs/recycle/elem', .as_view(), name='fs_recycle_elem'), # 请求回收站下的所有条目
     path('fs/father', .as_view(), name='fs_father'), # 请求文件or夹的上级文件夹

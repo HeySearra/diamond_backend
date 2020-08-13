@@ -23,6 +23,10 @@ class Entity(models.Model):
     def encoded_id(self) -> str:
         return encode(self.id)
     
+    @staticmethod
+    def locate_root(name):
+        return Entity.objects.create(name=name, type=ENT_TYPE.fold)
+    
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
     content = RichTextField(default='', max_length=32 * KB)
