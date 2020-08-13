@@ -16,7 +16,7 @@ from email.header import Header
 from user.models import User, EmailRecord, Message
 from entity.models import Collection
 from user.hypers import *
-from utils.cast import encode, decode, get_time
+from utils.cast import encode, decode, cur_time
 from utils.response import JSR
 
 
@@ -323,7 +323,7 @@ class AskMessageInfo(View):
         if not msg.exists():
             return -1, [] * 7
         msg = msg.get()
-        return 0, msg.is_read, u.is_dnd, msg.title, msg.portrait_url, msg.content, get_time(), msg.dt
+        return 0, msg.is_read, u.is_dnd, msg.title, msg.portrait_url, msg.content, cur_time(), msg.dt
 
 
 class SetMsgRead(View):

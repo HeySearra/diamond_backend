@@ -5,7 +5,7 @@ from django.views import View
 
 from entity.models import Collection
 from user.models import User
-from utils.cast import decode, get_time
+from utils.cast import decode, cur_time
 from utils.response import JSR
 
 
@@ -50,7 +50,5 @@ class Star(View):
         star.user = u
         star.ent = int(decode(kwargs['id']))
         star.type = kwargs['type']
-        star.dt = get_time()
         star.save()
         return 0
-

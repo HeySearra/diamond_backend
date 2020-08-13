@@ -12,6 +12,22 @@ def record(auth: str, user, ent) -> List[Tuple[object, bool]]:
     return obj
 
 
+def record_create(user, ent):
+    return record('create', user, ent)
+
+
+def record_write(user, ent):
+    return record('write', user, ent)
+
+
+def record_comment(user, ent):
+    return record('comment', user, ent)
+
+
+def record_read(user, ent):
+    return record('read', user, ent)
+
+
 class CreateRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='create_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='create_records', on_delete=models.CASCADE)
