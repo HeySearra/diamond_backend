@@ -41,6 +41,7 @@ urlpatterns = [
     path('team/new', New.as_view(), name='team_new'),
     path('team/edit_info', EditInfo.as_view(), name='team_edit_info'),
     path('team/all', All.as_view(), name='team_all'),
+    path('team/identity', Identity.as_view(), name='team_identity'),
 
     path('user/change_profile', ChangeProfile.as_view(), name=''),
 
