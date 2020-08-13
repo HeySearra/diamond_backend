@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from django.db import models
-
 from user.hypers import *
 
 
@@ -21,14 +20,6 @@ class User(models.Model):
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
     create_time = models.DateTimeField(blank=True, verbose_name='创建时间', auto_now_add=True)
     profile_photo = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
-
-    def verify_vip(self) -> bool:
-        if self.vip_date < date.today():
-            self.identity = 'user'
-            self.save()
-        else:
-            self.identity = 'vip'
-        return self.identity == 'vip'
 
 
 class EmailRecord(models.Model):
