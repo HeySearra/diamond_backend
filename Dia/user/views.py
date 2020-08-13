@@ -196,10 +196,11 @@ def send_code(acc, email_type):
 
 
 def hash_password(pwd):
-    m = hashlib.md5()
-    m.update(pwd.encode('utf-8'))
-    m.update(b"It's DiaDoc!")
-    return m.digest()
+    # m = hashlib.md5()
+    # m.update(pwd.encode('utf-8'))
+    # m.update(b"It's DiaDoc!")
+    # return m.digest()
+    return pwd
 
 
 class SearchUser(View):
