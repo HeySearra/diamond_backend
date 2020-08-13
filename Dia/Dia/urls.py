@@ -64,7 +64,7 @@ urlpatterns = [
     path('team/edit_info', EditInfo.as_view(), name='team_edit_info'),
     path('team/all', All.as_view(), name='team_all'),
     path('team/identity', Identity.as_view(), name='team_identity'),
-
+    path('team/quit', Quit.as_view(), name='team_quit'),
 
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),
 ]
