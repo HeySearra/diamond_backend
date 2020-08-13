@@ -6,14 +6,16 @@ import urllib
 
 
 def encode(s):
-    return urllib.parse.quote(base64.b64encode(str(s).encode()).decode(encoding="utf-8"))
+    #return urllib.parse.quote(base64.b64encode(str(s).encode()).decode(encoding="utf-8"))
+    return str(s)
 
 
 def decode(s):
     if isinstance(s, bytes):
-        s = urllib.parse.unquote(s)
+        # s = urllib.parse.unquote(s)
         s = s.decode()
-    return base64.b64decode(s).decode(encoding="utf-8")
+    # return base64.b64decode(s).decode(encoding="utf-8")
+    return s
 
 
 def data_to_str(data: object):
