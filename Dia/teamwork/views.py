@@ -215,7 +215,6 @@ class Delete(View):
 class New(View):
     @JSR('status')
     def post(self, request):
-        print(1)
         E = EasyDict()
         E.uk = -1
         E.key, E.auth, E.name = 1, 2, 3
@@ -292,16 +291,16 @@ class All(View):
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img,
-                    'member_count': Member.objects.filter(team=m.team).count()
+                    'portrait': m.team.img.path if m.team.img else '',
+                    'member_count': len(Member.objects.filter(team=m.team))
                 })
             else:
                 join_team.append({
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img,
-                    'member_count': Member.objects.filter(team=m.team).count()
+                    'portrait': m.team.img.path if m.team.img else '',
+                    'member_count': len(Member.objects.filter(team=m.team))
                 })
         return 0, my_team, join_team
 
