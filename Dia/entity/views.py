@@ -31,12 +31,12 @@ class WorkbenchCreate(View):
         kwargs: dict = dict(request.GET)
         if kwargs.keys() != {'page', 'each'}:
             return E.k
-        
+
         page, each = int(kwargs['page']), int(kwargs['each'])
-        
+
         ls = u.create_records.all()[(page - 1) * each: page * each]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
-        
+
         return 0, cur_time(), [{
             'type': l.type,
             'pfid': l.father.encoded_id,
@@ -60,10 +60,10 @@ class WorkbenchRecentView(View):
         kwargs: dict = dict(request.GET)
         if kwargs.keys() != {}.keys():
             return E.k
-        
+
         ls = u.read_records.all()[:15]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
-        
+
         return 0, cur_time(), [{
             'name': l.name,
             'dt': l.create_dt,
@@ -92,9 +92,9 @@ class DocEdit(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'name', 'did', 'content'}:
             return E.k
-        
+
         name, did, content = kwargs['name'], kwargs['did'], kwargs['content']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
@@ -108,7 +108,7 @@ class DocEdit(View):
             e.save()
         except:
             return E.u
-        
+
         return 0
 
 
@@ -126,9 +126,9 @@ class DocComment(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'did', 'content'}:
             return E.k
-        
+
         did, content = kwargs['did'], kwargs['content']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
@@ -137,7 +137,7 @@ class DocComment(View):
             e.save()
         except:
             return E.u
-        
+
         return 0
 
 
@@ -155,9 +155,9 @@ class DocAll(View):
         kwargs: dict = dict(request.GET)
         if kwargs.keys() != {'did'}:
             return E.k
-        
+
         did = kwargs['did']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
@@ -178,9 +178,9 @@ class DocInfo(View):
         kwargs: dict = dict(request.GET)
         if kwargs.keys() != {'did'}:
             return E.k
-        
+
         did = kwargs['did']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
@@ -205,14 +205,14 @@ class DocLock(View):
         kwargs: dict = dict(request.GET)
         if kwargs.keys() != {'did'}:
             return E.k
-        
+
         did = kwargs['did']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
         return 0, e.is_locked
-    
+
     @JSR('status')
     def post(self, request):
         E = ED()
@@ -226,9 +226,9 @@ class DocLock(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'did', 'is_locked'}:
             return E.k
-        
+
         did, is_locked = kwargs['did'], kwargs['is_locked']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
@@ -257,7 +257,7 @@ class FSNew(View):
 
         if kwargs.keys() == {'name', 'type'}:
             kwargs['pfid'] = 0
-        
+
         name, pfid, type = kwargs['name'], kwargs['pfid'], kwargs['type']
 
         if pfid == 0:
@@ -266,7 +266,7 @@ class FSNew(View):
             fa = Entity.get_via_encoded_id(pfid)
         if fa is None:
             return '', E.no_fa
-        
+
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
@@ -289,16 +289,16 @@ class FSFoldElem(View):
         kwargs = dict(request.GET)
         if kwargs.keys() != {'fid'}:
             return E.k, '', [], []
-        
+
         e = Entity.get_via_encoded_id(kwargs['fid'])
         if e is None:
             return E.no_f, '', [], []
-        
+
         path: List[Entity] = e.path
         sons: List[Tuple[Entity, bool]] = [(s, False) for s in e.sons.filter(is_deleted=False)]
         if e.is_user_root():
             sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u)])
-        
+
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in path]
         sons_s = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
@@ -306,7 +306,7 @@ class FSFoldElem(View):
             'create_dt': f.create_dt, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
             'edit_dt': f.edit_dt, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
         } for f, is_link in sons]
-        
+
         return 0, cur_time(), path_s, sons_s
 
 
@@ -324,20 +324,21 @@ class FSRecycleElem(View):
         kwargs = dict(request.GET)
         if kwargs.keys() != set():
             return E.k, '', []
-        
+
         fs = u.create_records.filter(ent__is_deleted=True)
-        
+
         ret = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'delete_dt': f.delete_dt, 'is_dia': False,  # todo
         } for f in fs]
-        
+
         return 0, cur_time(), ret
 
 
 class FSFather(View):
     @JSR('status', 'pfid')
     def get(self, request):
+        print(request.GET)
         E = ED()
         E.u, E.k = -1, 1
         E.au, E.no = 2, 3
@@ -349,11 +350,11 @@ class FSFather(View):
         kwargs = dict(request.GET)
         if kwargs.keys() != {'id', 'type'}:
             return E.k, ''
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None or e.father is None:
             return E.no, ''
-        
+
         return 0, e.father.encoded_id
 
 
@@ -372,11 +373,11 @@ class FSDocInfo(View):
         kwargs = dict(request.GET)
         if kwargs.keys() != {'did'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None or e.father is None:
             return E.no
-        
+
         return (
             0, e.name, len(e.plain_content),
             e.creator.encoded_id, e.creator.name,
@@ -399,11 +400,11 @@ class FSFoldInfo(View):
         kwargs = dict(request.GET)
         if kwargs.keys() != {'did'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None or e.father is None:
             return E.no
-        
+
         return (
             0, e.name,
             e.creator.encoded_id, e.creator.name,
@@ -426,7 +427,7 @@ class FSRename(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'name'}:
             return E.k
-        
+
         name = kwargs['name']
         if not CHECK_ENAME(name):
             return E.too_long
@@ -455,15 +456,15 @@ class FSLinkNew(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
         if u.links.filter(ent__name=e.name):
             return E.uni
-        
+
         Links.objects.create(user=u, ent=e)
-        
+
         return 0
 
 
@@ -482,23 +483,23 @@ class FSMove(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'pfid'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
-        
+
         fa = Entity.get_via_encoded_id(kwargs['pfid'])
         if fa is None or fa.is_doc():
             return E.not_found
-        
+
         if e.father is not None and e.father.id == fa.id:
             return E.already
-        
+
         if fa.sons_dup_name(e.name):
             return E.uni
-        
+
         e.move(fa)
-        
+
         return 0
 
 
@@ -517,23 +518,23 @@ class FSCopy(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'pfid'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
-        
+
         fa = Entity.get_via_encoded_id(kwargs['pfid'])
         if fa is None or fa.is_doc():
             return E.not_found
-        
+
         if e.father is not None and e.father.id == fa.id:
             return E.already
-        
+
         if fa.sons_dup_name(e.name):
             return E.uni
-        
+
         e.replicate(u, fa)
-        
+
         return 0
 
 
@@ -552,15 +553,15 @@ class FSDelete(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.no_id
-        
+
         e.is_deleted = True
         e.delete_dt = datetime.now()
         e.save()
-        
+
         return 0
 
 
@@ -579,17 +580,17 @@ class FSDeleteLink(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type'}:
             return E.k
-        
+
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
-        
+
         q = Links.objects.filter(user=u, ent=e)
         if q.exists():
             q.delete()
         else:
             return E.no_id
-        
+
         return 0
 
 
@@ -608,7 +609,7 @@ class FSUserRoot(View):
         kwargs = dict(request.GET)
         if kwargs.keys() != set():
             return E.k
-        
+
         return 0, u.root.encoded_id
 
 
@@ -624,15 +625,17 @@ class FSTeamRoot(View):
         if u is None:
             return E.au
         # todo: 更多权限判断
+        # print(request.GET)
         kwargs = dict(request.GET)
         if kwargs.keys() != {'tid'}:
             return E.k
-        
+
         t: Team
+
         t = Team.get_via_encoded_id(kwargs['tid'])
         if t is None or not t.contains_user(u):
             return E.u
-        
+
         return 0, t.root.encoded_id
 
 
@@ -651,7 +654,7 @@ class FSRecycleRecover(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type'}:
             return E.k
-        
+
         e = Entity.objects.filter(int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
@@ -662,7 +665,7 @@ class FSRecycleRecover(View):
             return E.not_found
         e.is_deleted = False
         e.save()
-        
+
         return 0
 
 
@@ -681,16 +684,16 @@ class FSRecycleDelete(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type'}:
             return E.k
-        
+
         e = Entity.objects.filter(int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         ent: Entity = e.get()
         if not ent.is_deleted:
             return E.not_found
-        
+
         [so.delete() for so in ent.subtree]
-        
+
         return 0
 
 
@@ -709,12 +712,12 @@ class FSRecycleClear(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {}.keys():
             return E.k
-        
+
         all_f = []
         for rec in u.create_records.filter(ent__is_deleted=True):
             e: Entity = rec.ent
             all_f.extend(e.subtree)
-        
+
         fids = [f.id for f in all_f]
         all_f = [Entity.objects.get(id=fid) for fid in list(set(fids))]
         [f.delete() for f in all_f]

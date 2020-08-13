@@ -505,7 +505,7 @@ class UserInfo(View):
         return u.name, u.portrait.path, u.acc, encode(u.id), 0
 
 
-class EditInfo(View):
+class UserEditInfo(View):
     @JSR('status')
     def post(self, request):
         if not request.session['is_login']:
