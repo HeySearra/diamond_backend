@@ -236,6 +236,7 @@ class New(View):
             Member.objects.create(team=team, member=owner, auth='owner')
         except:
             return E.uk
+        return 0
 
 
 class EditInfo(View):
