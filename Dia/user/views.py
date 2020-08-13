@@ -22,7 +22,7 @@ from utils.response import JSR
 from entity.models import Entity
 
 
-def send_team_invite_message(team = Team(), su = User(), mu = User()):
+def send_team_invite_message(team=Team(), su=User(), mu=User()):
     # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
@@ -39,7 +39,7 @@ def send_team_invite_message(team = Team(), su = User(), mu = User()):
     return True
 
 
-def send_team_out_message(team = Team(), mu=User()):
+def send_team_out_message(team=Team(), mu=User()):
     # mu: 被踢出的
     m = Message()
     m.owner = mu
@@ -69,7 +69,7 @@ def send_team_dismiss_message(team=Team(), mu=User()):
     return True
 
 
-def send_team_accept_message(team = Team(), su = User(), mu = User(), if_accept=True):
+def send_team_accept_message(team=Team(), su=User(), mu=User(), if_accept=True):
     # tid:团队id，su:发起邀请的用户，mu:处理邀请的用户，if_accept:是否接受邀请
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
@@ -86,7 +86,7 @@ def send_team_accept_message(team = Team(), su = User(), mu = User(), if_accept=
     return True
 
 
-def send_team_admin_message(team = Team(), su = User(), mu = User()):
+def send_team_admin_message(team=Team(), su=User(), mu=User()):
     # tid:团队id，su:发起添加管理员的用户，mu：刚被设为管理员的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
@@ -103,14 +103,14 @@ def send_team_admin_message(team = Team(), su = User(), mu = User()):
     return True
 
 
-def send_comment_message(comment = (), su = User(), mu = User()):
+def send_comment_message(comment=(), su=User(), mu=User()):
     # tid:团队id，su:发表评论的用户，mu：文档的拥有者
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     # 这里没有写完，注释的地方需要完善
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = su.name + " 评论了您的文档：" # + comment.doc.title
+    m.title = su.name + " 评论了您的文档："  # + comment.doc.title
     m.content = comment.content
     m.portrait = su.portrait.path
     m.related_id = comment.id
@@ -150,7 +150,7 @@ def send_code(acc, email_type):
         ver_code.code = code_num
         ver_code.acc = acc
         ver_code.send_time = datetime.now()
-        ver_code.expire_time = datetime.now()+timedelta(minutes=5)
+        ver_code.expire_time = datetime.now() + timedelta(minutes=5)
         ver_code.email_type = email_type
         try:
             ver_code.save()
@@ -165,7 +165,7 @@ def send_code(acc, email_type):
         code_num = ''.join(code)
 
         ver_code = EmailRecord()
-        ver_code.code = '/forget/set?acc='+acc+'&key='+code_num
+        ver_code.code = '/forget/set?acc=' + acc + '&key=' + code_num
         ver_code.acc = acc
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now() + timedelta(minutes=60)
@@ -176,7 +176,7 @@ def send_code(acc, email_type):
         except:
             print(123)
             return False
-        msg = MIMEText('找回密码的链接为:/forget/set?acc='+acc+'&key='+code_num + code_num, 'plain', 'utf-8')
+        msg = MIMEText('找回密码的链接为:/forget/set?acc=' + acc + '&key=' + code_num + code_num, 'plain', 'utf-8')
         msg['Subject'] = Header('金刚石文档找回密码')
 
     # 邮件头信息
@@ -239,7 +239,7 @@ class Register(View):
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         kwargs.update({'pwd': hash_password(kwargs['pwd'])})
-        kwargs.update({'profile_photo': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
+        kwargs.update({'profile': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
         er = EmailRecord.objects.filter(code=kwargs['ver_code'], acc=kwargs['acc'])
         if not er.exists():
             return E.code
@@ -259,9 +259,17 @@ class Register(View):
             except:
                 print(111)
                 return E.uk,
-            request.session['is_login'] = True
-            request.session['uid'] = encode(u.id)
-            print(u.portrait.path)
+            try:
+                request.session['is_login'] = True
+                print(1)
+            except:
+                return E.uk
+            try:
+                request.session['uid'] = encode(u.id)
+                print(2)
+            except:
+                return E.uk
+            # print(u.portrait.path)
             return 0,
 
         return E.code
@@ -282,7 +290,7 @@ class Register(View):
 class Login(View):
     @JSR('count', 'status')
     def post(self, request):
-        request.session.flush()
+        # request.session.flush()
         if request.session.get('is_login', None):
             u = User.objects.get(int(decode(request.session['uid'])))
             if u.login_date != date.today():
@@ -360,7 +368,7 @@ class FindPwd(View):
 
 class SetPwd(View):
     @JSR('status')
-    def post(self,  request):
+    def post(self, request):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'pwd', 'key'}:
             return 1,
@@ -418,16 +426,16 @@ class AskMessageInfo(View):
     @JSR('status', 'is_read', 'is_dnd', 'name', 'po', 'content', 'cur_dtdt', 'dt')
     def get(self, request):
         if dict(request.GET).keys() != {'mid'}:
-            return 1, []*7
+            return 1, [] * 7
         try:
             mid = int(decode(request.GET.get('mid')))
         except ValueError:
-            return -1, []*7
+            return -1, [] * 7
 
         u = User.objects.filter(id=int(decode(request.session['uid'])))
 
         if not u.exists():
-            return -1, []*7
+            return -1, [] * 7
         u = u.get()
         msg = Message.objects.filter(id=mid)
         if not msg.exists():
@@ -488,15 +496,20 @@ class UserInfo(View):
     @JSR('name', 'portrait', 'acc', 'uid', 'status')
     def get(self, request):
         if not request.session['is_login']:
+            print(1)
             return '', '', '', '', 2
         try:
+            print(2)
             uid = int(decode(request.session.get('uid', None)))
         except:
+            print(3)
             return '', '', '', '', -1
         u = User.objects.filter(id=uid)
         if not u.exists():
+            print(4)
             return '', '', '', '', -1
         u = u.get()
+        print(5)
         return u.name, u.portrait.path, u.email, encode(u.id), 0
 
 
@@ -580,7 +593,7 @@ class ChangeProfile(View):
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        u.profile_photo = file_path
+        u.profile = file_path
         try:
             u.save()
         except:
