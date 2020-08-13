@@ -282,6 +282,7 @@ class Register(View):
 class Login(View):
     @JSR('count', 'status')
     def post(self, request):
+        request.session.flush()
         if request.session.get('is_login', None):
             u = User.objects.get(int(decode(request.session['uid'])))
             if u.login_date != date.today():
