@@ -17,6 +17,223 @@ from typing import List, Tuple
 from teamwork.models import Team
 
 
+class WorkbenchCreate(View):
+    @JSR('status', 'cur_dt', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au = 2
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = dict(request.GET)
+        if kwargs.keys() != {'page', 'each'}:
+            return E.k
+        
+        page, each = int(kwargs['page']), int(kwargs['each'])
+        
+        ls = u.create_records.all()[(page - 1) * each: page * each]
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        
+        return 0, cur_time(), [{
+            'type': l.type,
+            'pfid': l.father.encoded_id,
+            'dt': l.create_dt,
+            'name': l.name,
+            'id': l.encoded_id
+        } for l in ls]
+
+
+class WorkbenchRecentView(View):
+    @JSR('status', 'cur_dt', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au = 2
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = dict(request.GET)
+        if kwargs.keys() != {}.keys():
+            return E.k
+        
+        ls = u.read_records.all()[:15]
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        
+        return 0, cur_time(), [{
+            'name': l.name,
+            'dt': l.create_dt,
+            'id': l.encoded_id,
+            'is_starred': Collection.objects.filter(user=u, ent=l).exists(),
+        } for l in ls]
+
+
+class DocEdit(View):
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.inv_name, E.inv_cont, E.rename = 2, 3, 4, 5
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'name', 'did', 'content'}:
+            return E.k
+        
+        name, did, content = kwargs['name'], kwargs['did'], kwargs['content']
+        
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.u
+        if e.father.sons_dup_name(name):
+            return E.rename
+        if not CHECK_ENAME(name):
+            return E.inv_name
+        e.name = name
+        e.content = content
+        try:
+            e.save()
+        except:
+            return E.u
+        
+        return 0
+
+
+class DocComment(View):
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.inv_name, E.inv_cont, E.rename = 2, 3, 4, 5
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'did', 'content'}:
+            return E.k
+        
+        did, content = kwargs['did'], kwargs['content']
+        
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.u
+        e.content = content
+        try:
+            e.save()
+        except:
+            return E.u
+        
+        return 0
+
+
+class DocAll(View):
+    @JSR('status', 'name', 'content')
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = dict(request.GET)
+        if kwargs.keys() != {'did'}:
+            return E.k
+        
+        did = kwargs['did']
+        
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent
+        return 0, e.name, e.content
+
+
+class DocInfo(View):
+    @JSR('status', 'name', 'is_starred', 'create_dt', 'cuid', 'cname', 'edit_dt', 'euid', 'ename')
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = dict(request.GET)
+        if kwargs.keys() != {'did'}:
+            return E.k
+        
+        did = kwargs['did']
+        
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent
+        return (
+            0, e.name, Collection.objects.filter(user=u, ent=e).exists(),
+            e.create_dt, e.creator.encoded_id, e.creator.name,
+            e.edit_dt, e.editor.encoded_id, e.editor.name,
+        )
+
+
+class DocLock(View):
+    @JSR('status', 'is_locked')
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = dict(request.GET)
+        if kwargs.keys() != {'did'}:
+            return E.k
+        
+        did = kwargs['did']
+        
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent
+        return 0, e.is_locked
+    
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'did', 'is_locked'}:
+            return E.k
+        
+        did, is_locked = kwargs['did'], kwargs['is_locked']
+        
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent
+        e.is_locked = is_locked
+        try:
+            e.save()
+        except:
+            return E.u
+        return 0
+
+
 class FSNew(View):
     @JSR('fid', 'status')
     def post(self, request):
@@ -125,7 +342,7 @@ class FSFather(View):
         if e is None or e.father is None:
             return E.no, ''
         
-        return 0, e.father.id
+        return 0, e.father.encoded_id
 
 
 class FSDocInfo(View):

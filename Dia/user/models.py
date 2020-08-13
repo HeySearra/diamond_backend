@@ -17,18 +17,18 @@ class User(models.Model):
         return encode(self.id)
 
     # basic fields
-    acc = models.EmailField(unique=True, verbose_name='账号', max_length=BASIC_DATA_MAX_LEN)
-    pwd = models.CharField(verbose_name='密码', max_length=BASIC_DATA_MAX_LEN)
+    acc = models.EmailField(unique=True, verbose_name='账号', max_length=BASIC_DATA_MAX_LEN, null=True)
+    pwd = models.CharField(verbose_name='密码', max_length=BASIC_DATA_MAX_LEN, null=True)
     name = models.CharField(verbose_name='姓名', max_length=BASIC_DATA_MAX_LEN)
     is_dnd = models.BooleanField(blank=True, verbose_name='消息是否免打扰', default=False)
-    root = models.ForeignKey(to='entity.Entity', related_name='root_user', on_delete=models.CASCADE)
+    root = models.ForeignKey(to='entity.Entity', related_name='root_user', on_delete=models.CASCADE, null=True)
 
     # extended fields
 
     # other fields
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
-    profile_photo = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
+    profile = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
 
 
 class EmailRecord(models.Model):
@@ -42,7 +42,7 @@ class EmailRecord(models.Model):
         return encode(self.id)
 
     code = models.CharField(max_length=20, verbose_name='验证码')
-    acc = models.EmailField(max_length=50, verbose_name='用户邮箱', null=True, blank=True)
+    acc = models.EmailField(max_length=50, verbose_name='用户邮箱', null=True, unique=True, default='')
     send_time = models.DateTimeField(default=datetime.now, verbose_name='发送时间', null=True, blank=True)
     expire_time = models.DateTimeField(null=True)
     email_type = models.CharField(choices=(('register', '注册邮件'), ('forget', '找回密码')), max_length=10)
