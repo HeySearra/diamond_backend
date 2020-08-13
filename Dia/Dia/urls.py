@@ -1,11 +1,8 @@
 from django.urls import path, re_path
 from django.views.generic import TemplateView
 
-
 from user.views import *
 from teamwork.views import *
-
-
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name="index.html"), name='index'),
@@ -38,4 +35,3 @@ urlpatterns = [
 
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),
 ]
-
