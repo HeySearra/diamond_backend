@@ -283,8 +283,11 @@ class Login(View):
     @JSR('count', 'status')
     def post(self, request):
         # request.session.flush()
-        if request.session.get('is_login', None):
-            u = User.objects.get(int(decode(request.session['uid'])))
+        if request.session.get('is_login', None):  # 已登录
+            try:
+                u = User.objects.get(id=int(decode(request.session['uid'])))
+            except:
+                return 0, -1
             if u.login_date != date.today():
                 u.login_date = date.today()
                 u.wrong_count = 0
