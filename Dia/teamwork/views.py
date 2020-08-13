@@ -291,16 +291,16 @@ class All(View):
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img,
-                    'member_count': len(Member.objects.filter(m.team.id))
+                    'portrait': m.team.img.path if m.team.img else '',
+                    'member_count': len(Member.objects.filter(team=m.team))
                 })
             else:
                 join_team.append({
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img,
-                    'member_count': len(Member.objects.filter(m.team.id))
+                    'portrait': m.team.img.path if m.team.img else '',
+                    'member_count': len(Member.objects.filter(team=m.team))
                 })
         return 0, my_team, join_team
 
