@@ -12,3 +12,6 @@ AUTH_CHS = (
     ('read', '只读'),
 )
 AUTH_DICT = {e[0]: e[1] for e in AUTH_CHS}
+
+TEAM_NAME_MAX_LENGTH = 64
+TEAM_INTRO_MAX_LENGTH = 1024

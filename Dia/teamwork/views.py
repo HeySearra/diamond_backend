@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-# Create your views here.
+# your views here.
 import json
 from django.views import View
 from easydict import EasyDict
@@ -240,7 +240,7 @@ class EditInfo(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.tid = 1, 2, 3
+        E.key, E.auth, E.tid, E.name, E.intro = 1, 2, 3, 4, 5
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'tid', 'name', 'intro', 'img'}:
             return E.key
@@ -250,7 +250,11 @@ class EditInfo(View):
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
         except:
             return E.tid
-        team.name = kwargs['name']  # todo 判断合法性
+        if not (0 < len(kwargs['name']) <= TEAM_NAME_MAX_LENGTH and str(kwargs['name']).isprintable()):
+            return E.name
+        if not 0 < len(kwargs['intro']) <= TEAM_INTRO_MAX_LENGTH:
+            return E.intro
+        team.name = kwargs['name']
         team.intro = kwargs['intro']
         team.img = kwargs['img']
         try:
