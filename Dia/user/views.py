@@ -18,6 +18,8 @@ from fusion.models import Collection
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
 from utils.response import JSR
+from entity.models import Entity
+
 
 
 def send_code(acc, email_type):
@@ -53,6 +55,7 @@ def send_code(acc, email_type):
         try:
             ver_code.save()
         except:
+            print(111)
             return False
         # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
         msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
@@ -69,7 +72,9 @@ def send_code(acc, email_type):
         ver_code.email_type = email_type
         try:
             ver_code.save()
+            #
         except:
+            print(123)
             return False
         msg = MIMEText('找回密码的链接为:/forget/set?acc='+acc+'&key='+code_num + code_num, 'plain', 'utf-8')
         msg['Subject'] = Header('金刚石文档找回密码')
@@ -123,7 +128,7 @@ class Register(View):
         E = EasyDict()
         E.uk = -1
         E.key, E.acc, E.pwd, E.code, E.name, E.uni = 1, 2, 3, 4, 5, 6
-
+        print(111234)
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'ver_code', 'pwd', 'name'}:
             return E.key,
@@ -140,15 +145,19 @@ class Register(View):
             return E.code
         er = er.get()
         kwargs.pop('ver_code')
+
         if datetime.now() < er.expire_time:
             try:
-                u = User.objects.create(**kwargs)
+                # print(kwargs)
+                root = Entity.locate_root(name='tmp')
+                u = User.objects.create(root=root, **kwargs)
             except IntegrityError:
                 return E.uni,  # 字段unique未满足
             except DataError as e:
-                print(e)
+                print(111)
                 return E.uk,  # 诸如某个CharField超过了max_len的错误
             except:
+                print(111)
                 return E.uk,
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)
