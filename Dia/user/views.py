@@ -13,11 +13,113 @@ from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
+from teamwork.models import Team
 from user.models import User, EmailRecord, Message
 from fusion.models import Collection
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
 from utils.response import JSR
+from entity.models import Entity
+
+
+def send_team_invite_message(team = Team(), su = User(), mu = User()):
+    # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = su
+    m.sender = su
+    m.title = su.name + " 邀请你加入团队：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'join'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_out_message(team = Team(), mu=User()):
+    # mu: 被踢出的
+    m = Message()
+    m.owner = mu
+    m.title = "您已被移出团队：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'out'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_dismiss_message(team=Team(), mu=User()):
+    # mu: 团队解散
+    m = Message()
+    m.owner = mu
+    m.title = "团队已解散：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'dismiss'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_accept_message(team = Team(), su = User(), mu = User(), if_accept=True):
+    # tid:团队id，su:发起邀请的用户，mu:处理邀请的用户，if_accept:是否接受邀请
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = su
+    m.sender = mu
+    m.title = mu.name + " 接受" if if_accept else " 拒绝" + "了您的团队邀请：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'accept'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_admin_message(team = Team(), su = User(), mu = User()):
+    # tid:团队id，su:发起添加管理员的用户，mu：刚被设为管理员的用户
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = su.name + " 将你设为团队管理员：" + team.name
+    m.portrait = team.img if team.img else ''
+    m.related_id = team.id
+    m.type = 'admin'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_comment_message(comment = (), su = User(), mu = User()):
+    # tid:团队id，su:发表评论的用户，mu：文档的拥有者
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    # 这里没有写完，注释的地方需要完善
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = su.name + " 评论了您的文档：" # + comment.doc.title
+    m.content = comment.content
+    m.portrait = su.portrait.path
+    m.related_id = comment.id
+    m.type = 'doc'
+    try:
+        m.save()
+    except:
+        return False
+    return True
 
 
 def send_code(acc, email_type):
@@ -53,6 +155,7 @@ def send_code(acc, email_type):
         try:
             ver_code.save()
         except:
+            print(111)
             return False
         # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
         msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
@@ -69,7 +172,9 @@ def send_code(acc, email_type):
         ver_code.email_type = email_type
         try:
             ver_code.save()
+            #
         except:
+            print(123)
             return False
         msg = MIMEText('找回密码的链接为:/forget/set?acc='+acc+'&key='+code_num + code_num, 'plain', 'utf-8')
         msg['Subject'] = Header('金刚石文档找回密码')
@@ -110,7 +215,7 @@ class SearchUser(View):
         for u in us:
             ulist.append({
                 'name': u.name,
-                'portrait': u.profile_photo,
+                'portrait': u.portrait,
                 'acc': u.email,
                 'uid': encode(u.id)
             })
@@ -123,7 +228,7 @@ class Register(View):
         E = EasyDict()
         E.uk = -1
         E.key, E.acc, E.pwd, E.code, E.name, E.uni = 1, 2, 3, 4, 5, 6
-
+        print(111234)
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'ver_code', 'pwd', 'name'}:
             return E.key,
@@ -140,19 +245,23 @@ class Register(View):
             return E.code
         er = er.get()
         kwargs.pop('ver_code')
+
         if datetime.now() < er.expire_time:
             try:
-                u = User.objects.create(**kwargs)
+                # print(kwargs)
+                root = Entity.locate_root(name='tmp')
+                u = User.objects.create(root=root, **kwargs)
             except IntegrityError:
                 return E.uni,  # 字段unique未满足
             except DataError as e:
-                print(e)
+                print(111)
                 return E.uk,  # 诸如某个CharField超过了max_len的错误
             except:
+                print(111)
                 return E.uk,
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)
-            print(u.profile_photo.path)
+            print(u.portrait.path)
             return 0,
 
         return E.code
@@ -387,7 +496,7 @@ class UserInfo(View):
         if not u.exists():
             return '', '', '', '', -1
         u = u.get()
-        return u.name, u.profile_photo.path, u.email, encode(u.id), 0
+        return u.name, u.portrait.path, u.email, encode(u.id), 0
 
 
 class EditInfo(View):

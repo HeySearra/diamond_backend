@@ -33,6 +33,9 @@ class CreateRecord(models.Model):
     ent = models.ForeignKey(to='entity.Entity', related_name='create_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
     
+    class Meta:
+        ordering = ['-dt']
+    
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
@@ -42,6 +45,9 @@ class WriteRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='write_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='write_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
+    
+    class Meta:
+        ordering = ['-dt']
     
     def upd_dt(self):
         self.dt = datetime.now()
@@ -53,6 +59,9 @@ class CommentRecord(models.Model):
     ent = models.ForeignKey(to='entity.Entity', related_name='comment_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
     
+    class Meta:
+        ordering = ['-dt']
+    
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
@@ -62,6 +71,9 @@ class ReadRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='read_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='read_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
+    
+    class Meta:
+        ordering = ['-dt']
     
     def upd_dt(self):
         self.dt = datetime.now()

@@ -31,7 +31,7 @@ class StarCondition(View):
         return is_starred, 0
 
 
-class Star(View):
+class FSStar(View):
     @JSR('status')
     def post(self, request):
         u = User.objects.filter(id=int(decode(request.session['uid'])))

@@ -27,11 +27,13 @@ class NewFromFold(View):
             entity = Entity.objects.get(id=int(decode(kwargs['fid'])))
         except:
             return E.uk
-        if not entity.is_user_root():
+        if not entity.can_convert_to_team():
             return E.root
         try:
             team = Team.objects.create(root=entity)
             Member.objects.create(member=user, team=team, auth='owner')
+            entity.father = None
+            entity.save()
         except:
             return E.uk
         return team.id, 0
@@ -44,13 +46,13 @@ class Invitation(View):
         E.uk = -1
         E.key, E.auth, E.typo, E.exist = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'tid', 'uid'}:
+        if kwargs.keys() != {'tid', 'account'}:
             return E.key
         if not request.session['is_login']:
             return E.auth
         try:
             user1 = User.objects.get(id=int(decode(request.session['uid'])))
-            user2 = User.objects.get(id=int(decode(kwargs['uid'])))
+            user2 = User.objects.get(acc=kwargs['account'])
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
             auth = Member.objects.get(user=user1, team=team).auth
         except:
@@ -60,7 +62,7 @@ class Invitation(View):
         if Member.objects.filter(user=user2, team=team).exists():
             return E.exist
         try:
-            new_member = Member.objects.create(member=user2, team=team, author='member')
+            Member.objects.create(member=user2, team=team, author='member')
         except:
             return E.uk
         return 0
@@ -196,8 +198,8 @@ class Delete(View):
         except:
             return E.tid
         try:
-            u = User.objects.get(id=int(decode(request.session['uid'])))
-            owner = Member.objects.get(member=u, team=team)
+            user = User.objects.get(id=int(decode(request.session['uid'])))
+            owner = Member.objects.get(member=user, team=team)
         except:
             return E.auth
         if owner.auth != 'owner':
@@ -310,7 +312,7 @@ class InvitationConfirm(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'jid', 'result'}:
             return E.key
-
+        # ..todo
         return 0
 
 
@@ -340,3 +342,29 @@ class Identity(View):
             return 'none', 0
         return identity, 0
 
+
+class Quit(View):
+    @JSR('status')
+    def post(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth, E.tid, E.exist = 1, 2, 3, 4
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'tid'}:
+            return E.key
+        if not request.session['is_login']:
+            return E.auth
+        try:
+            team = Team.objects.get(id=int(decode(kwargs['tid'])))
+            user = User.objects.get(id=int(decode(request.session['uid'])))
+        except:
+            return E.tid
+        try:
+            m = Member.objects.get(team=team, member=user)
+        except:
+            return E.exist
+        try:
+            m.delete()
+        except:
+            return E.uk
+        return 0
