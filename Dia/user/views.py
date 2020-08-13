@@ -196,11 +196,10 @@ def send_code(acc, email_type):
 
 
 def hash_password(pwd):
-    # m = hashlib.md5()
-    # m.update(pwd.encode('utf-8'))
-    # m.update(b"It's DiaDoc!")
-    # return m.digest()
-    return pwd
+    m = hashlib.md5()
+    m.update(pwd.encode('utf-8'))
+    m.update(b"It's DiaDoc!")
+    return m.digest()
 
 
 class SearchUser(View):
@@ -390,7 +389,7 @@ class UnreadCount(View):
         if not u.exists():
             return 0, -1
         u = u.get()
-        count = Message.objects.filter(Q(user_id=u.id) | Q(is_read=False)).count()
+        count = Message.objects.filter(Q(owner_id=u.id) | Q(is_read=False)).count()
         return count, 0
 
 
