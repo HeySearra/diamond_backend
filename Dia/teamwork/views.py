@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-# Create your views here.
+# your views here.
 import json
 from django.views import View
 from easydict import EasyDict
@@ -240,7 +240,7 @@ class EditInfo(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.tid = 1, 2, 3
+        E.key, E.auth, E.tid, E.name, E.intro = 1, 2, 3, 4, 5
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'tid', 'name', 'intro', 'img'}:
             return E.key
@@ -250,6 +250,10 @@ class EditInfo(View):
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
         except:
             return E.tid
+        if not (0 < len(kwargs['name']) <= TEAM_NAME_MAX_LENGTH and str(kwargs['name']).isprintable()):
+            return E.name
+        if not 0 < len(kwargs['intro']) <= TEAM_INTRO_MAX_LENGTH:
+            return E.intro
         team.name = kwargs['name']
         team.intro = kwargs['intro']
         team.img = kwargs['img']
@@ -268,6 +272,8 @@ class All(View):
         E.key, E.auth, E.tid = 1, 2, 3
         if dict(request.GET).keys() != set():
             return E.key, [], []
+        if not request.session['is_login']:
+            return E.auth
         uid = int(decode(request.session['uid']))
         try:
             members = Member.objects.filter(member=uid)
@@ -293,3 +299,44 @@ class All(View):
                     'member_count': len(Member.objects.filter(m.team.id))
                 })
         return 0, my_team, join_team
+
+
+class InvitationConfirm(View):
+    @JSR('status')
+    def post(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth = 1, 2
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'jid', 'result'}:
+            return E.key
+
+        return 0
+
+
+class Identity(View):
+    @JSR('identity', 'status')
+    def get(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth, E.tid = 1, 2, 3
+        if dict(request.GET).keys() != {'tid'}:
+            return '', E.key
+        if not request.session['is_login']:
+            return 'none', E.auth
+        uid = int(decode(request.session['uid']))
+        tid = int(decode(request.GET['tid']))
+        try:
+            user = User.objects.get(id=uid)
+        except:
+            return '', E.uk
+        try:
+            team = Team.objects.get(id=tid)
+        except:
+            return '', E.tid
+        try:
+            identity = Member.objects.get(team=team, member=user).auth
+        except:
+            return 'none', 0
+        return identity, 0
+
