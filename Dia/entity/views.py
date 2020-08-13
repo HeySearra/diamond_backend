@@ -28,11 +28,13 @@ class WorkbenchCreate(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs: dict = dict(request.GET)
-        if kwargs.keys() != {'page', 'each'}:
+        try:
+            page = request.GET.get('page')
+            each = request.GET.get('each')
+        except:
             return E.k
         
-        page, each = int(kwargs['page']), int(kwargs['each'])
+        page, each = int(page), int(each)
         
         ls = u.create_records.all()[(page - 1) * each: page * each]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
@@ -57,9 +59,6 @@ class WorkbenchRecentView(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs: dict = dict(request.GET)
-        if kwargs.keys() != {}.keys():
-            return E.k
         
         ls = u.read_records.all()[:15]
         ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
@@ -152,11 +151,10 @@ class DocAll(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs: dict = dict(request.GET)
-        if kwargs.keys() != {'did'}:
+        try:
+            did = request.GET.get('did')
+        except:
             return E.k
-        
-        did = kwargs['did']
         
         e = Entity.get_via_encoded_id(did)
         if e is None:
@@ -175,11 +173,10 @@ class DocInfo(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs: dict = dict(request.GET)
-        if kwargs.keys() != {'did'}:
+        try:
+            did = request.GET.get('did')
+        except:
             return E.k
-        
-        did = kwargs['did']
         
         e = Entity.get_via_encoded_id(did)
         if e is None:
@@ -202,12 +199,11 @@ class DocLock(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs: dict = dict(request.GET)
-        if kwargs.keys() != {'did'}:
+        try:
+            did = request.GET.get('did')
+        except:
             return E.k
-        
-        did = kwargs['did']
-        
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
@@ -286,11 +282,13 @@ class FSFoldElem(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, '', [], []
-        kwargs = dict(request.GET)
-        if kwargs.keys() != {'fid'}:
+
+        try:
+            fid = request.GET.get('fid')
+        except:
             return E.k, '', [], []
         
-        e = Entity.get_via_encoded_id(kwargs['fid'])
+        e = Entity.get_via_encoded_id(fid)
         if e is None:
             return E.no_f, '', [], []
         
@@ -321,9 +319,6 @@ class FSRecycleElem(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, '', []
-        kwargs = dict(request.GET)
-        if kwargs.keys() != set():
-            return E.k, '', []
         
         fs = u.create_records.filter(ent__is_deleted=True)
         
@@ -346,11 +341,13 @@ class FSFather(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, ''
-        kwargs = dict(request.GET)
-        if kwargs.keys() != {'id', 'type'}:
+        try:
+            id = request.GET.get('id')
+            type = request.GET.get('type')
+        except:
             return E.k, ''
         
-        e = Entity.get_via_encoded_id(kwargs['id'])
+        e = Entity.get_via_encoded_id(id)
         if e is None or e.father is None:
             return E.no, ''
         
@@ -369,11 +366,12 @@ class FSDocInfo(View):
         if u is None:
             return E.au
         # todo: 更多权限判断
-        kwargs = dict(request.GET)
-        if kwargs.keys() != {'did'}:
+        try:
+            did = request.GET.get('did')
+        except:
             return E.k
-        
-        e = Entity.get_via_encoded_id(kwargs['id'])
+
+        e = Entity.get_via_encoded_id(did)
         if e is None or e.father is None:
             return E.no
         
@@ -396,11 +394,12 @@ class FSFoldInfo(View):
         if u is None:
             return E.au
         # todo: 更多权限判断
-        kwargs = dict(request.GET)
-        if kwargs.keys() != {'did'}:
+        try:
+            did = request.GET.get('did')
+        except:
             return E.k
         
-        e = Entity.get_via_encoded_id(kwargs['id'])
+        e = Entity.get_via_encoded_id(did)
         if e is None or e.father is None:
             return E.no
         
@@ -605,9 +604,6 @@ class FSUserRoot(View):
         if u is None:
             return E.au
         # todo: 更多权限判断
-        kwargs = dict(request.GET)
-        if kwargs.keys() != set():
-            return E.k
         
         return 0, u.root.encoded_id
 
@@ -624,12 +620,13 @@ class FSTeamRoot(View):
         if u is None:
             return E.au
         # todo: 更多权限判断
-        kwargs = dict(request.GET)
-        if kwargs.keys() != {'tid'}:
+        try:
+            tid = request.GET.get('tid')
+        except:
             return E.k
         
         t: Team
-        t = Team.get_via_encoded_id(kwargs['tid'])
+        t = Team.get_via_encoded_id(tid)
         if t is None or not t.contains_user(u):
             return E.u
         
