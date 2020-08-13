@@ -288,6 +288,7 @@ class Login(View):
                 u = User.objects.get(id=int(decode(request.session['uid'])))
             except:
                 return 0, -1
+            print(1)
             if u.login_date != date.today():
                 u.login_date = date.today()
                 u.wrong_count = 0
@@ -296,19 +297,19 @@ class Login(View):
                 except:
                     return 0, -1
             return 0, 0
-
+        print(2)
         E = EasyDict()
         E.uk = -1
         E.key, E.exist, E.pwd, E.many = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'pwd'}:
             return 0, E.key
-
-        u = User.objects.filter(email=kwargs['acc'])
+        print(3)
+        u = User.objects.filter(acc=kwargs['acc'])
         if not u.exists():
             return 0, E.exist
         u = u.get()
-
+        print(4)
         if u.login_date != date.today():
             u.login_date = date.today()
             u.wrong_count = 0
@@ -319,15 +320,16 @@ class Login(View):
 
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.many
-
-        if u.password != hash_password(kwargs['pwd']):
+        print(4.5)
+        if u.pwd != hash_password(kwargs['pwd']):
+            print(5)
             u.wrong_count += 1
             try:
                 u.save()
             except:
                 return 0, -1
             return u.wrong_count, E.pwd
-
+        print(6)
         request.session['is_login'] = True
         request.session['uid'] = encode(u.id)
         request.session['name'] = u.name
@@ -367,7 +369,7 @@ class SetPwd(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'pwd', 'key'}:
             return 1,
-        u = User.objects.filter(email=kwargs['acc'])
+        u = User.objects.filter(acc=kwargs['acc'])
         if not u.exists():
             return 2,
         u = u.get()
@@ -376,7 +378,7 @@ class SetPwd(View):
         if not EmailRecord.objects.filter(code=kwargs['key']).exists():
             return 4,
         er = EmailRecord.objects.filter(Q(acc=kwargs['acc']) | Q(code=kwargs['key'])).get()
-        u.password = hash_password(kwargs['pwd'])
+        u.pwd = hash_password(kwargs['pwd'])
         u.save()
         return 0,
 
@@ -546,12 +548,12 @@ class ChangePwd(View):
             return E.uk
         u = u.get()
 
-        if kwargs['old_pwd'] != u.password:
+        if kwargs['old_pwd'] != u.pwd:
             return E.wr_pwd
         if not CHECK_PWD(kwargs['new_pwd']):
             return E.ill_pwd
 
-        u.password = hash_password(kwargs['new_pwd'])
+        u.pwd = hash_password(kwargs['new_pwd'])
         try:
             u.save()
         except:
