@@ -13,6 +13,8 @@ from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from email.header import Header
+
+from Dia.settings import BASE_DIR
 from teamwork.models import Team
 from user.models import User, EmailRecord, Message
 from fusion.models import Collection
@@ -112,7 +114,7 @@ def send_comment_message(comment=(), su=User(), mu=User()):
     m.sender = su
     m.title = su.name + " 评论了您的文档："  # + comment.doc.title
     m.content = comment.content
-    m.portrait = su.portrait.path
+    m.portrait = su.portrait
     m.related_id = comment.id
     m.type = 'doc'
     try:
@@ -501,7 +503,7 @@ class UserInfo(View):
         if not u.exists():
             return '', '', '', '', -1
         u = u.get()
-        return u.name, u.portrait.path, u.acc, encode(u.id), 0
+        return u.name, u.portrait, u.acc, encode(u.id), 0
 
 
 class UserEditInfo(View):
@@ -584,9 +586,9 @@ class ChangeProfile(View):
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        u.portrait = file_path
+        u.portrait = os.path.join(BASE_DIR, file_path)
         try:
             u.save()
         except:
             return '', errc.unknown
-        return file_path, 0
+        return u.portrait, 0
