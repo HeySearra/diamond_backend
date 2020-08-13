@@ -15,39 +15,39 @@ class Entity(models.Model):
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
     content = RichTextField(default='', max_length=32 * KB)
-    
+
     @property
     def plain_content(self):
         return striptags(self.content)
-    
+
     father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.CASCADE)
     creator = models.ForeignKey(null=False, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
     create_dt = models.DateTimeField(auto_now_add=True)
     editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
     edit_dt = models.DateTimeField(default=datetime.now)
     row = models.IntegerField(default=-1)
-    
+
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
-    
+
     @staticmethod
     def get_ent_via_encoded_id(encoded_id):
         return Entity.objects.get(id=int(decode(encoded_id)))
-    
+
     @property
     def encoded_id(self):
         return encode(self.id)
-    
+
     def is_fold(self):
         return self.type == 'fold'
-    
+
     def is_doc(self):
         return self.type == 'doc'
-    
+
     def for_each(self, func: Callable):
         return [func(e) for e in self.sons.all()]
-    
+
     def bfs_apply(self, func: Callable, cond: Callable = lambda _: True):
         ret = [func(self)] if cond(self) else []
         q = deque(f for f in self.sons.all())
@@ -57,22 +57,22 @@ class Entity(models.Model):
             if cond(f):
                 ret.append(func(f))
         return ret
-    
+
     @property
     def subtree(self, include_self=False):
         return self.bfs_apply(func=lambda _: _)[0 if include_self else 1:]
-    
+
     @staticmethod
     def _dfs(f, func, cond, ret):
         if cond(f):
             ret.append(func(f))
         [Entity._dfs(ff, func, cond, ret) for ff in f.sons.all()]
-    
+
     def dfs_apply(self, func: Callable, cond: Callable = lambda _: True):
         ret = []
         Entity._dfs(self, func, cond, ret)
         return ret
-    
+
     @property
     def path(self, root_begins=True):
         p = []
@@ -81,7 +81,7 @@ class Entity(models.Model):
             p.append(f)
             f = f.father
         return reversed(p) if root_begins else p
-    
+
     @property
     def root(self):
         f = self.father
@@ -90,23 +90,23 @@ class Entity(models.Model):
         while f.father is not None:
             f = f.father
         return f
-    
+
     def is_user_root(self):
         ...  # todo
-    
+
     def is_team_root(self):
         ...  # todo
-    
+
     @property
     def root_user(self):
         r = self.root
         # todo
-    
+
     @property
     def root_team(self):
         r = self.root
         # todo
-    
+
     def can_convert_to_team(self):
         r = self.root_user
         return all((
@@ -114,10 +114,10 @@ class Entity(models.Model):
             self.father is not None,
             r.id == self.father.id
         ))
-    
+
     def sons_dup_name(self, name):
         return self.sons.filter(name=name).exists()
-    
+
     def touch(self, user):
         self.editor, self.edit_dt = user, datetime.now()
         try:
@@ -125,7 +125,7 @@ class Entity(models.Model):
         except:
             return False
         return True
-    
+
     def replicate(self, user, dest):
         new_ent = Entity.objects.create(
             name=self.name,
@@ -136,7 +136,7 @@ class Entity(models.Model):
             editor=user,
         )
         return new_ent
-    
+
     def move(self, dest):
         self.father = dest
         try:
@@ -150,4 +150,4 @@ class Collection(models.Model):
     user = models.ForeignKey('user.User', related_name='related_collection', on_delete=models.CASCADE)
     ent = models.ForeignKey('entity.Entity', related_name='ent', on_delete=models.CASCADE)
     type = models.CharField(blank=True, verbose_name='类型', max_length=20)
-    dt = models.DateTimeField(default=datetime.now, verbose_name='文件收藏时间', auto_now_add=True)
+    dt = models.DateTimeField(verbose_name='文件收藏时间', auto_now_add=True)

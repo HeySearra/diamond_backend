@@ -21,9 +21,9 @@ urlpatterns = [
     # 管理中心个人设置
     # path('member/apply', Member.as_view(), name='member_apply'),  # 申请成为会员
     # path('member/apply', Member.as_view(), name='member_apply'),  # 获取会员信息，同上
-    path('user/info', UserInfo.as_view(), name='user_in'),  # 获取个人信息
+    # path('user/info', UserInfo.as_view(), name='user_in'),  # 获取个人信息
     path('user/change_password', ChangePwd.as_view(), name='user_change_password'),  # 修改密码
-    path('user/change_profile', ChangeProfile.as_view(), name=''),
+    # path('user/change_profile', ChangeProfile.as_view(), name=''),
 
     # 团队相关
     path('team/new_from_fold', NewFromFold.as_view(), name='team_new_from_fold'),
