@@ -35,7 +35,7 @@ urlpatterns = [
     
     # 文件系统
     path('workbench/create', WorkbenchCreate.as_view(), name='workbench_create'),
-    path('workbench/recent_view', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
+    path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
     path('workbench/star', WorkbenchStar.as_view(),),
     
     path('doc/edit', DocEdit.as_view(), name='doc_edit'),
