@@ -42,7 +42,7 @@ class EmailRecord(models.Model):
         return encode(self.id)
 
     code = models.CharField(max_length=20, verbose_name='验证码')
-    acc = models.EmailField(max_length=50, verbose_name='用户邮箱')
+    acc = models.EmailField(max_length=50, verbose_name='用户邮箱', null=True, blank=True)
     send_time = models.DateTimeField(default=datetime.now, verbose_name='发送时间', null=True, blank=True)
     expire_time = models.DateTimeField(null=True)
     email_type = models.CharField(choices=(('register', '注册邮件'), ('forget', '找回密码')), max_length=10)
@@ -62,8 +62,8 @@ class Message(models.Model):
     def encoded_id(self):
         return encode(self.id)
 
-    owner = models.ForeignKey('user.User', related_name='related_message', on_delete=models.CASCADE)
-    sender = models.ForeignKey('user.User', related_name='send_message', on_delete=models.CASCADE, blan=True, null=True)
+    owner = models.ForeignKey('user.User', related_name='related_message', verbose_name="接收消息者", on_delete=models.CASCADE, null=True)
+    sender = models.ForeignKey('user.User', related_name='send_message', verbose_name="发送消息者", on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=64, verbose_name='标题')
     content = models.TextField(blank=False, verbose_name='消息内容', max_length=201, default='')
     is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)

@@ -7,7 +7,6 @@ from django.template.defaultfilters import striptags
 
 from entity.hypers import *
 from meta_config import KB
-from teamwork.models import Team
 from utils.cast import encode, decode
 from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
