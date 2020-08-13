@@ -228,11 +228,11 @@ class New(View):
             owner = User.objects.get(id=int(decode(request.session['uid'])))
         except:
             return E.auth
-        if not (0 <= len(str(kwargs['name'])) <= 64 and str(kwargs['name']).isprintable()):
+        if not (0 <= len(str(kwargs['name'])) <= TEAM_NAME_MAX_LENGTH and str(kwargs['name']).isprintable()):
             return E.name
         try:
             # 创建新根文件夹
-            root = Entity.objects.create(name=kwargs['name'])
+            root = Entity.objects.create(name=kwargs['name']+'_root')
             team = Team.objects.create(name=kwargs['name'], root=root)
             Member.objects.create(team=team, member=owner, auth='owner')
         except:

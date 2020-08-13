@@ -250,22 +250,17 @@ class FSNew(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return '', E.au
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'pfid', 'type'} and kwargs.keys() != {'name', 'type'}:
+        kwargs: dict = {'pfid': None}
+        kwargs.update(json.loads(request.body))
+        if kwargs.keys() != {'name', 'pfid', 'type'}:
             return '', E.k
-
-        if kwargs.keys() == {'name', 'type'}:
-            kwargs['pfid'] = 0
 
         name, pfid, type = kwargs['name'], kwargs['pfid'], kwargs['type']
 
-        if pfid == 0:
-            fa = u.root
-        else:
-            fa = Entity.get_via_encoded_id(pfid)
+        fa = Entity.get_via_encoded_id(pfid) if pfid is not None else u.root
         if fa is None:
             return '', E.no_fa
-
+        print('================================', fa.name)
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
@@ -328,8 +323,8 @@ class FSRecycleElem(View):
         fs = u.create_records.filter(ent__is_deleted=True)
 
         ret = [{
-            'type': f.type, 'id': f.encoded_id, 'name': f.name,
-            'delete_dt': f.delete_dt, 'is_dia': False,  # todo
+            'type': f.ent.type, 'id': f.ent.encoded_id, 'name': f.ent.name,
+            'delete_dt': f.ent.delete_dt, 'is_dia': False,  # todo
         } for f in fs]
 
         return 0, cur_time(), ret
@@ -340,7 +335,7 @@ class FSFather(View):
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.no = 2, 3
+        E.au, E.no, E.no_father = 2, 3, 4
         if not request.session.get('is_login', False):
             return E.au, ''
         u = User.get_via_encoded_id(request.session['uid'])
@@ -349,11 +344,12 @@ class FSFather(View):
         kwargs = request.GET
         if kwargs.keys() != {'id', 'type'}:
             return E.k, ''
-        print(kwargs)
-        print("=================", kwargs.get('id'))
+
         e = Entity.get_via_encoded_id(kwargs.get('id'))
-        if e is None or e.father is None:
+        if e is None:
             return E.no, ''
+        if e.father is None:
+            return E.no_father, ''
 
         return 0, e.father.encoded_id
 
@@ -374,7 +370,7 @@ class FSDocInfo(View):
         if kwargs.keys() != {'did'}:
             return E.k
 
-        e = Entity.get_via_encoded_id(kwargs.get('id'))
+        e = Entity.get_via_encoded_id(kwargs.get('did'))
         if e is None or e.father is None:
             return E.no
 
@@ -398,10 +394,10 @@ class FSFoldInfo(View):
             return E.au
         # todo: 更多权限判断
         kwargs = request.GET
-        if kwargs.keys() != {'did'}:
+        if kwargs.keys() != {'fid'}:
             return E.k
 
-        e = Entity.get_via_encoded_id(kwargs.get('id'))
+        e = Entity.get_via_encoded_id(kwargs.get('fid'))
         if e is None or e.father is None:
             return E.no
 
