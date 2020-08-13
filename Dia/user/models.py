@@ -9,7 +9,8 @@ from utils.cast import encode, decode
 class User(models.Model):
     @staticmethod
     def get_via_encoded_id(encoded_id):
-        return User.objects.get(id=int(decode(encoded_id)))
+        u = User.objects.filter(id=int(decode(encoded_id)))
+        return u.get() if u.exists() else None
 
     @property
     def encoded_id(self):
@@ -33,7 +34,8 @@ class User(models.Model):
 class EmailRecord(models.Model):
     @staticmethod
     def get_via_encoded_id(encoded_id):
-        return EmailRecord.objects.get(id=int(decode(encoded_id)))
+        q = EmailRecord.objects.filter(id=int(decode(encoded_id)))
+        return q.get() if q.exists() else None
 
     @property
     def encoded_id(self):
@@ -53,7 +55,8 @@ class EmailRecord(models.Model):
 class Message(models.Model):
     @staticmethod
     def get_via_encoded_id(encoded_id):
-        return Message.objects.get(id=int(decode(encoded_id)))
+        q = Message.objects.filter(id=int(decode(encoded_id)))
+        return q.get() if q.exists() else None
 
     @property
     def encoded_id(self):
