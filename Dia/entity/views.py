@@ -1,10 +1,14 @@
-from django.shortcuts import render
+import json
+
+from django.db.models import Q
+from django.views import View
 
 from entity.models import Collection
-from django.views import View
 from user.models import User
-from utils.cast import encode, decode, get_time
+from utils.cast import decode, get_time
 from utils.response import JSR
+
+
 # Create your views here.
 
 
@@ -39,7 +43,7 @@ class Star(View):
             return 1,
         if kwargs['is_starred']:
             try:
-                Collection().objects.filter(id=int(decode(request.session['uid']))).delete()
+                Collection.objects.filter(id=int(decode(request.session['uid']))).delete()
             except:
                 return -1,
         star = Collection()

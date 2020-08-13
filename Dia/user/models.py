@@ -5,10 +5,11 @@ from user.hypers import *
 
 class User(models.Model):
     # basic fields
-    acc = models.EmailField(null=True, unique=True, verbose_name='账号', max_length=BASIC_DATA_MAX_LEN)
+    acc = models.EmailField(unique=True, verbose_name='账号', max_length=BASIC_DATA_MAX_LEN)
     pwd = models.CharField(verbose_name='密码', max_length=BASIC_DATA_MAX_LEN)
     name = models.CharField(verbose_name='姓名', max_length=BASIC_DATA_MAX_LEN)
     is_dnd = models.BooleanField(blank=True, verbose_name='消息是否免打扰', default=False)
+    root = models.ForeignKey(to='entity.Entity', related_name='root_user', on_delete=models.CASCADE)
 
     # extended fields
 

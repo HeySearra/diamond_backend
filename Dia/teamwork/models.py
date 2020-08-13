@@ -7,7 +7,7 @@ from teamwork.hypers import *
 
 
 class Team(models.Model):
-    root = models.ForeignKey(to=Entity, on_delete=models.CASCADE)
+    root = models.ForeignKey(to='entity.Entity', related_name='root_team', on_delete=models.CASCADE)
     name = models.CharField(verbose_name='团队名', max_length=64, default='未命名', blank=True)
     intro = models.CharField(verbose_name='团队介绍', max_length=1024, default='这个团队很懒，暂时还没有介绍~', blank=True)
     img = models.ImageField(verbose_name='团队头像', upload_to='', default='', blank=True)
