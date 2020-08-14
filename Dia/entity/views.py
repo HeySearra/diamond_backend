@@ -101,6 +101,7 @@ class WorkbenchStar(View):
 
 
 class DocEdit(View):
+    # todo: upd record
     @JSR('status')
     def post(self, request):
         E = ED()
@@ -135,6 +136,7 @@ class DocEdit(View):
 
 
 class DocComment(View):
+    # todo: upd record
     @JSR('status')
     def post(self, request):
         E = ED()
@@ -164,6 +166,7 @@ class DocComment(View):
 
 
 class DocAll(View):
+    # todo: upd record
     @JSR('status', 'name', 'content')
     def get(self, request):
         E = ED()
@@ -283,6 +286,8 @@ class FSNew(View):
         fa = Entity.get_via_encoded_id(pfid) if pfid is not None else u.root
         if fa is None:
             return '', E.no_fa
+        if fa.sons_dup_name(name):
+            return '', E.rename
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
