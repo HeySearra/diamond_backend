@@ -9,6 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 from django.template.defaultfilters import striptags
 
+from meta_config import HELL_WORDS
+
 
 def req():
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
@@ -155,14 +157,14 @@ def send_code(acc, email_type, storage=True):
         storage_code = code_num
         # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
         msg = MIMEText(content % ('验证码', code_num, "-" * 3 * len(sent), sent), 'html', 'utf-8')
-        msg['Subject'] = Header('DiaDoc 注册验证码' + random.choice(['哦', '呀', '啊', '嘤', '惹', '呢', '！', '哼', '~', '嗷', '嘻', '¿']))
+        msg['Subject'] = Header('DiaDoc 注册验证码' + random.choice(HELL_WORDS))
     else:
         code = random.sample(key_list, 10)
         code_num = ''.join(code)
         
         storage_code = '/forget/set?acc=' + acc + '&key=' + code_num
         msg = MIMEText(content % ('找回密码的链接', storage_code, "-" * 3 * len(sent), sent), 'html', 'utf-8')
-        msg['Subject'] = Header('DiaDoc 找回密码' + random.choice(['哦', '呀', '啊', '嘤', '惹', '呢', '！', '哼', '~', '嗷', '嘻', '¿']))
+        msg['Subject'] = Header('DiaDoc 找回密码' + random.choice(HELL_WORDS))
     
     # 邮件头信息
     msg['From'] = Header(from_addr)
