@@ -28,7 +28,7 @@ def send_team_invite_message(team=Team(), su=User(), mu=User()):
     # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
-    m.owner = su
+    m.owner = mu
     m.sender = su
     m.title = su.name + " 邀请你加入团队：" + team.name
     m.portrait = team.portrait if team.portrait else ''
