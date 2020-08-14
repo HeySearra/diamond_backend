@@ -163,7 +163,7 @@ class Info(View):
             return E.tid, '', '', '', '', 0, '', '', [], []
         name = team.name
         intro = team.intro
-        portrait = team.img.path if team.img else ''
+        portrait = team.portrait if team.portrait else ''
         create_dt = team.create_dt_str
         doc_num = len(team.root.subtree)
         cuid = ''
@@ -267,7 +267,7 @@ class TeamEditInfo(View):
             return E.intro
         team.name = kwargs['name']
         team.intro = kwargs['intro']
-        team.img = kwargs['img']
+        team.portrait = kwargs['img']
         try:
             team.save()
         except:
@@ -298,7 +298,7 @@ class All(View):
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img.path if m.team.img else '',
+                    'portrait': m.team.portrait if m.team.portrait else '',
                     'member_count': len(Member.objects.filter(team=m.team))
                 })
             else:
@@ -306,7 +306,7 @@ class All(View):
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img.path if m.team.img else '',
+                    'portrait': m.team.portrait if m.team.portrait else '',
                     'member_count': len(Member.objects.filter(team=m.team))
                 })
         return 0, my_team, join_team

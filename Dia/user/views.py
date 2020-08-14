@@ -31,7 +31,7 @@ def send_team_invite_message(team=Team(), su=User(), mu=User()):
     m.owner = su
     m.sender = su
     m.title = su.name + " 邀请你加入团队：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'join'
     try:
@@ -46,7 +46,7 @@ def send_team_out_message(team=Team(), mu=User()):
     m = Message()
     m.owner = mu
     m.title = "您已被移出团队：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'out'
     try:
@@ -61,7 +61,7 @@ def send_team_dismiss_message(team=Team(), mu=User()):
     m = Message()
     m.owner = mu
     m.title = "团队已解散：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'dismiss'
     try:
@@ -78,7 +78,7 @@ def send_team_accept_message(team=Team(), su=User(), mu=User(), if_accept=True):
     m.owner = su
     m.sender = mu
     m.title = mu.name + " 接受" if if_accept else " 拒绝" + "了您的团队邀请：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'accept'
     try:
@@ -95,7 +95,7 @@ def send_team_admin_message(team=Team(), su=User(), mu=User()):
     m.owner = mu
     m.sender = su
     m.title = su.name + " 将你设为团队管理员：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'admin'
     try:
