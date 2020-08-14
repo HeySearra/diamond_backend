@@ -1,6 +1,6 @@
 import os
 import re
-
+from Dia.settings import MEDIA_ROOT
 # choices
 # from Cuby.settings import MEDIA_ROOT
 
@@ -15,14 +15,21 @@ IDENTITY_CHS = (
     ('vip', '会员'),
     ('admin', '管理员'),
 )
+MESSAGE_type = (
+    ('join', '被邀请加入团队'),
+    ('accept', '对方接受或拒绝加入团队的邀请'),
+    ('out', '踢出团队'),
+    ('dismiss', '解散团队'),
+    ('doc', '文档新增评论'),
+)
 IDENTITY_DICT = {e[0]: e[1] for e in IDENTITY_CHS}
-DEFAULT_PROFILE_ROOT = 'profile'
-MAX_UPLOADED_FSIZE = 1024 * 1024
+DEFAULT_PROFILE_ROOT = MEDIA_ROOT + '/profile'
+MAX_UPLOADED_FSIZE = 500 * 1024
 FNAME_DEFAULT_LEN = 20
 
 # constants
 MINI_DATA_MAX_LEN = 32
-BASIC_DATA_MAX_LEN = 48
+BASIC_DATA_MAX_LEN = 96
 EXT_DATA_MAX_LEN = 256
 NAME_MAX_LEN = 16
 PWD_MIN_LEN = 6

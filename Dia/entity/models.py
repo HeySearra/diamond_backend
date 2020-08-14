@@ -1,17 +1,32 @@
 from collections import deque
-from datetime import datetime
 from typing import Callable
 
 from ckeditor.fields import RichTextField
 from django.db import models
+from django.db.models import QuerySet
 from django.template.defaultfilters import striptags
 
 from entity.hypers import *
-from meta_config import KB
+from meta_config import KB, TIME_FMT, ROOT_SUFFIX
 from utils.cast import encode, decode
+from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
 
 class Entity(models.Model):
+
+    @staticmethod
+    def get_via_encoded_id(encoded_id):
+        e = Entity.objects.filter(id=int(decode(encoded_id)))
+        return e.get() if e.exists() and not e.get().backtrace_deleted else None
+
+    @property
+    def encoded_id(self) -> str:
+        return encode(self.id)
+
+    @staticmethod
+    def locate_root(name):
+        return Entity.objects.create(name=name + ROOT_SUFFIX, type=ENT_TYPE.fold, father=None)
+
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
     content = RichTextField(default='', max_length=32 * KB)
@@ -20,24 +35,40 @@ class Entity(models.Model):
     def plain_content(self):
         return striptags(self.content)
 
-    father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.CASCADE)
-    creator = models.ForeignKey(null=False, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
-    create_dt = models.DateTimeField(auto_now_add=True)
-    editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
-    edit_dt = models.DateTimeField(default=datetime.now)
+    father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.SET_NULL)
+    # creator = models.ForeignKey(null=True, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
+    # create_dt = models.DateTimeField(auto_now_add=True)
+    # editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
+    # edit_dt = models.DateTimeField(default=datetime.now)
     row = models.IntegerField(default=-1)
+
+    @property
+    def creator(self):
+        r = CreateRecord.objects.filter(ent=self)
+        return r.first().user if r.exists() else None
+
+    @property
+    def create_dt(self):
+        r = CreateRecord.objects.filter(ent=self)
+        return r.first().dt_str if r.exists() else None
+
+    @property
+    def editor(self):
+        r = WriteRecord.objects.filter(ent=self)
+        return r.first().user if r.exists() else None
+
+    @property
+    def edit_dt(self):
+        r = WriteRecord.objects.filter(ent=self)
+        return r.first().dt_str if r.exists() else None
 
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
 
-    @staticmethod
-    def get_ent_via_encoded_id(encoded_id):
-        return Entity.objects.get(id=int(decode(encoded_id)))
-
     @property
-    def encoded_id(self):
-        return encode(self.id)
+    def delete_dt_str(self):
+        return self.delete_dt.strftime(TIME_FMT)
 
     def is_fold(self):
         return self.type == 'fold'
@@ -45,8 +76,8 @@ class Entity(models.Model):
     def is_doc(self):
         return self.type == 'doc'
 
-    def for_each(self, func: Callable):
-        return [func(e) for e in self.sons.all()]
+    def for_each(self, func: Callable, cond: Callable = lambda _: True):
+        return [func(e) for e in self.sons.all() if cond(e)]
 
     def bfs_apply(self, func: Callable, cond: Callable = lambda _: True):
         ret = [func(self)] if cond(self) else []
@@ -59,8 +90,8 @@ class Entity(models.Model):
         return ret
 
     @property
-    def subtree(self, include_self=False):
-        return self.bfs_apply(func=lambda _: _)[0 if include_self else 1:]
+    def subtree(self):
+        return self.bfs_apply(func=lambda _: _)
 
     @staticmethod
     def _dfs(f, func, cond, ret):
@@ -74,13 +105,13 @@ class Entity(models.Model):
         return ret
 
     @property
-    def path(self, root_begins=True):
+    def path(self):
         p = []
         f = self.father
         while f is not None:
             p.append(f)
             f = f.father
-        return reversed(p) if root_begins else p
+        return reversed(p)
 
     @property
     def root(self):
@@ -91,40 +122,47 @@ class Entity(models.Model):
             f = f.father
         return f
 
+    @property
+    def backtrace_deleted(self):
+        if self.is_deleted:
+            return True
+        f = self.father
+        if f is None:
+            return False
+        while f.father is not None:
+            if f.is_deleted:
+                return True
+            f = f.father
+        return False
+
     def is_user_root(self):
-        ...  # todo
+        return self.root_user.exists()
 
     def is_team_root(self):
-        ...  # todo
+        return self.root_team.exists()
 
     @property
-    def root_user(self):
-        r = self.root
-        # todo
+    def backtrace_root_user(self):
+        u = self.root.root_user
+        return u.get() if u.exists() else None
 
     @property
-    def root_team(self):
-        r = self.root
-        # todo
+    def backtrace_root_team(self):
+        t = self.root.root_team
+        return t.get() if t.exists() else None
 
     def can_convert_to_team(self):
-        r = self.root_user
+        # todo: 别忘了把团队根的father变成None
+        r = self.backtrace_root_user
         return all((
+            not self.backtrace_deleted,
             r is not None,
             self.father is not None,
             r.id == self.father.id
         ))
 
     def sons_dup_name(self, name):
-        return self.sons.filter(name=name).exists()
-
-    def touch(self, user):
-        self.editor, self.edit_dt = user, datetime.now()
-        try:
-            self.save()
-        except:
-            return False
-        return True
+        return self.sons.filter(is_deleted=False, name=name).exists()
 
     def replicate(self, user, dest):
         new_ent = Entity.objects.create(
@@ -132,9 +170,9 @@ class Entity(models.Model):
             type=self.type,
             content=self.content,
             father=dest,
-            creator=user,
-            editor=user,
         )
+        record_create(user, new_ent)
+
         return new_ent
 
     def move(self, dest):
@@ -145,9 +183,15 @@ class Entity(models.Model):
             return False
         return True
 
-
-class Collection(models.Model):
-    user = models.ForeignKey('user.User', related_name='related_collection', on_delete=models.CASCADE)
-    ent = models.ForeignKey('entity.Entity', related_name='ent', on_delete=models.CASCADE)
-    type = models.CharField(blank=True, verbose_name='类型', max_length=20)
-    dt = models.DateTimeField(default=datetime.now, verbose_name='文件收藏时间')
+    def first_person(self, p):
+        """
+        :param p: User类型
+        :return: 是否是第一批写权限者。
+        """
+        u, t = self.backtrace_root_user, self.backtrace_root_team
+        if u is not None:
+            return u.id == p.id
+        elif t is not None:
+            return t.contains_user(p.id)
+        else:
+            return False
