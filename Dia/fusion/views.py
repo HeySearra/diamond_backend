@@ -47,6 +47,7 @@ class FSStar(View):
                 Collection.objects.filter(id=int(decode(request.session['uid']))).delete()
             except:
                 return -1,
+            return 0
         star = Collection()
         star.user = u
         star.ent = Entity.objects.get(id=int(decode(kwargs['id'])))
