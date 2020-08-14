@@ -168,7 +168,7 @@ class Entity(models.Model):
     def brothers_dup_name(self, name):
         if self.father is None:
             return False
-        return self.father.sons.filter(Q(id=self.id), is_deleted=False, name=name)
+        return self.father.sons.filter(~Q(id=self.id), is_deleted=False, name=name)
 
     def sons_dup_name(self, name):
         return self.sons.filter(is_deleted=False, name=name).exists()
