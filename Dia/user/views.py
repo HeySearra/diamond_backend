@@ -71,9 +71,9 @@ def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     # tid:团队id，su:发起邀请的用户，mu:处理邀请的用户，if_accept:是否接受邀请
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
-    m.owner = su
-    m.sender = mu
-    m.title = mu.name + " 接受" if if_accept else " 拒绝" + "了您的团队邀请：" + team.name
+    m.owner = mu
+    m.sender = su
+    m.title = mu.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'accept'
@@ -330,7 +330,7 @@ class AskMessageList(View):
         if not u.exists():
             return -1, [], 0, ''
         u = u.get()
-        messages = Message.objects.filter(owner_id=u.id).order_by('dt')[(page - 1) * each: page * each]
+        messages = Message.objects.filter(owner_id=u.id).order_by('-dt')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
             msg.append({

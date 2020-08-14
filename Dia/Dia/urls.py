@@ -75,7 +75,8 @@ urlpatterns = [
     path('team/all', All.as_view(), name='team_all'),
     path('team/identity', Identity.as_view(), name='team_identity'),
     path('team/quit', Quit.as_view(), name='team_quit'),
-    
+    path('team/invitation/confirm', InvitationConfirm.as_view(), name='team_invitation_confirm'),
+
     # 阴间
     path('hell/words', HellWords.as_view(), name='hell_words'),
 
