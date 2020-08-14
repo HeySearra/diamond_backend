@@ -23,7 +23,6 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT + '/static/'),
 )
 
-# MEDIA_ROOT = '/home/cu/dia/py/dia-backend/dia/frontend/dist/static/upload'
 MEDIA_ROOT = 'store'
 
 # Quick-start development settings - unsuitable for production
@@ -134,7 +133,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'Diadb',
         'USER': 'root',
-        'PASSWORD': 'qQ333005',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {'charset': 'utf8mb4'},
