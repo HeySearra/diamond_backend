@@ -36,7 +36,7 @@ def JSR(*keys):
                 if req_type == 'GET':
                     get_para = f'[{req_type}] session: {pformat(dict(request.session))}'
                     if len(dict(request.GET).keys()):
-                        get_para += f', GET: {pformat(request.GET)}'
+                        get_para += f', GET: {pformat(dict(request.GET))}'
                     print(Fore.BLUE + get_para)
             prev_time = time.time()
             values = req_func(*args, **kw)
