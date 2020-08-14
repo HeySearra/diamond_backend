@@ -1,5 +1,7 @@
 from django.db import models
 
+from meta_config import TIME_FMT
+
 
 class Collection(models.Model):
     user = models.ForeignKey('user.User', related_name='related_collection', on_delete=models.CASCADE)
@@ -8,6 +10,10 @@ class Collection(models.Model):
 
     class Meta:
         ordering = ["-dt"]
+    
+    @property
+    def dt_str(self):
+        return self.dt.strftime(TIME_FMT)
 
 
 class Links(models.Model):
