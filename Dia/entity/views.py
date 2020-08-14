@@ -74,6 +74,7 @@ class WorkbenchRecentView(View):
 class WorkbenchStar(View):
     @JSR('status', 'list')
     def get(self, request):
+
         return 0, []
 
 

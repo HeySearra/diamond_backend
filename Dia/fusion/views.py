@@ -6,6 +6,7 @@ from django.shortcuts import render
 # Create your views here.
 from django.views import View
 
+from entity.models import Entity
 from fusion.models import Collection
 from user.models import User
 from utils.cast import decode
@@ -48,6 +49,6 @@ class FSStar(View):
                 return -1,
         star = Collection()
         star.user = u
-        star.ent = int(decode(kwargs['id']))
+        star.ent = Entity.objects.get(id=int(decode(kwargs['id'])))
         star.save()
         return 0
