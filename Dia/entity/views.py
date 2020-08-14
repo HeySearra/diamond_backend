@@ -18,7 +18,7 @@ from teamwork.models import Team
 
 
 class WorkbenchCreate(View):
-    @JSR('status', 'cur_dt', 'list')
+    @JSR('status', 'amount', 'cur_dt', 'list')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -34,10 +34,11 @@ class WorkbenchCreate(View):
 
         page, each = int(kwargs.get('page')), int(kwargs.get('each'))
 
-        ls = u.create_records.all()[(page - 1) * each: page * each]
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        ls = u.create_records.all()
+        amount = ls.count()
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted][(page - 1) * each: page * each]
 
-        return 0, cur_time(), [{
+        return 0, amount, cur_time(), [{
             'type': l.type,
             'pfid': l.father.encoded_id,
             'dt': l.create_dt,
@@ -72,10 +73,31 @@ class WorkbenchRecentView(View):
 
 
 class WorkbenchStar(View):
-    @JSR('status', 'list')
+    @JSR('status', 'amount', 'list')
     def get(self, request):
+        E = ED()
+        E.u, E.k, E.au = -1, 1, 2
+        if not request.session.get('is_login', False):
+            return E.au, []
 
-        return 0, []
+        kwargs: dict = request.GET
+        if kwargs.keys() != {'page', 'each'}:
+            return E.k
+
+        page, each = int(kwargs.get('page')), int(kwargs.get('each'))
+
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au, []
+        cl = u.related_collection.all()
+        amount = cl.count()
+        cl = cl[(page - 1) * each: page * each]
+        return 0, amount, [{
+                'name': l.ent.name,
+                'dt': l.ent.create_dt,
+                'id': l.ent.encoded_id,
+                'is_starred': Collection.objects.filter(user=u, ent=l.ent).exists(),
+            } for l in cl]
 
 
 class DocEdit(View):
