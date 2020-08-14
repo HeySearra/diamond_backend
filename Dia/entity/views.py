@@ -98,7 +98,7 @@ class DocEdit(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
-        if e.father.sons_dup_name(name):
+        if e.brothers_dup_name(name):
             return E.rename
         if not CHECK_ENAME(name):
             return E.inv_name
@@ -430,7 +430,7 @@ class FSRename(View):
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
-        if e.father.sons_dup_name():
+        if e.brothers_dup_name(name):
             return E.uni
         e.name = name
         e.save()

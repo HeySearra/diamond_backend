@@ -3,7 +3,7 @@ from typing import Callable
 
 from ckeditor.fields import RichTextField
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.template.defaultfilters import striptags
 
 from entity.hypers import *
@@ -164,6 +164,11 @@ class Entity(models.Model):
             self.father is not None,
             r.id == self.father.id
         ))
+
+    def brothers_dup_name(self, name):
+        if self.father is None:
+            return False
+        return self.father.sons.filter(Q(id=self.id), is_deleted=False, name=name)
 
     def sons_dup_name(self, name):
         return self.sons.filter(is_deleted=False, name=name).exists()
