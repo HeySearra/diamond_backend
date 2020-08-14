@@ -22,16 +22,16 @@ class NewFromFold(View):
         E.key, E.auth, E.root = 1, 2, 3
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'fid'}:
-            return E.key
+            return None, E.key
         if not request.session['is_login']:
-            return E.auth
+            return None, E.auth
         try:
             user = User.objects.get(id=int(decode(request.session['uid'])))
             entity = Entity.objects.get(id=int(decode(kwargs['fid'])))
         except:
-            return E.uk
+            return None, E.uk
         if not entity.can_convert_to_team():
-            return E.root
+            return None, E.root
         try:
             team = Team.objects.create(root=entity)
             Member.objects.create(member=user, team=team, auth='owner')
@@ -40,7 +40,7 @@ class NewFromFold(View):
             entity.save()
             record_create(user, entity, delete=True)
         except:
-            return E.uk
+            return None, E.uk
         return team.id, 0
 
 
@@ -164,7 +164,7 @@ class Info(View):
         name = team.name
         intro = team.intro
         portrait = team.img.path if team.img else ''
-        create_dt = team.create_dt
+        create_dt = team.create_dt_str
         doc_num = len(team.root.subtree)
         cuid = ''
         cname = ''
@@ -188,6 +188,7 @@ class Info(View):
         return 0, name, intro, portrait, create_dt, doc_num, cuid, cname, norm, admin
 
 
+# 解散团队
 class Delete(View):
     @JSR('status')
     def post(self, request):
@@ -211,6 +212,7 @@ class Delete(View):
         if owner.auth != 'owner':
             return E.auth
         try:
+            # team.root.move(user.root)  # todo
             team.delete()
         except:
             return E.uk
