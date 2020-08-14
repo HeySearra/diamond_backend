@@ -651,7 +651,7 @@ class FSRecycleRecover(View):
         if kwargs.keys() != {'id', 'type'}:
             return E.k
 
-        e = Entity.objects.filter(int(decode(kwargs['id'])))
+        e = Entity.objects.filter(id=int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         e = e.get()
@@ -681,7 +681,7 @@ class FSRecycleDelete(View):
         if kwargs.keys() != {'id', 'type'}:
             return E.k
 
-        e = Entity.objects.filter(int(decode(kwargs['id'])))
+        e = Entity.objects.filter(id=int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         ent: Entity = e.get()
