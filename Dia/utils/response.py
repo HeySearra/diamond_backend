@@ -39,7 +39,7 @@ def JSR(*keys):
             values = req_func(*args, **kw)
             time_cost = time.time() - prev_time
             values = list(values) if isinstance(values, (tuple, list)) else [values]
-            values = list(map(lambda x: x.strftime('%Y-%m-%d %H:%M:%S') if isinstance(x, datetime) else x, values))
+            # values = list(map(lambda x: x.strftime('%Y-%m-%d %H:%M:%S') if isinstance(x, datetime) else x, values))
             [values.append('') for _ in range(len(keys) - len(values))]
             ret_dict = dict(zip(keys, values))
             if debug:

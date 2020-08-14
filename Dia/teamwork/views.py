@@ -5,6 +5,8 @@ import json
 from django.views import View
 from easydict import EasyDict
 
+from meta_config import ROOT_SUFFIX
+from record.models import record_create
 from utils.cast import encode, decode
 from utils.response import JSR
 from teamwork.models import *
@@ -34,7 +36,9 @@ class NewFromFold(View):
             team = Team.objects.create(root=entity)
             Member.objects.create(member=user, team=team, auth='owner')
             entity.father = None
+            entity.name = team.name + ROOT_SUFFIX
             entity.save()
+            record_create(user, entity, delete=True)
         except:
             return E.uk
         return team.id, 0
@@ -232,7 +236,7 @@ class New(View):
             return E.name
         try:
             # 创建新根文件夹
-            root = Entity.objects.create(name=kwargs['name']+'_root')
+            root = Entity.locate_root(kwargs['name'])
             team = Team.objects.create(name=kwargs['name'], root=root)
             Member.objects.create(team=team, member=owner, auth='owner')
         except:

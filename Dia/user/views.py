@@ -251,7 +251,7 @@ class Register(View):
         if datetime.now() < er.expire_time:
             try:
                 # print(kwargs)
-                root = Entity.locate_root(name=kwargs['name']+'_root')
+                root = Entity.locate_root(name=kwargs['name'])
                 u = User.objects.create(root=root, **kwargs)
             except IntegrityError:
                 return E.uni,  # 字段unique未满足

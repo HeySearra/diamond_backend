@@ -1,31 +1,40 @@
 from django.db import models
 from datetime import datetime
+
+from meta_config import TIME_FMT
 from teamwork.hypers import DOC_AUTH
 from typing import List, Tuple
 
 
-def record(auth: str, user, ent) -> List[Tuple[object, bool]]:
+def record(auth: str, user, ent, delete):
     clz = [CreateRecord, WriteRecord, CommentRecord, ReadRecord]
     pos = ['create', DOC_AUTH.write, DOC_AUTH.comment, DOC_AUTH.read].index(auth)
-    obj = [c.objects.get_or_create(user=user, ent=ent)[0] for c in clz[pos:]]
-    [o.upd_dt() for o in obj]
-    return obj
+    kwargs = dict(user=user, ent=ent)
+    if delete:
+        [c.objects.filter(**kwargs).delete() for c in clz[pos:]]
+    else:   # update
+        [
+            o.upd_dt() for o in [
+                c.objects.get_or_create(user=user, ent=ent)[0]
+                for c in clz[pos:]
+            ]
+        ]
 
 
-def record_create(user, ent):
-    return record('create', user, ent)
+def record_create(user, ent, delete=False):
+    return record('create', user, ent, delete)
 
 
-def record_write(user, ent):
-    return record('write', user, ent)
+def record_write(user, ent, delete=False):
+    return record('write', user, ent, delete)
 
 
-def record_comment(user, ent):
-    return record('comment', user, ent)
+def record_comment(user, ent, delete=False):
+    return record('comment', user, ent, delete)
 
 
-def record_read(user, ent):
-    return record('read', user, ent)
+def record_read(user, ent, delete=False):
+    return record('read', user, ent, delete)
 
 
 class CreateRecord(models.Model):
@@ -39,6 +48,10 @@ class CreateRecord(models.Model):
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
+    
+    @property
+    def dt_str(self):
+        return self.dt.strftime(TIME_FMT)
 
 
 class WriteRecord(models.Model):
@@ -52,6 +65,10 @@ class WriteRecord(models.Model):
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
+    
+    @property
+    def dt_str(self):
+        return self.dt.strftime(TIME_FMT)
 
 
 class CommentRecord(models.Model):
@@ -65,6 +82,10 @@ class CommentRecord(models.Model):
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
+    
+    @property
+    def dt_str(self):
+        return self.dt.strftime(TIME_FMT)
 
 
 class ReadRecord(models.Model):
@@ -78,3 +99,7 @@ class ReadRecord(models.Model):
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
+    
+    @property
+    def dt_str(self):
+        return self.dt.strftime(TIME_FMT)

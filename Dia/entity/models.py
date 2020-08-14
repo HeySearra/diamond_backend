@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 from django.template.defaultfilters import striptags
 
 from entity.hypers import *
-from meta_config import KB
+from meta_config import KB, TIME_FMT, ROOT_SUFFIX
 from utils.cast import encode, decode
 from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
@@ -25,7 +25,7 @@ class Entity(models.Model):
 
     @staticmethod
     def locate_root(name):
-        return Entity.objects.create(name=name, type=ENT_TYPE.fold)
+        return Entity.objects.create(name=name + ROOT_SUFFIX, type=ENT_TYPE.fold, father=None)
 
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
@@ -50,7 +50,7 @@ class Entity(models.Model):
     @property
     def create_dt(self):
         r = CreateRecord.objects.filter(ent=self)
-        return r.first().dt if r.exists() else None
+        return r.first().dt_str if r.exists() else None
 
     @property
     def editor(self):
@@ -60,11 +60,15 @@ class Entity(models.Model):
     @property
     def edit_dt(self):
         r = WriteRecord.objects.filter(ent=self)
-        return r.first().dt if r.exists() else None
+        return r.first().dt_str if r.exists() else None
 
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
+
+    @property
+    def delete_dt_str(self):
+        return self.delete_dt.strftime(TIME_FMT)
 
     def is_fold(self):
         return self.type == 'fold'
