@@ -261,7 +261,6 @@ class FSNew(View):
         fa = Entity.get_via_encoded_id(pfid) if pfid is not None else u.root
         if fa is None:
             return '', E.no_fa
-        print('================================', fa.name)
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
@@ -272,7 +271,7 @@ class FSNew(View):
 
 
 class FSFoldElem(View):
-    @JSR('status', 'cur_dt', 'path', 'list')
+    @JSR('status', 'cur_dt', 'path', 'list', 'name')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -303,7 +302,7 @@ class FSFoldElem(View):
             'edit_dt': f.edit_dt, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
         } for f, is_link in sons]
 
-        return 0, cur_time(), path_s, sons_s
+        return 0, cur_time(), path_s, sons_s, e.name
 
 
 class FSRecycleElem(View):
