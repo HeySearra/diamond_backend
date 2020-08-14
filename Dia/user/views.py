@@ -19,7 +19,7 @@ from utils.response import JSR
 from entity.models import Entity
 
 
-def send_team_invite_message(team=Team(), su=User(), mu=User()):
+def send_team_invite_message(team: Team, su: User, mu: User):
     # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
@@ -36,7 +36,7 @@ def send_team_invite_message(team=Team(), su=User(), mu=User()):
     return True
 
 
-def send_team_out_message(team=Team(), mu=User()):
+def send_team_out_message(team: Team, mu: User):
     # mu: 被踢出的
     m = Message()
     m.owner = mu
@@ -51,7 +51,7 @@ def send_team_out_message(team=Team(), mu=User()):
     return True
 
 
-def send_team_dismiss_message(team=Team(), mu=User()):
+def send_team_dismiss_message(team: Team, mu: User):
     # mu: 团队解散
     m = Message()
     m.owner = mu
@@ -59,6 +59,7 @@ def send_team_dismiss_message(team=Team(), mu=User()):
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'dismiss'
+    print(m)
     try:
         m.save()
     except:
@@ -66,7 +67,7 @@ def send_team_dismiss_message(team=Team(), mu=User()):
     return True
 
 
-def send_team_accept_message(team=Team(), su=User(), mu=User(), if_accept=True):
+def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     # tid:团队id，su:发起邀请的用户，mu:处理邀请的用户，if_accept:是否接受邀请
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
@@ -83,7 +84,7 @@ def send_team_accept_message(team=Team(), su=User(), mu=User(), if_accept=True):
     return True
 
 
-def send_team_admin_message(team=Team(), su=User(), mu=User()):
+def send_team_admin_message(team: Team, su: User, mu: User):
     # tid:团队id，su:发起添加管理员的用户，mu：刚被设为管理员的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
@@ -169,7 +170,7 @@ class Register(View):
             return E.code
         er = er.get()
         kwargs.pop('ver_code')
-        
+
         if datetime.now() < er.expire_time:
             try:
                 # print(kwargs)
@@ -189,14 +190,14 @@ class Register(View):
             return 0,
         else:
             return 7
-    
+
     @JSR('status')
     def get(self, request):
         try:
             acc = str(request.GET.get('acc'))
         except:
             return 1,
-        
+
         if send_code(acc, 'register'):
             return 0,
         else:
@@ -240,7 +241,7 @@ class Login(View):
                 u.save()
             except:
                 return u.wrong_count, E.uk
-        
+
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.many
         print(4.5)
@@ -262,7 +263,7 @@ class Login(View):
         except:
             return u.wrong_count, E.uk
         return u.wrong_count, 0
-    
+
     @JSR('status')
     def get(self, request):
         if request.session.get('is_login', None):
@@ -327,7 +328,7 @@ class AskMessageList(View):
             each = int(request.GET.get('each'))
         except ValueError:
             return -1, [], 0, ''
-        
+
         u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return -1, [], 0, ''
@@ -351,9 +352,9 @@ class AskMessageInfo(View):
             mid = int(decode(request.GET.get('mid')))
         except ValueError:
             return -1, [] * 13
-        
+
         u = User.objects.filter(id=int(decode(request.session['uid'])))
-        
+
         if not u.exists():
             return -1, [] * 13
         u = u.get()
@@ -402,7 +403,7 @@ class SetDnd(View):
         u.is_dnd = kwargs['is_dnd']
         u.save()
         return 0,
-    
+
     @JSR('status', 'is_dnd')
     def post(self, request):
         u = User.objects.filter(id=int(decode(request.session['uid'])))
@@ -465,17 +466,17 @@ class ChangePwd(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'old_pwd', 'new_pwd'}:
             return E.key
-        
+
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return E.uk
         u = u.get()
-        
+
         if kwargs['old_pwd'] != u.pwd:
             return E.wr_pwd
         if not CHECK_PWD(kwargs['new_pwd']):
             return E.ill_pwd
-        
+
         u.pwd = hash_password(kwargs['new_pwd'])
         try:
             u.save()
@@ -490,7 +491,7 @@ class ChangeProfile(View):
         errc = EasyDict()
         errc.unknown = -1
         errc.toobig = 3
-        
+
         file = request.FILES.get("file", None)
         if not file:
             return '', errc.unknown
@@ -498,10 +499,10 @@ class ChangeProfile(View):
         if not u.exists():
             return '', errc.unknown
         u = u.get()
-        
+
         if file.size > MAX_UPLOADED_FSIZE:
             return '', errc.toobig
-        
+
         file_name = ''.join(
             [random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)]) + '.' + \
                     str(file.name).split(".")[-1]

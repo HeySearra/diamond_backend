@@ -221,7 +221,8 @@ class Delete(View):
             return E.auth
         try:
             for m in members:
-                if not send_team_dismiss_message(team, m):
+                print(111)
+                if not send_team_dismiss_message(team=team, mu=m.member):
                     return E.uk
             # team.root.move(user.root)  # todo
             team.delete()
