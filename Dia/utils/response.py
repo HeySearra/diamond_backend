@@ -29,7 +29,6 @@ def JSR(*keys):
                 # func_name += '.' + req_type.lower()
                 
                 # print(Fore.BLUE + f'[{req_type}] called: {func_name}')
-                para_from_frontend = ''
                 if req_type == 'POST':
                     try:
                         body_str = pformat(json.loads(request.body))
