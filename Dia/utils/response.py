@@ -1,8 +1,6 @@
 import json
 import time
 import functools
-from datetime import datetime
-
 from django.http import JsonResponse
 from django.contrib.sessions.backends.db import SessionStore
 from colorama import Fore, Back
@@ -13,7 +11,6 @@ from typing import List
 from collections import OrderedDict
 
 
-# todo: auto decoder of id
 def JSR(*keys):
     def decorator(req_func):
         @functools.wraps(req_func)
@@ -39,12 +36,11 @@ def JSR(*keys):
             values = req_func(*args, **kw)
             time_cost = time.time() - prev_time
             values = list(values) if isinstance(values, (tuple, list)) else [values]
-            # values = list(map(lambda x: x.strftime('%Y-%m-%d %H:%M:%S') if isinstance(x, datetime) else x, values))
             [values.append('') for _ in range(len(keys) - len(values))]
             ret_dict = dict(zip(keys, values))
             if debug:
                 c = Fore.RED if ret_dict.get('status', 0) else Fore.GREEN
-                print(c + f'[{req_type}] ret of {func_name}: {pformat(ret_dict)}')
+                print(c + f'[{req_type}] ret: {pformat(ret_dict)}')
                 print(c + f'[{req_type}] time of {func_name}: {time_cost:.2f}s')
             return JsonResponse(ret_dict)
 

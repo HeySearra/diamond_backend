@@ -2,20 +2,16 @@ import datetime
 import re
 import json
 import base64
-import urllib
 
 
 def encode(s):
-    #return urllib.parse.quote(base64.b64encode(str(s).encode()).decode(encoding="utf-8"))
-    return str(s)
+    return base64.b64encode(str(s).encode()).decode(encoding="utf-8")
 
 
 def decode(s):
     if isinstance(s, bytes):
-        # s = urllib.parse.unquote(s)
         s = s.decode()
-    # return base64.b64decode(s).decode(encoding="utf-8")
-    return s
+    return base64.b64decode(s).decode(encoding="utf-8")
 
 
 def data_to_str(data: object):
@@ -30,7 +26,7 @@ def parse_datetime(datetime):
     return [int(x) for x in filter(lambda s: len(s) <= 4, re.split('[-:/ .]', str(datetime)))]
 
 
-def cur_time():
+def get_time():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
