@@ -34,6 +34,10 @@ class Entity(models.Model):
     type = models.CharField(null=False, default=ENT_TYPE.doc, choices=ENT_TYPE_CHS, max_length=BASIC_DATA_MAX_LEN)
     content = RichTextField(default='', max_length=32 * KB)
 
+    # def __str__(self):
+    #     return f'Ent(id={self.id}, name={self.name}, ' \
+    #            f'path={"".join([f.name for f in self.path])})'
+
     @property
     def plain_content(self):
         return striptags(self.content)
@@ -51,7 +55,7 @@ class Entity(models.Model):
         return r.first().user if r.exists() else None
 
     @property
-    def create_dt(self):
+    def create_dt_str(self):
         r = CreateRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
 
@@ -72,10 +76,6 @@ class Entity(models.Model):
     @property
     def delete_dt_str(self):
         return self.delete_dt.strftime(TIME_FMT)
-
-    @property
-    def create_dt_str(self):
-        return self.create_dt.strftime(TIME_FMT)
 
     def is_fold(self):
         return self.type == 'fold'
