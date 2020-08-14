@@ -34,7 +34,10 @@ def JSR(*keys):
                         body_str = '[cannot preview body]'
                     print(Fore.BLUE + f'[{req_type}] body: {body_str}')
                 if req_type == 'GET':
-                    print(Fore.BLUE + f'[{req_type}] session: {pformat(dict(request.session))}')
+                    get_para = f'[{req_type}] session: {pformat(dict(request.session))}'
+                    if len(dict(request.GET).keys()):
+                        get_para += f', GET: {pformat(request.GET)}'
+                    print(Fore.BLUE + get_para)
             prev_time = time.time()
             values = req_func(*args, **kw)
             time_cost = time.time() - prev_time

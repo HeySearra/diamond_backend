@@ -53,16 +53,16 @@ def upd_record(auth: str, user, ent, delete):
             o.upd_dt()
 
 
-def record_create(user, ent, delete=False, upd_user=None):
-    return upd_record('create', user, ent, delete, upd_user)
+def record_create(user, ent, delete=False):
+    return upd_record('create', user, ent, delete)
 
 
-def record_write(user, ent, delete=False, upd_user=None):
-    return upd_record('write', user, ent, delete, upd_user)
+def record_write(user, ent, delete=False):
+    return upd_record('write', user, ent, delete)
 
 
-def record_comment(user, ent, delete=False, upd_user=None):
-    return upd_record('comment', user, ent, delete, upd_user)
+def record_comment(user, ent, delete=False):
+    return upd_record('comment', user, ent, delete)
 
 
 def record_read(user, ent, delete=False):
