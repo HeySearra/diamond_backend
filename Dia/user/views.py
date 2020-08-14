@@ -410,36 +410,36 @@ class AskMessageList(View):
         if not u.exists():
             return -1, [], 0, ''
         u = u.get()
-        messages = Message.objects.filter(user_id=u.id).order_by('id')[(page - 1) * each: page * each]
+        messages = Message.objects.filter(owner_id=u.id).order_by('dt')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
             msg.append({
                 'mid': encode(message.id),
-                'dtdt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
+                'dt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
             })
-        return 0, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S"), len(msg), msg
+        return 0, cur_time(), len(msg), msg
 
 
 class AskMessageInfo(View):
-    @JSR('status', 'is_read', 'is_dnd', 'name', 'po', 'content', 'cur_dtdt', 'dt')
+    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'content', 'cur_dt', 'dt')
     def get(self, request):
         if dict(request.GET).keys() != {'mid'}:
-            return 1, [] * 7
+            return 1, [] * 13
         try:
             mid = int(decode(request.GET.get('mid')))
         except ValueError:
-            return -1, [] * 7
+            return -1, [] * 13
 
         u = User.objects.filter(id=int(decode(request.session['uid'])))
 
         if not u.exists():
-            return -1, [] * 7
+            return -1, [] * 13
         u = u.get()
         msg = Message.objects.filter(id=mid)
         if not msg.exists():
-            return -1, [] * 7
+            return -1, [] * 13
         msg = msg.get()
-        return 0, msg.is_read, u.is_dnd, msg.title, msg.portrait_url, msg.content, cur_time(), msg.dt
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.content, cur_time(), msg.dt
 
 
 class SetMsgRead(View):
