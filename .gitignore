@@ -1,10 +1,12 @@
+.DS_Store
 .idea
 __pycache__/
 frontend
 migrations
-
+store
 *.py[cod]
 *$py.class
+.DS_store
 
 **/*.zip
 **/*.rar

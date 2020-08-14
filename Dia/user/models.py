@@ -3,6 +3,7 @@ from datetime import datetime
 from django.db import models
 
 from user.hypers import *
+from meta_config import TIME_FMT
 from utils.cast import encode, decode
 
 
@@ -28,7 +29,7 @@ class User(models.Model):
     # other fields
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
-    portrait = models.FileField(blank=True, upload_to=DEFAULT_PROFILE_ROOT, verbose_name="头像路径", max_length=256, default='')
+    portrait = models.CharField(blank=True, verbose_name="头像路径", max_length=512, default='')
 
 
 class EmailRecord(models.Model):
@@ -62,13 +63,17 @@ class Message(models.Model):
     def encoded_id(self):
         return encode(self.id)
 
+    @property
+    def dt_str(self):
+        return self.dt.strftime(TIME_FMT)
+
     owner = models.ForeignKey('user.User', related_name='related_message', verbose_name="接收消息者", on_delete=models.CASCADE, null=True)
     sender = models.ForeignKey('user.User', related_name='send_message', verbose_name="发送消息者", on_delete=models.CASCADE, blank=True, null=True)
-    title = models.CharField(max_length=64, verbose_name='标题')
-    content = models.TextField(blank=False, verbose_name='消息内容', max_length=201, default='')
+    title = models.CharField(max_length=256, verbose_name='标题', default='')
+    content = models.TextField(blank=False, verbose_name='消息内容', max_length=512, default='')
     is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)
     is_process = models.BooleanField(verbose_name='消息是否被处理', default=False)
     portrait = models.CharField(max_length=512, verbose_name='头像url', default='')   # 团队或者用户的头像
     related_id = models.IntegerField(default=0) # 根据type，id所对的类型不同
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
-    type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type)
+    type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type, default='')

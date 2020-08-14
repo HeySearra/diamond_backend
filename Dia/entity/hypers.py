@@ -1,4 +1,4 @@
-from easydict import EasyDict as ED
+from collections import namedtuple
 
 BASIC_DATA_MAX_LEN = 128
 EXT_DATA_MAX_LEN = 256
@@ -10,9 +10,7 @@ ENT_TYPE_CHS = (
     ('fold', '文件夹'),
     ('doc', '文档'),
 )
-ENT_TYPE = ED()
-ENT_TYPE.fold = 'fold'
-ENT_TYPE.doc = 'doc'
+ENT_TYPE = namedtuple('___', ['fold', 'doc'])('fold', 'doc')
 
 CHECK_ENAME = lambda d: 0 <= len(d) <= ENAME_MAX_LEN
 CHECK_COMMENT = lambda d: 0 <= len(d) <= COMMENT_MAX_LEN

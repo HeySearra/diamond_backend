@@ -1,6 +1,6 @@
 import os
 import re
-
+from Dia.settings import MEDIA_ROOT
 # choices
 # from Cuby.settings import MEDIA_ROOT
 
@@ -23,8 +23,8 @@ MESSAGE_type = (
     ('doc', '文档新增评论'),
 )
 IDENTITY_DICT = {e[0]: e[1] for e in IDENTITY_CHS}
-DEFAULT_PROFILE_ROOT = 'profile'
-MAX_UPLOADED_FSIZE = 1024 * 1024
+DEFAULT_PROFILE_ROOT = MEDIA_ROOT + '/profile'
+MAX_UPLOADED_FSIZE = 500 * 1024
 FNAME_DEFAULT_LEN = 20
 
 # constants
