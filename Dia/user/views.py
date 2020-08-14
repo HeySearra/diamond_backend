@@ -135,7 +135,7 @@ class SearchUser(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'key'}:
             return [], 1
-        us = User.objects.filter(name__icontains=kwargs['key'])
+        us = User.objects.filter(Q(name__icontains=kwargs['key']) | Q(acc__icontains=kwargs['key']))
         ulist = []
         for u in us:
             ulist.append({
