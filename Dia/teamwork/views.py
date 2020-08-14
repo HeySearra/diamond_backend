@@ -6,7 +6,7 @@ from django.views import View
 from easydict import EasyDict
 
 from meta_config import ROOT_SUFFIX
-from record.models import record_create
+from record.models import record_create, upd_record_user
 from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message
@@ -30,7 +30,7 @@ class NewFromFold(View):
             return None, E.auth
         try:
             user = User.objects.get(id=int(decode(request.session['uid'])))
-            entity = Entity.objects.get(id=int(decode(kwargs['fid'])))
+            entity = Entity.get_via_encoded_id(kwargs['fid'])
         except:
             return None, E.uk
         if not entity.can_convert_to_team():
@@ -144,6 +144,15 @@ class Remove(View):
         try:
             if not send_team_out_message(team, user2):
                 return E.uk
+            old_user = u.get().member
+            team.root.bfs_apply(
+                func=lambda ent: upd_record_user(
+                    auth='create', ent=ent,
+                    old_user=old_user,
+                    new_user=team.owner
+                )
+            )
+            
             u.delete()
         except:
             return E.uk
@@ -229,7 +238,11 @@ class Delete(View):
                 print(111)
                 if not send_team_dismiss_message(team=team, mu=m.member):
                     return E.uk
-            # team.root.move(user.root)  # todo
+            team.root.move(user.root)
+            # 篡位嗷
+            team.root.bfs_apply(
+                func=lambda f: upd_record_user('create', f, old_user=None, new_user=user)
+            )
             team.delete()
         except:
             return E.uk

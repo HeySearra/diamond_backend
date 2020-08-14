@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 from entity.models import Entity
 from fusion.models import Collection, Links
-from record.models import record, CreateRecord, WriteRecord, record_create
+from record.models import upd_record, CreateRecord, WriteRecord, record_create
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from utils.cast import encode, decode, cur_time
