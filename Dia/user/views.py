@@ -1,25 +1,20 @@
 import json
-import os
 import random
 import string
-import smtplib
 import hashlib
 
-from email.mime.text import MIMEText
-from datetime import datetime, date, timedelta
-from dateutil.relativedelta import relativedelta
+from datetime import datetime, date
 from easydict import EasyDict
 from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
-from email.header import Header
 
 from Dia.settings import BASE_DIR
 from teamwork.models import Team
 from user.models import User, EmailRecord, Message
-from fusion.models import Collection
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
+from utils.network import send_code
 from utils.response import JSR
 from entity.models import Entity
 
@@ -28,10 +23,10 @@ def send_team_invite_message(team=Team(), su=User(), mu=User()):
     # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
-    m.owner = su
+    m.owner = mu
     m.sender = su
     m.title = su.name + " 邀请你加入团队：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'join'
     try:
@@ -46,7 +41,7 @@ def send_team_out_message(team=Team(), mu=User()):
     m = Message()
     m.owner = mu
     m.title = "您已被移出团队：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'out'
     try:
@@ -61,7 +56,7 @@ def send_team_dismiss_message(team=Team(), mu=User()):
     m = Message()
     m.owner = mu
     m.title = "团队已解散：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'dismiss'
     try:
@@ -78,7 +73,7 @@ def send_team_accept_message(team=Team(), su=User(), mu=User(), if_accept=True):
     m.owner = su
     m.sender = mu
     m.title = mu.name + " 接受" if if_accept else " 拒绝" + "了您的团队邀请：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'accept'
     try:
@@ -95,7 +90,7 @@ def send_team_admin_message(team=Team(), su=User(), mu=User()):
     m.owner = mu
     m.sender = su
     m.title = su.name + " 将你设为团队管理员：" + team.name
-    m.portrait = team.img if team.img else ''
+    m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'admin'
     try:
@@ -121,79 +116,6 @@ def send_comment_message(comment=(), su=User(), mu=User()):
         m.save()
     except:
         return False
-    return True
-
-
-def send_code(acc, email_type):
-    # 发信方的信息：发信邮箱，QQ 邮箱授权码
-    from_addr = 'diadoc@163.com'
-    password = 'UTXGEJFQTCJNDAHQ'
-
-    # 收信方邮箱
-    to_addr = acc
-
-    # 发信服务器
-    smtp_server = 'smtp.163.com'
-
-    # 生成随机验证码
-    code_list = []
-    for i in range(10):  # 0~9
-        code_list.append(str(i))
-    key_list = []
-    for i in range(65, 91):  # A-Z
-        key_list.append(chr(i))
-    for i in range(97, 123):  # a-z
-        key_list.append(chr(i))
-    if email_type == 'register':
-        code = random.sample(code_list, 6)  # 随机取6位数
-        code_num = ''.join(code)
-        # 数据库保存验证码！！！！！！！！！！！
-        ver_code = EmailRecord()
-        ver_code.code = code_num
-        ver_code.acc = acc
-        ver_code.send_time = datetime.now()
-        ver_code.expire_time = datetime.now() + timedelta(minutes=5)
-        ver_code.email_type = email_type
-        try:
-            ver_code.save()
-        except:
-            print(111)
-            return False
-        # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
-        msg = MIMEText('验证码为' + code_num, 'plain', 'utf-8')
-        msg['Subject'] = Header('金刚石文档注册验证码')
-    else:
-        code = random.sample(key_list, 10)
-        code_num = ''.join(code)
-
-        ver_code = EmailRecord()
-        ver_code.code = '/forget/set?acc=' + acc + '&key=' + code_num
-        ver_code.acc = acc
-        ver_code.send_time = datetime.now()
-        ver_code.expire_time = datetime.now() + timedelta(minutes=60)
-        ver_code.email_type = email_type
-        try:
-            ver_code.save()
-            #
-        except:
-            print(123)
-            return False
-        msg = MIMEText('找回密码的链接为:/forget/set?acc=' + acc + '&key=' + code_num + code_num, 'plain', 'utf-8')
-        msg['Subject'] = Header('金刚石文档找回密码')
-
-    # 邮件头信息
-    msg['From'] = Header(from_addr)
-    msg['To'] = Header(to_addr)
-
-    # 开启发信服务，这里使用的是加密传输
-    server = smtplib.SMTP_SSL(host='smtp.163.com')
-    server.connect(smtp_server, 465)
-    # 登录发信邮箱
-    server.login(from_addr, password)
-    # 发送邮件
-    server.sendmail(from_addr, to_addr, msg.as_string())
-    # 关闭服务器
-    server.quit()
     return True
 
 
@@ -247,7 +169,7 @@ class Register(View):
             return E.code
         er = er.get()
         kwargs.pop('ver_code')
-
+        
         if datetime.now() < er.expire_time:
             try:
                 # print(kwargs)
@@ -267,14 +189,14 @@ class Register(View):
             return 0,
         else:
             return 7
-
+    
     @JSR('status')
     def get(self, request):
         try:
             acc = str(request.GET.get('acc'))
         except:
             return 1,
-
+        
         if send_code(acc, 'register'):
             return 0,
         else:
@@ -318,7 +240,7 @@ class Login(View):
                 u.save()
             except:
                 return u.wrong_count, E.uk
-
+        
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.many
         print(4.5)
@@ -340,7 +262,7 @@ class Login(View):
         except:
             return u.wrong_count, E.uk
         return u.wrong_count, 0
-
+    
     @JSR('status')
     def get(self, request):
         if request.session.get('is_login', None):
@@ -405,41 +327,41 @@ class AskMessageList(View):
             each = int(request.GET.get('each'))
         except ValueError:
             return -1, [], 0, ''
-
+        
         u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return -1, [], 0, ''
         u = u.get()
-        messages = Message.objects.filter(user_id=u.id).order_by('id')[(page - 1) * each: page * each]
+        messages = Message.objects.filter(owner_id=u.id).order_by('dt')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
             msg.append({
                 'mid': encode(message.id),
-                'dtdt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
+                'dt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
             })
-        return 0, datetime.strptime(str(datetime.now()), "%Y-%m-%d %H:%M:%S"), len(msg), msg
+        return 0, cur_time(), len(msg), msg
 
 
 class AskMessageInfo(View):
-    @JSR('status', 'is_read', 'is_dnd', 'name', 'po', 'content', 'cur_dtdt', 'dt')
+    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'content', 'cur_dt', 'dt')
     def get(self, request):
         if dict(request.GET).keys() != {'mid'}:
-            return 1, [] * 7
+            return 1, [] * 13
         try:
             mid = int(decode(request.GET.get('mid')))
         except ValueError:
-            return -1, [] * 7
-
+            return -1, [] * 13
+        
         u = User.objects.filter(id=int(decode(request.session['uid'])))
-
+        
         if not u.exists():
-            return -1, [] * 7
+            return -1, [] * 13
         u = u.get()
         msg = Message.objects.filter(id=mid)
         if not msg.exists():
-            return -1, [] * 7
+            return -1, [] * 13
         msg = msg.get()
-        return 0, msg.is_read, u.is_dnd, msg.title, msg.portrait_url, msg.content, cur_time(), msg.dt
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.content, cur_time(), msg.dt
 
 
 class SetMsgRead(View):
@@ -480,7 +402,7 @@ class SetDnd(View):
         u.is_dnd = kwargs['is_dnd']
         u.save()
         return 0,
-
+    
     @JSR('status', 'is_dnd')
     def post(self, request):
         u = User.objects.filter(id=int(decode(request.session['uid'])))
@@ -543,17 +465,17 @@ class ChangePwd(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'old_pwd', 'new_pwd'}:
             return E.key
-
+        
         u = User.objects.filter(id=request.session['uid'])
         if not u.exists():
             return E.uk
         u = u.get()
-
+        
         if kwargs['old_pwd'] != u.pwd:
             return E.wr_pwd
         if not CHECK_PWD(kwargs['new_pwd']):
             return E.ill_pwd
-
+        
         u.pwd = hash_password(kwargs['new_pwd'])
         try:
             u.save()
@@ -568,7 +490,7 @@ class ChangeProfile(View):
         errc = EasyDict()
         errc.unknown = -1
         errc.toobig = 3
-
+        
         file = request.FILES.get("file", None)
         if not file:
             return '', errc.unknown
@@ -576,10 +498,10 @@ class ChangeProfile(View):
         if not u.exists():
             return '', errc.unknown
         u = u.get()
-
+        
         if file.size > MAX_UPLOADED_FSIZE:
             return '', errc.toobig
-
+        
         file_name = ''.join(
             [random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)]) + '.' + \
                     str(file.name).split(".")[-1]

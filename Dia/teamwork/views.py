@@ -7,6 +7,9 @@ from easydict import EasyDict
 
 from meta_config import ROOT_SUFFIX
 from record.models import record_create
+from user.models import Message
+from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
+    send_team_accept_message
 from utils.cast import encode, decode
 from utils.response import JSR
 from teamwork.models import *
@@ -22,16 +25,16 @@ class NewFromFold(View):
         E.key, E.auth, E.root = 1, 2, 3
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'fid'}:
-            return E.key
+            return None, E.key
         if not request.session['is_login']:
-            return E.auth
+            return None, E.auth
         try:
             user = User.objects.get(id=int(decode(request.session['uid'])))
             entity = Entity.objects.get(id=int(decode(kwargs['fid'])))
         except:
-            return E.uk
+            return None, E.uk
         if not entity.can_convert_to_team():
-            return E.root
+            return None, E.root
         try:
             team = Team.objects.create(root=entity)
             Member.objects.create(member=user, team=team, auth='owner')
@@ -40,7 +43,7 @@ class NewFromFold(View):
             entity.save()
             record_create(user, entity, delete=True)
         except:
-            return E.uk
+            return None, E.uk
         return team.id, 0
 
 
@@ -64,10 +67,12 @@ class Invitation(View):
             return E.uk
         if auth == 'member':
             return E.auth
-        if Member.objects.filter(user=user2, team=team).exists():
+        if Member.objects.filter(member=user2, team=team).exists():
             return E.exist
         try:
-            Member.objects.create(member=user2, team=team, author='member')
+            # Member.objects.create(member=user2, team=team, author='member')
+            if not send_team_invite_message(team, user1, user2):
+                return E.uk
         except:
             return E.uk
         return 0
@@ -132,6 +137,8 @@ class Remove(View):
         if not u.exists():
             return E.exist
         try:
+            if not send_team_out_message(team, user2):
+                return E.uk
             u.delete()
         except:
             return E.uk
@@ -163,8 +170,8 @@ class Info(View):
             return E.tid, '', '', '', '', 0, '', '', [], []
         name = team.name
         intro = team.intro
-        portrait = team.img.path if team.img else ''
-        create_dt = team.create_dt
+        portrait = team.portrait if team.portrait else ''
+        create_dt = team.create_dt_str
         doc_num = len(team.root.subtree)
         cuid = ''
         cname = ''
@@ -188,6 +195,7 @@ class Info(View):
         return 0, name, intro, portrait, create_dt, doc_num, cuid, cname, norm, admin
 
 
+# 解散团队
 class Delete(View):
     @JSR('status')
     def post(self, request):
@@ -206,11 +214,16 @@ class Delete(View):
         try:
             user = User.objects.get(id=int(decode(request.session['uid'])))
             owner = Member.objects.get(member=user, team=team)
+            members = Member.objects.filter(team=team)
         except:
             return E.auth
         if owner.auth != 'owner':
             return E.auth
         try:
+            for m in members:
+                if not send_team_dismiss_message(team, m):
+                    return E.uk
+            # team.root.move(user.root)  # todo
             team.delete()
         except:
             return E.uk
@@ -265,7 +278,7 @@ class TeamEditInfo(View):
             return E.intro
         team.name = kwargs['name']
         team.intro = kwargs['intro']
-        team.img = kwargs['img']
+        team.portrait = kwargs['img']
         try:
             team.save()
         except:
@@ -296,7 +309,7 @@ class All(View):
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img.path if m.team.img else '',
+                    'portrait': m.team.portrait if m.team.portrait else '',
                     'member_count': len(Member.objects.filter(team=m.team))
                 })
             else:
@@ -304,7 +317,7 @@ class All(View):
                     'tid': encode(str(m.team.id)),
                     'name': m.team.name,
                     'intro': m.team.intro,
-                    'portrait': m.team.img.path if m.team.img else '',
+                    'portrait': m.team.portrait if m.team.portrait else '',
                     'member_count': len(Member.objects.filter(team=m.team))
                 })
         return 0, my_team, join_team
@@ -315,11 +328,32 @@ class InvitationConfirm(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth = 1, 2
+        E.key, E.auth, E.exist, E.jid = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'jid', 'result'}:
             return E.key
-        # ..todo
+        if not request.session['is_login']:
+            return E.auth
+        try:
+            msg = Message.objects.get(id=int(decode(kwargs['jid'])))
+        except:
+            return E.jid
+        try:
+            team = Team.objects.get(id=msg.related_id)  # 消息里的id未加密
+        except:
+            return E.uk
+        if kwargs['result']:
+            if Member.objects.filter(team=team, member=msg.owner).exists():
+                return E.exist
+            try:
+                Member.objects.create(team=team, member=msg.owner, auth='member')
+                if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=True):
+                    return E.uk
+            except:
+                return E.uk
+        else:
+            if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=False):
+                return E.uk
         return 0
 
 

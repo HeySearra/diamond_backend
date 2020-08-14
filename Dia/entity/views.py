@@ -60,8 +60,8 @@ class WorkbenchRecentView(View):
         kwargs: dict = request.GET
         if kwargs.keys() != {}.keys():
             return E.k
-        ls = u.read_records.all()[:15]
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        ls = u.read_records.all().order_by('-dt')
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted][:15]
         print(ls)
         return 0, cur_time(), [{
             'name': l.name,
@@ -98,7 +98,7 @@ class DocEdit(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
-        if e.father.sons_dup_name(name):
+        if e.brothers_dup_name(name):
             return E.rename
         if not CHECK_ENAME(name):
             return E.inv_name
@@ -261,7 +261,6 @@ class FSNew(View):
         fa = Entity.get_via_encoded_id(pfid) if pfid is not None else u.root
         if fa is None:
             return '', E.no_fa
-        print('================================', fa.name)
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
@@ -272,7 +271,7 @@ class FSNew(View):
 
 
 class FSFoldElem(View):
-    @JSR('status', 'cur_dt', 'path', 'list')
+    @JSR('status', 'cur_dt', 'path', 'list', 'name')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -303,7 +302,7 @@ class FSFoldElem(View):
             'edit_dt': f.edit_dt, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
         } for f, is_link in sons]
 
-        return 0, cur_time(), path_s, sons_s
+        return 0, cur_time(), path_s, sons_s, e.name
 
 
 class FSRecycleElem(View):
@@ -431,7 +430,7 @@ class FSRename(View):
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
-        if e.father.sons_dup_name():
+        if e.brothers_dup_name(name):
             return E.uni
         e.name = name
         e.save()
@@ -652,7 +651,7 @@ class FSRecycleRecover(View):
         if kwargs.keys() != {'id', 'type'}:
             return E.k
 
-        e = Entity.objects.filter(int(decode(kwargs['id'])))
+        e = Entity.objects.filter(id=int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         e = e.get()
@@ -682,7 +681,7 @@ class FSRecycleDelete(View):
         if kwargs.keys() != {'id', 'type'}:
             return E.k
 
-        e = Entity.objects.filter(int(decode(kwargs['id'])))
+        e = Entity.objects.filter(id=int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         ent: Entity = e.get()

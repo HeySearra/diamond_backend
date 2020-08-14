@@ -27,8 +27,8 @@ urlpatterns = [
 
     # 消息
     path('msg/unread_count', UnreadCount.as_view(), name='msg_unread_count'),
-    path('msg/list/', AskMessageList.as_view(), name='msg_list'),
-    path('msg/info/', AskMessageInfo.as_view(), name='msg_info'),
+    path('msg/list', AskMessageList.as_view(), name='msg_list'),
+    path('msg/info', AskMessageInfo.as_view(), name='msg_info'),
     path('msg/ar', SetMsgRead.as_view(), name='msg_ar'),
     path('msg/ar_all', SetAllMsgRead.as_view(), name='msg_ar_all'),
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰

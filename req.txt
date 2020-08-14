@@ -6,3 +6,5 @@ colorama
 easydict
 django-ckeditor
 Pillow
+requests
+beautifulsoup4
