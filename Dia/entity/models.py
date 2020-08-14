@@ -8,6 +8,7 @@ from django.template.defaultfilters import striptags
 
 from entity.hypers import *
 from meta_config import KB, TIME_FMT, ROOT_SUFFIX
+from user.models import User
 from utils.cast import encode, decode
 from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
@@ -207,3 +208,15 @@ class Entity(models.Model):
             return t.contains_user(p.id)
         else:
             return False
+
+
+class Template(models.Model):
+    creator = models.ForeignKey(to=User, null=True, on_delete=models.SET_NULL)
+    name = models.CharField(unique=False, default='未命名', max_length=BASIC_DATA_MAX_LEN)
+    content = RichTextField(default='', max_length=32 * KB)
+    create_dt = models.DateTimeField(auto_now_add=True)
+    delete_dt = models.DateTimeField(null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-create_dt']

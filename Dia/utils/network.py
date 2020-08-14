@@ -99,13 +99,13 @@ def send_code(acc, email_type, storage=True):
     # 发信方的信息：发信邮箱，QQ 邮箱授权码
     from_addr = 'diadoc@163.com'
     password = 'UTXGEJFQTCJNDAHQ'
-    
+
     # 收信方邮箱
     to_addr = acc
-    
+
     # 发信服务器
     smtp_server = 'smtp.163.com'
-    
+
     # 生成随机验证码
     code_list = []
     for i in range(10):  # 0~9
@@ -115,7 +115,7 @@ def send_code(acc, email_type, storage=True):
         key_list.append(chr(i))
     for i in range(97, 123):  # a-z
         key_list.append(chr(i))
-    
+
     content = r"""
     您好：
     <br>
@@ -149,7 +149,7 @@ def send_code(acc, email_type, storage=True):
     """
     sent = rand_sent()
     print(f'[sent] = {sent}')
-    
+
     if email_type == 'register':
         code = random.sample(code_list, 6)  # 随机取6位数
         code_num = ''.join(code)
@@ -161,15 +161,15 @@ def send_code(acc, email_type, storage=True):
     else:
         code = random.sample(key_list, 10)
         code_num = ''.join(code)
-        
+
         storage_code = '/forget/set?acc=' + acc + '&key=' + code_num
         msg = MIMEText(content % ('找回密码的链接', storage_code, "-" * 3 * len(sent), sent), 'html', 'utf-8')
         msg['Subject'] = Header('DiaDoc 找回密码' + random.choice(HELL_WORDS))
-    
+
     # 邮件头信息
     msg['From'] = Header(from_addr)
     msg['To'] = Header(to_addr)
-    
+
     # 开启发信服务，这里使用的是加密传输
     server = smtplib.SMTP_SSL(host='smtp.163.com')
     server.connect(smtp_server, 465)
@@ -179,7 +179,7 @@ def send_code(acc, email_type, storage=True):
     server.sendmail(from_addr, to_addr, msg.as_string())
     # 关闭服务器
     server.quit()
-    
+
     if storage:
         from user.models import EmailRecord
         ver_code = EmailRecord()
@@ -197,8 +197,8 @@ def send_code(acc, email_type, storage=True):
 
 if __name__ == '__main__':
     # req()
-    send_code('1633352938@qq.com', 'register', storage=False)
-    
+    send_code('1016194674@qq.com', 'register', storage=False)
+
     # print(rand_sent())
     # print(rand_sent())
     # print(rand_sent())
