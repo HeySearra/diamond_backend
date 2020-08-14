@@ -14,7 +14,7 @@ source activate "${dj_name}"
 
 
 django_proj_root="Dia"
-lg_info "venv ${dj_name} activated, rm caches..."
+lg_info "venv \`${dj_name}\` activated, rm caches..."
 rm -rf "${django_proj_root}/**/migrations"
 rm -rf "${django_proj_root}/**/migrations/*"
 rm -rf "${django_proj_root}/**/migrations/00*"
@@ -26,20 +26,20 @@ cwd=$(pwd)
 lg_dir="logging"
 if [ ! -d "${lg_dir}" ]
 then
-  lg_info "mk log dir: ${lg_dir}"
+  lg_info "mk log dir \`${lg_dir}\`"
   mkdir "${lg_dir}"
 fi
 
 lg_file="${lg_dir}/run.sh.log"
 :> "${lg_file}"
-lg_info "caches removed, make migs... (outputs are redirected to ${lg_file})"
+lg_info "caches removed, auto-make migs... (outputs are redirected to \`${lg_file}\`)"
 for dir in $(find . -name views.py)''
 do
   cd "$(dirname "$dir")" || exit
   pack=${PWD##*/}
   cd "${cwd}" || exit
   python manage.py makemigrations "${pack}" >> "${lg_file}"
-  lg_info "make migs of ${pack}"
+  lg_info "app \`${pack}\` detected, auto-make migs..."
 done;
 python manage.py migrate >> "${lg_file}"
 
@@ -49,14 +49,14 @@ lg_info "db migrated, check log files..."
 lg_file="${lg_dir}/console.log"
 if [ ! -f "${lg_file}" ]
 then
-  lg_info "create log file: ${lg_file}"
+  lg_info "create log file \`${lg_file}\`"
   touch "${lg_file}"
 fi
 
 lg_file="${lg_dir}/error.log"
 if [ ! -f "${lg_file}" ]
 then
-  lg_info "create log file: ${lg_file}"
+  lg_info "create log file \`${lg_file}\`"
   touch "${lg_file}"
 fi
 

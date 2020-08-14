@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 from entity.models import Entity
 from fusion.models import Collection, Links
-from record.models import record, CreateRecord, WriteRecord, record_create
+from record.models import upd_record, CreateRecord, WriteRecord, record_create
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from utils.cast import encode, decode, cur_time
@@ -18,7 +18,7 @@ from teamwork.models import Team
 
 
 class WorkbenchCreate(View):
-    @JSR('status', 'cur_dt', 'list')
+    @JSR('status', 'amount', 'cur_dt', 'list')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -34,13 +34,14 @@ class WorkbenchCreate(View):
 
         page, each = int(kwargs.get('page')), int(kwargs.get('each'))
 
-        ls = u.create_records.all()[(page - 1) * each: page * each]
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        ls = u.create_records.all()
+        amount = ls.count()
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted][(page - 1) * each: page * each]
 
-        return 0, cur_time(), [{
+        return 0, amount, cur_time(), [{
             'type': l.type,
             'pfid': l.father.encoded_id,
-            'dt': l.create_dt,
+            'dt': l.create_dt_str,
             'name': l.name,
             'id': l.encoded_id
         } for l in ls]
@@ -60,25 +61,49 @@ class WorkbenchRecentView(View):
         kwargs: dict = request.GET
         if kwargs.keys() != {}.keys():
             return E.k
-        ls = u.read_records.all()[:15]
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        ls = u.read_records.all().order_by('-dt')
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted and _.ent.is_doc()][:15]
         print(ls)
         return 0, cur_time(), [{
             'name': l.name,
-            'dt': l.create_dt,
+            'dt': l.create_dt_str,
             'id': l.encoded_id,
             'is_starred': Collection.objects.filter(user=u, ent=l).exists(),
         } for l in ls]
 
 
 class WorkbenchStar(View):
-    @JSR('status', 'list')
+    @JSR('status', 'amount', 'list')
     def get(self, request):
+        E = ED()
+        E.u, E.k, E.au = -1, 1, 2
+        if not request.session.get('is_login', False):
+            return E.au
 
-        return 0, []
+        kwargs: dict = request.GET
+        if kwargs.keys() != {'page', 'each'}:
+            return E.k
+
+        page, each = int(kwargs.get('page')), int(kwargs.get('each'))
+
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        ents = [c.ent for c in u.related_collection.all() if not c.ent.backtrace_deleted]
+        
+        amount = len(ents)
+        ents = ents[(page - 1) * each: page * each]
+        return 0, amount, [{
+                'name': ent.name,
+                'dt': ent.create_dt_str,
+                'id': ent.encoded_id,
+                'is_starred': Collection.objects.filter(user=u, ent=ent).exists(),
+                'type': ent.type,
+            } for ent in ents]
 
 
 class DocEdit(View):
+    # todo: upd record
     @JSR('status')
     def post(self, request):
         E = ED()
@@ -98,7 +123,7 @@ class DocEdit(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
-        if e.father.sons_dup_name(name):
+        if e.brothers_dup_name(name):
             return E.rename
         if not CHECK_ENAME(name):
             return E.inv_name
@@ -113,6 +138,7 @@ class DocEdit(View):
 
 
 class DocComment(View):
+    # todo: upd record
     @JSR('status')
     def post(self, request):
         E = ED()
@@ -142,6 +168,7 @@ class DocComment(View):
 
 
 class DocAll(View):
+    # todo: upd record
     @JSR('status', 'name', 'content')
     def get(self, request):
         E = ED()
@@ -152,7 +179,7 @@ class DocAll(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs: dict = request.GET
+        kwargs = eval(list(request.GET.keys())[0])
         if kwargs.keys() != {'did'}:
             return E.k
 
@@ -186,7 +213,7 @@ class DocInfo(View):
             return E.no_ent
         return (
             0, e.name, Collection.objects.filter(user=u, ent=e).exists(),
-            e.create_dt, e.creator.encoded_id, e.creator.name,
+            e.create_dt_str, e.creator.encoded_id, e.creator.name,
             e.edit_dt, e.editor.encoded_id, e.editor.name,
         )
 
@@ -261,7 +288,8 @@ class FSNew(View):
         fa = Entity.get_via_encoded_id(pfid) if pfid is not None else u.root
         if fa is None:
             return '', E.no_fa
-        print('================================', fa.name)
+        if fa.sons_dup_name(name):
+            return '', E.rename
         e = Entity(name=name, father=fa, type=type)
         try:
             e.save()
@@ -272,7 +300,7 @@ class FSNew(View):
 
 
 class FSFoldElem(View):
-    @JSR('status', 'cur_dt', 'path', 'list')
+    @JSR('status', 'cur_dt', 'path', 'list', 'name')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -295,15 +323,16 @@ class FSFoldElem(View):
         if e.is_user_root():
             sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u)])
 
+        print('=='*20, f'apply for {sons}')
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in path]
         sons_s = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
-            'create_dt': f.create_dt, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
+            'create_dt': f.create_dt_str, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
             'edit_dt': f.edit_dt, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
         } for f, is_link in sons]
 
-        return 0, cur_time(), path_s, sons_s
+        return 0, cur_time(), path_s, sons_s, e.name
 
 
 class FSRecycleElem(View):
@@ -431,7 +460,7 @@ class FSRename(View):
         e = Entity.get_via_encoded_id(kwargs['id'])
         if e is None:
             return E.u
-        if e.father.sons_dup_name():
+        if e.brothers_dup_name(name):
             return E.uni
         e.name = name
         e.save()
@@ -470,7 +499,7 @@ class FSMove(View):
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.uni, E.already, E.not_found = 2, 3, 4, 5
+        E.au, E.uni, E.already, E.not_found, E.taowa = 2, 3, 4, 5, 6
         if not request.session.get('is_login', False):
             return E.au
         u = User.get_via_encoded_id(request.session['uid'])
@@ -494,6 +523,9 @@ class FSMove(View):
 
         if fa.sons_dup_name(e.name):
             return E.uni
+        
+        if fa.id == e.id:
+            return E.taowa
 
         e.move(fa)
 
@@ -652,7 +684,7 @@ class FSRecycleRecover(View):
         if kwargs.keys() != {'id', 'type'}:
             return E.k
 
-        e = Entity.objects.filter(int(decode(kwargs['id'])))
+        e = Entity.objects.filter(id=int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         e = e.get()
@@ -682,7 +714,7 @@ class FSRecycleDelete(View):
         if kwargs.keys() != {'id', 'type'}:
             return E.k
 
-        e = Entity.objects.filter(int(decode(kwargs['id'])))
+        e = Entity.objects.filter(id=int(decode(kwargs['id'])))
         if not e.exists():
             return E.not_found
         ent: Entity = e.get()

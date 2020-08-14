@@ -3,16 +3,20 @@ from typing import Callable
 
 from ckeditor.fields import RichTextField
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.template.defaultfilters import striptags
 
 from entity.hypers import *
 from meta_config import KB, TIME_FMT, ROOT_SUFFIX
+from user.models import User
 from utils.cast import encode, decode
 from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
 
 class Entity(models.Model):
+    @staticmethod
+    def get_not_deleted(*args, **kwargs):
+        return [f for f in Entity.objects.get(*args, **kwargs) if not f.backtrace_deleted]
 
     @staticmethod
     def get_via_encoded_id(encoded_id):
@@ -28,8 +32,12 @@ class Entity(models.Model):
         return Entity.objects.create(name=name + ROOT_SUFFIX, type=ENT_TYPE.fold, father=None)
 
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
-    type = models.CharField(max_length=BASIC_DATA_MAX_LEN, choices=ENT_TYPE_CHS)
+    type = models.CharField(null=False, default=ENT_TYPE.doc, choices=ENT_TYPE_CHS, max_length=BASIC_DATA_MAX_LEN)
     content = RichTextField(default='', max_length=32 * KB)
+
+    # def __str__(self):
+    #     return f'Ent(id={self.id}, name={self.name}, ' \
+    #            f'path={"".join([f.name for f in self.path])})'
 
     @property
     def plain_content(self):
@@ -48,7 +56,7 @@ class Entity(models.Model):
         return r.first().user if r.exists() else None
 
     @property
-    def create_dt(self):
+    def create_dt_str(self):
         r = CreateRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
 
@@ -161,6 +169,11 @@ class Entity(models.Model):
             r.id == self.father.id
         ))
 
+    def brothers_dup_name(self, name):
+        if self.father is None:
+            return False
+        return self.father.sons.filter(~Q(id=self.id), is_deleted=False, name=name)
+
     def sons_dup_name(self, name):
         return self.sons.filter(is_deleted=False, name=name).exists()
 
@@ -195,3 +208,15 @@ class Entity(models.Model):
             return t.contains_user(p.id)
         else:
             return False
+
+
+class Template(models.Model):
+    creator = models.ForeignKey(to=User, null=True, on_delete=models.SET_NULL)
+    name = models.CharField(unique=False, default='未命名', max_length=BASIC_DATA_MAX_LEN)
+    content = RichTextField(default='', max_length=32 * KB)
+    create_dt = models.DateTimeField(auto_now_add=True)
+    delete_dt = models.DateTimeField(null=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-create_dt']
