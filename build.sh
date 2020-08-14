@@ -24,6 +24,12 @@ rm -rf "${django_proj_root}/**/migrations/__pycache__"
 cd "${django_proj_root}" || exit
 cwd=$(pwd)
 lg_dir="logging"
+if [ ! -d "${lg_dir}" ]
+then
+  lg_info "mk log dir: ${lg_dir}"
+  mkdir "${lg_dir}"
+fi
+
 lg_file="${lg_dir}/run.sh.log"
 :> "${lg_file}"
 lg_info "caches removed, make migs... (outputs are redirected to ${lg_file})"
@@ -38,21 +44,16 @@ done;
 python manage.py migrate >> "${lg_file}"
 
 
-lg_info "db migrated, check lg_infos..."
-if [ ! -d "${lg_dir}" ]
-then
-  lg_info "mk log dir: ${lg_dir}"
-  mkdir "${lg_dir}"
-fi
+lg_info "db migrated, check log files..."
+
 lg_file="${lg_dir}/console.log"
-
 if [ ! -f "${lg_file}" ]
 then
   lg_info "create log file: ${lg_file}"
   touch "${lg_file}"
 fi
+
 lg_file="${lg_dir}/error.log"
-
 if [ ! -f "${lg_file}" ]
 then
   lg_info "create log file: ${lg_file}"
@@ -60,7 +61,7 @@ then
 fi
 
 
-lg_info "lg_infos checked, run server..."
+lg_info "log files checked, run server..."
 if [ "$1" ]
 then
   mode="shell"

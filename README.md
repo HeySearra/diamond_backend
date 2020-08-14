@@ -27,15 +27,15 @@ sh ./drop.sh
 
 ##### run server:
 ```sh
-sh ./run.sh
+sh ./build.sh
 ```
 
 ##### debug in the shell:
 ```sh
-sh ./run.sh sh
+sh ./build.sh sh
 ```
 
 ##### directories & files:
-- logs: `logging`
+- logs: `Dia/logging`
 - frontend: `Dia/frontend`
 - django setting file: `Dia/settings.py`
