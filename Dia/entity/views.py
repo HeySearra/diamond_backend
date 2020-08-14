@@ -60,8 +60,8 @@ class WorkbenchRecentView(View):
         kwargs: dict = request.GET
         if kwargs.keys() != {}.keys():
             return E.k
-        ls = u.read_records.all()[:15]
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted]
+        ls = u.read_records.all().order_by('-dt')
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted][:15]
         print(ls)
         return 0, cur_time(), [{
             'name': l.name,
