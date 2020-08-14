@@ -319,7 +319,7 @@ class UnreadCount(View):
 
 
 class AskMessageList(View):
-    @JSR('status', 'cur_dtdt', 'amount', 'list')
+    @JSR('status', 'cur_dt', 'amount', 'list')
     def get(self, request):
         if dict(request.GET).keys() != {'page', 'each'}:
             return 1, [], 0, ''

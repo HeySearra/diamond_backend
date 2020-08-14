@@ -60,9 +60,13 @@ class Invitation(View):
             return E.auth
         try:
             user1 = User.objects.get(id=int(decode(request.session['uid'])))
+            print(1)
             user2 = User.objects.get(acc=kwargs['acc'])
+            print(2)
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
-            auth = Member.objects.get(user=user1, team=team).auth
+            print(3)
+            auth = Member.objects.get(member=user1, team=team).auth
+            print(4)
         except:
             return E.uk
         if auth == 'member':
@@ -71,6 +75,7 @@ class Invitation(View):
             return E.exist
         try:
             # Member.objects.create(member=user2, team=team, author='member')
+            print(111)
             if not send_team_invite_message(team, user1, user2):
                 return E.uk
         except:
@@ -125,13 +130,13 @@ class Remove(View):
             user1 = User.objects.get(id=int(decode(request.session['uid'])))
             user2 = User.objects.get(id=int(decode(kwargs['uid'])))
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
-            auth = Member.objects.get(user=user1, team=team).auth
+            auth = Member.objects.get(member=user1, team=team).auth
         except:
             return E.uk
         if auth == 'member':
             return E.auth
         try:
-            u = Member.objects.filter(user=user2, team=team)
+            u = Member.objects.filter(member=user2, team=team)
         except:
             return E.uk
         if not u.exists():
