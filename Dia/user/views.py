@@ -338,7 +338,7 @@ class AskMessageList(View):
         for message in messages:
             msg.append({
                 'mid': encode(message.id),
-                'dt': datetime.strptime(str(message.dt), "%Y-%m-%d %H:%M:%S"),
+                'dt': message.dt_str,
             })
         return 0, cur_time(), len(msg), msg
 
@@ -362,7 +362,7 @@ class AskMessageInfo(View):
         if not msg.exists():
             return -1, [] * 13
         msg = msg.get()
-        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.content, cur_time(), msg.dt
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.content, cur_time(), msg.dt_str
 
 
 class SetMsgRead(View):
@@ -439,9 +439,6 @@ class UserEditInfo(View):
             return 1,
         if not CHECK_NAME(kwargs['name']):
             return 3,
-        file = request.FILES.get("file", None)
-        if not file:
-            return 4
         try:
             uid = int(decode(request.session.get('uid', None)))
         except:
@@ -451,8 +448,12 @@ class UserEditInfo(View):
             return -1
         u = u.get()
         u.name = kwargs['name']
-        #  修改头像
-        u.save()
+        u.portrait = kwargs['img'].replace('\\\\', '\\')
+        try:
+            u.save()
+        except:
+            return -1
+        return 0
 
 
 class ChangePwd(View):
