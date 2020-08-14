@@ -35,7 +35,7 @@ NAME_MAX_LEN = 16
 PWD_MIN_LEN = 6
 PWD_MAX_LEN = 16
 DESC_MAX_LEN = 200
-MAX_WRONG_PWD = 50
+MAX_WRONG_PWD = 5
 
 # checker lambdas
 _TEL_REG = r'^[0-9]+$'
