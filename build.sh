@@ -25,16 +25,17 @@ cd "${django_proj_root}" || exit
 cwd=$(pwd)
 lg_dir="logging"
 lg_file="${lg_dir}/run.sh.log"
+:> "${lg_file}"
 lg_info "caches removed, make migs... (outputs are redirected to ${lg_file})"
 for dir in $(find . -name views.py)''
 do
   cd "$(dirname "$dir")" || exit
   pack=${PWD##*/}
   cd "${cwd}" || exit
-  python manage.py makemigrations "${pack}"
+  python manage.py makemigrations "${pack}" >> "${lg_file}"
   lg_info "make migs of ${pack}"
 done;
-python manage.py migrate
+python manage.py migrate >> "${lg_file}"
 
 
 lg_info "db migrated, check lg_infos..."
