@@ -13,6 +13,9 @@ from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
 
 class Entity(models.Model):
+    @staticmethod
+    def get_not_deleted(*args, **kwargs):
+        return [f for f in Entity.objects.get(*args, **kwargs) if not f.backtrace_deleted]
 
     @staticmethod
     def get_via_encoded_id(encoded_id):

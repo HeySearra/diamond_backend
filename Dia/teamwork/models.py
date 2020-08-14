@@ -19,6 +19,10 @@ class Team(models.Model):
     def encoded_id(self):
         return encode(self.id)
 
+    @property
+    def owner(self):
+        return Member.objects.filter(team=self, auth=TEAM_AUTH.owner).get().member
+
     def contains_user(self, user_or_raw_id):
         d = user_or_raw_id.id if isinstance(user_or_raw_id, User) else user_or_raw_id
         return self.member_set.filter(member_id=d).exists()
@@ -46,7 +50,7 @@ class Member(models.Model):
     @property
     def encoded_id(self):
         return encode(self.id)
-
+    
     team = models.ForeignKey(to=Team, on_delete=models.CASCADE)
     member = models.ForeignKey(to=User, on_delete=models.CASCADE)
     auth = models.CharField(verbose_name='个人权限', choices=TEAM_AUTH_CHS, default='member', max_length=AUTH_MAX_LENGTH)
