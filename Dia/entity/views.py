@@ -214,7 +214,7 @@ class DocInfo(View):
         return (
             0, e.name, Collection.objects.filter(user=u, ent=e).exists(),
             e.create_dt_str, e.creator.encoded_id, e.creator.name,
-            e.edit_dt, e.editor.encoded_id, e.editor.name,
+            e.edit_dt_str, e.editor.encoded_id, e.editor.name,
         )
 
 
@@ -323,13 +323,12 @@ class FSFoldElem(View):
         if e.is_user_root():
             sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u)])
 
-        print('=='*20, f'apply for {sons}')
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in path]
         sons_s = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
             'create_dt': f.create_dt_str, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
-            'edit_dt': f.edit_dt, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
+            'edit_dt': f.edit_dt_str, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
         } for f, is_link in sons]
 
         return 0, cur_time(), path_s, sons_s, e.name

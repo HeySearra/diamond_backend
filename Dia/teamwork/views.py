@@ -60,13 +60,9 @@ class Invitation(View):
             return E.auth
         try:
             user1 = User.objects.get(id=int(decode(request.session['uid'])))
-            print(1)
             user2 = User.objects.get(acc=kwargs['acc'])
-            print(2)
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
-            print(3)
             auth = Member.objects.get(member=user1, team=team).auth
-            print(4)
         except:
             return E.uk
         if auth == 'member':
@@ -152,7 +148,7 @@ class Remove(View):
                     new_user=team.owner
                 )
             )
-            
+
             u.delete()
         except:
             return E.uk
@@ -235,6 +231,7 @@ class Delete(View):
             return E.auth
         try:
             for m in members:
+                print(111)
                 if not send_team_dismiss_message(team=team, mu=m.member):
                     return E.uk
             team.root.move(user.root)
@@ -343,37 +340,37 @@ class All(View):
 
 
 class InvitationConfirm(View):
-    @JSR('status')
+    @JSR('status', 'tid')
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.exist, E.jid = 1, 2, 3, 4
+        E.key, E.auth, E.exist, E.mid = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'jid', 'result'}:
-            return E.key
+        if kwargs.keys() != {'mid', 'result'}:
+            return E.key, ''
         if not request.session['is_login']:
-            return E.auth
+            return E.auth, ''
         try:
-            msg = Message.objects.get(id=int(decode(kwargs['jid'])))
+            msg = Message.objects.get(id=int(decode(kwargs['mid'])))
         except:
-            return E.jid
+            return E.mid, ''
         try:
             team = Team.objects.get(id=msg.related_id)  # 消息里的id未加密
         except:
-            return E.uk
+            return E.uk, ''
         if kwargs['result']:
             if Member.objects.filter(team=team, member=msg.owner).exists():
-                return E.exist
+                return E.exist, ''
             try:
                 Member.objects.create(team=team, member=msg.owner, auth='member')
                 if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=True):
-                    return E.uk
+                    return E.uk, ''
             except:
-                return E.uk
+                return E.uk, ''
         else:
             if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=False):
-                return E.uk
-        return 0
+                return E.uk, ''
+        return 0, encode(team.id)
 
 
 class Identity(View):

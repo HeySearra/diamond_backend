@@ -34,10 +34,6 @@ class Entity(models.Model):
     type = models.CharField(null=False, default=ENT_TYPE.doc, choices=ENT_TYPE_CHS, max_length=BASIC_DATA_MAX_LEN)
     content = RichTextField(default='', max_length=32 * KB)
 
-    # def __str__(self):
-    #     return f'Ent(id={self.id}, name={self.name}, ' \
-    #            f'path={"".join([f.name for f in self.path])})'
-
     @property
     def plain_content(self):
         return striptags(self.content)
@@ -65,7 +61,7 @@ class Entity(models.Model):
         return r.first().user if r.exists() else None
 
     @property
-    def edit_dt(self):
+    def edit_dt_str(self):
         r = WriteRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
 
@@ -207,3 +203,4 @@ class Entity(models.Model):
             return t.contains_user(p.id)
         else:
             return False
+
