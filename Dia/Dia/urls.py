@@ -8,6 +8,12 @@ from fusion.views import *
 from misc.views import *
 from teamwork.views import *
 
+# add for ckeditor image upload
+import os
+from django.conf.urls import url
+from django.views import static
+from Dia import settings
+
 urlpatterns = [
     path('', TemplateView.as_view(template_name="index.html"), name='index'),
 
@@ -81,6 +87,10 @@ urlpatterns = [
 
     # 阴间
     path('hell/words', HellWords.as_view(), name='hell_words'),
+
+    # ckeditor image upload
+    path('uploadImg', uploadImg.as_view(), name='uploadImg'),
+    url(r'^store/(?P<path>.*)$', static.serve, {'document_root': os.path.join(BASE_DIR, settings.MEDIA_ROOT)}), #lucien
 
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),
 ]
