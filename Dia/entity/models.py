@@ -104,18 +104,21 @@ class Entity(models.Model):
     def subtree(self) -> List:
         return self.bfs_apply(func=lambda _: _)
     
-    def count(self, recursive: bool) -> int:
+    def num_leaves(self) -> int:
         if self.backtrace_deleted:
             return 0
-        if not recursive:
-            return self.sons.filter(is_deleted=False).count()
+        # if not recursive:
+        #     return self.sons.filter(is_deleted=False).count()
         
         cnt = 0
         q = deque(f for f in self.sons.filter(is_deleted=False))
         while len(q):
             f = q.popleft()
-            cnt += 1
-            q.extend(ff for ff in f.sons.filter(is_deleted=False))
+            ex = [ff for ff in f.sons.filter(is_deleted=False)]
+            if len(ex):
+                q.extend(ex)
+            else:
+                cnt += 1
         return cnt
     
     @staticmethod
