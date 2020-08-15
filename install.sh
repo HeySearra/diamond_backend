@@ -1,3 +1,6 @@
+# mysql -u root -p
+# ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
+
 function lg_info {
     dt=$(date +"[%m-%d %H:%M:%S]")
     echo "=> ${dt} $1"
