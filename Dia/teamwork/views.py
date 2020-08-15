@@ -9,7 +9,7 @@ from meta_config import ROOT_SUFFIX
 from record.models import record_create, upd_record_user
 from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
-    send_team_accept_message
+    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message
 from utils.cast import encode, decode
 from utils.meta_wrapper import JSR
 from teamwork.models import *
@@ -103,7 +103,7 @@ class Auth(View):
         except:
             return E.tid
         try:
-            u = User.objects.get(id=int(decode(request.session['uid'])))
+            user = User.objects.get(id=int(decode(request.session['uid'])))
             owner = Member.objects.get(member=u, team=team)
         except:
             return E.auth
@@ -113,10 +113,24 @@ class Auth(View):
             try:
                 u = User.objects.get(id=uid)
                 member = Member.objects.get(member=u, team=team)
-                member.auth = 'admin' if member.auth == 'member' else 'member'
-                try:
-                    member.save()
-                except:
+                # 前端已判断不能设置自己权限（指创建者设置自己权限）
+                if member.auth == 'admin':
+                    member.auth = 'member'
+                    try:
+                        member.save()
+                    except:
+                        return E.uk
+                    if not send_team_admin_cancel_message(team=team, su=user, mu=u):
+                        return E.uk
+                else:
+                    member.auth = 'admin'
+                    try:
+                        member.save()
+                    except:
+                        return E.uk
+                    if not send_team_admin_message(team=team, su=user, mu=u):
+                        return E.uk
+                if not send_team_admin_message(team=team, su=user, mu=u):
                     return E.uk
             except:
                 return E.uid
