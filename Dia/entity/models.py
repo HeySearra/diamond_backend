@@ -8,7 +8,6 @@ from django.template.defaultfilters import striptags
 
 from entity.hypers import *
 from meta_config import KB, TIME_FMT, ROOT_SUFFIX
-from user.models import User
 from utils.cast import encode, decode
 from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
@@ -52,7 +51,7 @@ class Entity(models.Model):
         return r.first().user if r.exists() else None
 
     @property
-    def create_dt(self):
+    def create_dt_str(self):
         r = CreateRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
 
@@ -62,7 +61,7 @@ class Entity(models.Model):
         return r.first().user if r.exists() else None
 
     @property
-    def edit_dt(self):
+    def edit_dt_str(self):
         r = WriteRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
 
@@ -73,10 +72,6 @@ class Entity(models.Model):
     @property
     def delete_dt_str(self):
         return self.delete_dt.strftime(TIME_FMT)
-
-    @property
-    def create_dt_str(self):
-        return self.create_dt.strftime(TIME_FMT)
 
     def is_fold(self):
         return self.type == 'fold'

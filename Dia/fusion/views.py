@@ -48,13 +48,7 @@ class FSStar(View):
             return 3
 
         if kwargs['is_starred']:
-            try:
-                Collection.objects.filter(id=int(decode(request.session['uid']))).delete()
-            except:
-                return -1,
-            return 0
-        star = Collection()
-        star.user = u
-        star.ent = Entity.objects.get(id=int(decode(kwargs['id'])))
-        star.save()
+            Collection.objects.get_or_create(user=u, ent=ent)
+        else:
+            Collection.objects.filter(ent=ent, user_id=int(decode(request.session['uid']))).delete()
         return 0

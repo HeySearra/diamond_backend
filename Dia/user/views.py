@@ -153,7 +153,6 @@ class Register(View):
         E = EasyDict()
         E.uk = -1
         E.key, E.acc, E.pwd, E.code, E.name, E.uni = 1, 2, 3, 4, 5, 6
-        print(111234)
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'ver_code', 'pwd', 'name'}:
             return E.key,
@@ -179,10 +178,8 @@ class Register(View):
             except IntegrityError:
                 return E.uni,  # 字段unique未满足
             except DataError as e:
-                print(111)
                 return E.uk,  # 诸如某个CharField超过了max_len的错误
             except:
-                print(111)
                 return E.uk,
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)

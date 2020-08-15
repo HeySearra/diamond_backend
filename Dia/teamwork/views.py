@@ -236,6 +236,7 @@ class Delete(View):
                     return E.uk
             team.root.move(user.root)
             # 篡位嗷
+            record_create(user, team.root)
             team.root.bfs_apply(
                 func=lambda f: upd_record_user('create', f, old_user=None, new_user=user)
             )
