@@ -11,7 +11,7 @@ class Collection(models.Model):
 
     class Meta:
         ordering = ["-dt"]
-    
+
     @property
     def dt_str(self):
         return self.dt.strftime(TIME_FMT)
@@ -29,6 +29,7 @@ class Template(models.Model):
     create_dt = models.DateTimeField(auto_now_add=True)
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
-    
+    only_vip = models.BooleanField(default=False)
+
     class Meta:
         ordering = ['-create_dt']

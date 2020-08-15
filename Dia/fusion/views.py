@@ -54,4 +54,8 @@ class FSStar(View):
         return 0
 
 
+class TempAll(View):
+    @JSR('status', 'my_list', 'official_list')
+    def get(self, request):
 
+        pass

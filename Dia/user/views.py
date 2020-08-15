@@ -78,7 +78,7 @@ def send_team_dismiss_message(team: Team, mu: User, su:User):
     m.content = "团队 " + team.name + " 已被 " + su.name + " 解散"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'dismiss'
+    m.type = 'out'
     try:
         m.save()
     except:
@@ -96,7 +96,7 @@ def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     m.content = su.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'accept'
+    m.type = 'accept' if if_accept else 'reject'
     try:
         m.save()
     except:
