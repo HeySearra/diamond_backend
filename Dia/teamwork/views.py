@@ -5,6 +5,7 @@ import json
 from django.views import View
 from easydict import EasyDict
 
+from fusion.models import Links
 from meta_config import ROOT_SUFFIX
 from record.models import record_create, upd_record_user
 from user.models import Message
@@ -36,11 +37,12 @@ class NewFromFold(View):
         if not entity.can_convert_to_team():
             return None, E.root
         try:
-            team = Team.objects.create(root=entity)
+            team = Team.objects.create(root=entity, name=entity.name)
             Member.objects.create(member=user, team=team, auth='owner')
             entity.father = None
             entity.name = team.name + ROOT_SUFFIX
             entity.save()
+            Links.objects.filter(user=user, ent=entity).delete()
             record_create(user, entity, delete=True)
         except:
             return None, E.uk

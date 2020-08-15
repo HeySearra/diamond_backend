@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.template.defaultfilters import striptags
 
-from meta_config import HELL_WORDS
+from meta_config import HELL_WORDS, DEBUG
 
 
 def req():
@@ -153,9 +153,9 @@ def send_code(acc, email_type, storage=True):
         code = random.sample(code_list, 6)  # 随机取6位数
         code_num = ''.join(code)
         # 数据库保存验证码！！！！！！！！！！！
-        storage_code = code_num
+        storage_code = code_num if not DEBUG else '123456'
         # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
-        msg = MIMEText(content % ('验证码', code_num, "-" * 3 * len(sent), sent), 'html', 'utf-8')
+        msg = MIMEText(content % ('验证码', storage_code, "-" * 3 * len(sent), sent), 'html', 'utf-8')
         msg['Subject'] = Header('DiaDoc 注册验证码' + random.choice(HELL_WORDS))
     else:
         code = random.sample(key_list, 10)

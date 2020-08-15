@@ -59,7 +59,6 @@ def send_team_dismiss_message(team: Team, mu: User, su:User):
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'dismiss'
-    print(m)
     try:
         m.save()
     except:
@@ -189,7 +188,6 @@ class Register(View):
 
         if datetime.now() < er.expire_time:
             try:
-                # print(kwargs)
                 root = Entity.locate_root(name=kwargs['name'])
                 u = User.objects.create(root=root, **kwargs)
             except IntegrityError:
@@ -200,7 +198,6 @@ class Register(View):
                 return E.uk,
             request.session['is_login'] = True
             request.session['uid'] = encode(u.id)
-            # print(u.portrait.path)
             return 0,
         else:
             return 7

@@ -52,7 +52,7 @@ class Entity(models.Model):
     @property
     def create_dt_str(self) -> str:
         return CreateRecord.objects.get(ent_id=self.id).dt_str
-    
+
     @property
     def create_name_uid_dt_str(self) -> Tuple[str, str, str]:
         r = CreateRecord.objects.get(ent_id=self.id)
@@ -103,13 +103,13 @@ class Entity(models.Model):
     @property
     def subtree(self) -> List:
         return self.bfs_apply(func=lambda _: _)
-    
+
     def num_leaves(self) -> int:
         if self.backtrace_deleted:
             return 0
         # if not recursive:
         #     return self.sons.filter(is_deleted=False).count()
-        
+
         cnt = 0
         q = deque(f for f in self.sons.filter(is_deleted=False))
         while len(q):
@@ -120,7 +120,7 @@ class Entity(models.Model):
             else:
                 cnt += 1
         return cnt
-    
+
     @staticmethod
     def _dfs(f, func, cond, ret):
         if cond(f):
@@ -185,7 +185,7 @@ class Entity(models.Model):
             not self.backtrace_deleted,
             r is not None,
             self.father is not None,
-            r.id == self.father.id
+            r.root.id == self.father.id
         ))
 
     def brothers_dup_name(self, name) -> bool:
