@@ -399,7 +399,7 @@ class AskMessageInfo(View):
         if not msg.exists():
             return -1, [] * 11
         msg = msg.get()
-        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg, msg.content, cur_time(), msg.dt_str
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.team_name, msg.content, cur_time(), msg.dt_str
 
 
 class SetMsgRead(View):
