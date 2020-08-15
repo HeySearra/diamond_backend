@@ -41,8 +41,25 @@ def send_team_out_message(team: Team, mu: User):
     # mu: 被踢出的
     m = Message()
     m.owner = mu
-    m.title = "团队邀请"
+    m.title = "团队消息"
     m.content = "您已被移出团队：" + team.name
+    m.portrait = team.portrait if team.portrait else ''
+    m.related_id = team.id
+    m.type = 'out'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_member_out_message(team: Team, su: User, mu: User):
+    # mu: 退出的
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = "团队消息"
+    m.content = su.name + " 已经退出团队：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'out'
@@ -76,7 +93,7 @@ def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     m.owner = mu
     m.sender = su
     m.title = "团队邀请"
-    m.content = mu.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
+    m.content = su.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'accept'

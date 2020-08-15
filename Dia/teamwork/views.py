@@ -10,7 +10,7 @@ from meta_config import ROOT_SUFFIX
 from record.models import record_create, upd_record_user
 from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
-    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message
+    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message
 from utils.cast import encode, decode
 from utils.meta_wrapper import JSR
 from teamwork.models import *
@@ -449,6 +449,7 @@ class Quit(View):
         try:
             team = Team.objects.get(id=int(decode(kwargs['tid'])))
             user = User.objects.get(id=int(decode(request.session['uid'])))
+
         except:
             return E.tid
         try:
@@ -459,4 +460,9 @@ class Quit(View):
             m.delete()
         except:
             return E.uk
+        members = Member.objects.filter(team=team)
+        for m in members:
+            if m.auth == 'owner' or m.auth == 'admin':
+                if not send_team_member_out_message(team=team, su=user, mu=m.member):
+                    return E.uk
         return 0

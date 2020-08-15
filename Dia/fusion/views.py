@@ -52,3 +52,6 @@ class FSStar(View):
         else:
             Collection.objects.filter(ent=ent, user_id=int(decode(request.session['uid']))).delete()
         return 0
+
+
+
