@@ -191,7 +191,7 @@ class Info(View):
         intro = team.intro
         portrait = team.portrait if team.portrait else ''
         create_dt = team.create_dt_str
-        doc_num = len(team.root.subtree)
+        doc_num = team.root.count(recursive=True)
         cuid = ''
         cname = ''
         norm = []
