@@ -47,37 +47,31 @@ class Entity(models.Model):
 
     @property
     def creator(self):
-        r = CreateRecord.objects.filter(ent=self)
-        return r.first().user if r.exists() else None
+        return CreateRecord.objects.get(ent_id=self.id).user
 
     @property
     def create_dt_str(self):
-        r = CreateRecord.objects.filter(ent=self)
-        return r.first().dt_str if r.exists() else None
+        return CreateRecord.objects.get(ent_id=self.id).dt_str
     
     @property
-    def creat_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = CreateRecord.objects.filter(ent=self)
-        if r.exists():
-            r = r.first()
-            return r.user.name, r.user.encoded_id, r.dt_str
+    def create_name_uid_dt_str(self) -> Tuple[str, str, str]:
+        r = CreateRecord.objects.get(ent_id=self.id)
+        u = r.user
+        return u.name, u.encoded_id, r.dt_str
 
     @property
     def editor(self):
-        r = WriteRecord.objects.filter(ent=self)
-        return r.first().user if r.exists() else None
+        return WriteRecord.objects.get(ent_id=self.id).user
 
     @property
     def edit_dt_str(self):
-        r = WriteRecord.objects.filter(ent=self)
-        return r.first().dt_str if r.exists() else None
+        return WriteRecord.objects.get(ent_id=self.id).dt_str
 
     @property
     def edit_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = WriteRecord.objects.filter(ent=self)
-        if r.exists():
-            r = r.first()
-            return r.user.name, r.user.encoded_id, r.dt_str
+        r = WriteRecord.objects.get(ent_id=self.id)
+        u = r.user
+        return u.name, u.encoded_id, r.dt_str
 
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
