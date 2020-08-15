@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Callable
+from typing import Callable, Tuple
 
 from ckeditor.fields import RichTextField
 from django.db import models
@@ -54,6 +54,13 @@ class Entity(models.Model):
     def create_dt_str(self):
         r = CreateRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
+    
+    @property
+    def creat_name_uid_dt_str(self) -> Tuple[str, str, str]:
+        r = CreateRecord.objects.filter(ent=self)
+        if r.exists():
+            r = r.first()
+            return r.user.name, r.user.encoded_id, r.dt_str
 
     @property
     def editor(self):
@@ -64,6 +71,13 @@ class Entity(models.Model):
     def edit_dt_str(self):
         r = WriteRecord.objects.filter(ent=self)
         return r.first().dt_str if r.exists() else None
+
+    @property
+    def edit_name_uid_dt_str(self) -> Tuple[str, str, str]:
+        r = WriteRecord.objects.filter(ent=self)
+        if r.exists():
+            r = r.first()
+            return r.user.name, r.user.encoded_id, r.dt_str
 
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)

@@ -321,15 +321,16 @@ class FSFoldElem(View):
         path: List[Entity] = e.path
         sons: List[Tuple[Entity, bool]] = [(s, False) for s in e.sons.filter(is_deleted=False)]
         if e.is_user_root():
-            sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u)])
+            sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u) if not lk.ent.backtrace_deleted])
 
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in path]
+        cre_edi = [(f[0].creat_name_uid_dt_str, f[0].edit_name_uid_dt_str) for f in sons]
         sons_s = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
-            'create_dt': f.create_dt_str, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
-            'edit_dt': f.edit_dt_str, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
-        } for f, is_link in sons]
+            'create_dt': cdt, 'cuid': cuid, 'cname': cname,
+            'edit_dt': edt, 'euid': euid, 'ename': ename,
+        } for (f, is_link), ((cdt, cuid, cname), (edt, euid, ename)) in zip(sons, cre_edi)]
 
         return 0, cur_time(), path_s, sons_s, e.name
 
