@@ -42,17 +42,19 @@ class FSStar(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'is_starred'}:
             return 1,
-        
+
         ent = Entity.get_via_encoded_id(kwargs['id'])
         if ent is None:
             return 3
-        
+
         if kwargs['is_starred']:
             try:
-                Collection.objects.create(user=u, ent=ent)
+                Collection.objects.filter(id=int(decode(request.session['uid']))).delete()
             except:
-                return -1
+                return -1,
             return 0
-        else:
-            Collection.objects.filter(ent=ent, user_id=int(decode(request.session['uid']))).delete()
-            return 0
+        star = Collection()
+        star.user = u
+        star.ent = Entity.objects.get(id=int(decode(kwargs['id'])))
+        star.save()
+        return 0

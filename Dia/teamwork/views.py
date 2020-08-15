@@ -231,11 +231,11 @@ class Delete(View):
             return E.auth
         try:
             for m in members:
+                print(111)
                 if not send_team_dismiss_message(team=team, mu=m.member):
                     return E.uk
             team.root.move(user.root)
             # 篡位嗷
-            record_create(user, team.root)
             team.root.bfs_apply(
                 func=lambda f: upd_record_user('create', f, old_user=None, new_user=user)
             )

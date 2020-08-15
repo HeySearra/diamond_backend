@@ -41,7 +41,7 @@ class WorkbenchCreate(View):
         return 0, amount, cur_time(), [{
             'type': l.type,
             'pfid': l.father.encoded_id,
-            'dt': l.create_dt_str,
+            'dt': l.create_dt,
             'name': l.name,
             'id': l.encoded_id
         } for l in ls]
@@ -62,11 +62,11 @@ class WorkbenchRecentView(View):
         if kwargs.keys() != {}.keys():
             return E.k
         ls = u.read_records.all().order_by('-dt')
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted and _.ent.is_doc()][:15]
+        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted][:15]
         print(ls)
         return 0, cur_time(), [{
             'name': l.name,
-            'dt': l.create_dt_str,
+            'dt': l.create_dt,
             'id': l.encoded_id,
             'is_starred': Collection.objects.filter(user=u, ent=l).exists(),
         } for l in ls]
@@ -78,7 +78,7 @@ class WorkbenchStar(View):
         E = ED()
         E.u, E.k, E.au = -1, 1, 2
         if not request.session.get('is_login', False):
-            return E.au
+            return E.au, []
 
         kwargs: dict = request.GET
         if kwargs.keys() != {'page', 'each'}:
@@ -88,18 +88,16 @@ class WorkbenchStar(View):
 
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
-            return E.au
-        ents = [c.ent for c in u.related_collection.all() if not c.ent.backtrace_deleted]
-        
-        amount = len(ents)
-        ents = ents[(page - 1) * each: page * each]
+            return E.au, []
+        cl = u.related_collection.all()
+        amount = cl.count()
+        cl = cl[(page - 1) * each: page * each]
         return 0, amount, [{
-                'name': ent.name,
-                'dt': ent.create_dt_str,
-                'id': ent.encoded_id,
-                'is_starred': Collection.objects.filter(user=u, ent=ent).exists(),
-                'type': ent.type,
-            } for ent in ents]
+                'name': l.ent.name,
+                'dt': l.ent.create_dt,
+                'id': l.ent.encoded_id,
+                'is_starred': Collection.objects.filter(user=u, ent=l.ent).exists(),
+            } for l in cl]
 
 
 class DocEdit(View):
@@ -213,7 +211,7 @@ class DocInfo(View):
             return E.no_ent
         return (
             0, e.name, Collection.objects.filter(user=u, ent=e).exists(),
-            e.create_dt_str, e.creator.encoded_id, e.creator.name,
+            e.create_dt, e.creator.encoded_id, e.creator.name,
             e.edit_dt, e.editor.encoded_id, e.editor.name,
         )
 
@@ -323,12 +321,11 @@ class FSFoldElem(View):
         if e.is_user_root():
             sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u)])
 
-        print('=='*20, f'apply for {sons}')
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in path]
         sons_s = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
-            'create_dt': f.create_dt_str, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
+            'create_dt': f.create_dt, 'cuid': f.creator.encoded_id, 'cname': f.creator.name,
             'edit_dt': f.edit_dt, 'euid': f.editor.encoded_id, 'ename': f.editor.name,
         } for f, is_link in sons]
 
@@ -499,7 +496,7 @@ class FSMove(View):
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.uni, E.already, E.not_found, E.taowa = 2, 3, 4, 5, 6
+        E.au, E.uni, E.already, E.not_found = 2, 3, 4, 5
         if not request.session.get('is_login', False):
             return E.au
         u = User.get_via_encoded_id(request.session['uid'])
@@ -523,9 +520,6 @@ class FSMove(View):
 
         if fa.sons_dup_name(e.name):
             return E.uni
-        
-        if fa.id == e.id:
-            return E.taowa
 
         e.move(fa)
 
