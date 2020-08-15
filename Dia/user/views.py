@@ -381,25 +381,25 @@ class AskMessageList(View):
 
 
 class AskMessageInfo(View):
-    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'name', 'content', 'cur_dt', 'dt')
+    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'name', 'content', 'cur_dt', 'dt', 'result_content')
     def get(self, request):
         if dict(request.GET).keys() != {'mid'}:
-            return 1, [] * 11
+            return 1, [] * 12
         try:
             mid = int(decode(request.GET.get('mid')))
         except ValueError:
-            return -1, [] * 11
+            return -1, [] * 12
 
         u = User.objects.filter(id=int(decode(request.session['uid'])))
 
         if not u.exists():
-            return -1, [] * 11
+            return -1, [] * 12
         u = u.get()
         msg = Message.objects.filter(id=mid)
         if not msg.exists():
-            return -1, [] * 11
+            return -1, [] * 12
         msg = msg.get()
-        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.team_name, msg.content, cur_time(), msg.dt_str
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.team_name, msg.content, cur_time(), msg.dt_str, msg.result_content
 
 
 class SetMsgRead(View):
