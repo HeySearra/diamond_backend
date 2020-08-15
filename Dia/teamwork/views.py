@@ -114,6 +114,10 @@ class Auth(View):
                 u = User.objects.get(id=uid)
                 member = Member.objects.get(member=u, team=team)
                 member.auth = 'admin' if member.auth == 'member' else 'member'
+                try:
+                    member.save()
+                except:
+                    return E.uk
             except:
                 return E.uid
         return 0
