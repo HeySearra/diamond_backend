@@ -328,7 +328,7 @@ class UnreadCount(View):
         if not u.exists():
             return 0, -1
         u = u.get()
-        count = Message.objects.filter(Q(owner_id=u.id) | Q(is_read=False)).count()
+        count = Message.objects.filter(Q(owner_id=u.id) & Q(is_read=False)).count()
         return count, 0
 
 
