@@ -109,12 +109,15 @@ class Auth(View):
             return E.auth
         if owner.auth != 'owner':
             return E.auth
-        for uid in kwargs['list']:
+        user_list = Member.objects.filter(team=team)
+        for _ in user_list:
+            uid = _.member.id
             try:
                 u = User.objects.get(id=uid)
                 member = Member.objects.get(member=u, team=team)
                 # 前端已判断不能设置自己权限（指创建者设置自己权限）
-                if member.auth == 'admin':
+                # 如果本身是管理员且不在设置的uid_list里，就撤销并发信息
+                if member.auth == 'admin' and not (encode(u.id) in kwargs['list']):
                     member.auth = 'member'
                     try:
                         member.save()
@@ -122,7 +125,8 @@ class Auth(View):
                         return E.uk
                     if not send_team_admin_cancel_message(team=team, su=user, mu=u):
                         return E.uk
-                else:
+                    print('=='*10, 'to_member')
+                elif member.auth == 'member' and encode(u.id) in kwargs['list']:
                     member.auth = 'admin'
                     try:
                         member.save()
@@ -130,6 +134,7 @@ class Auth(View):
                         return E.uk
                     if not send_team_admin_message(team=team, su=user, mu=u):
                         return E.uk
+                    print('=='*10, 'to_admin')
             except:
                 return E.uid
         return 0
