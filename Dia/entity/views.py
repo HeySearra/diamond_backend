@@ -7,7 +7,7 @@ import os
 from user.models import User
 from datetime import datetime, timedelta
 from dateutil import relativedelta
-from entity.models import Entity
+from entity.models import Entity, Comment
 from fusion.models import Collection, Links
 from record.models import upd_record, CreateRecord, WriteRecord, record_create
 from django.db.utils import IntegrityError, DataError
@@ -786,3 +786,67 @@ class FSRecycleClear(View):
         all_f = [Entity.objects.get(id=fid) for fid in list(set(fids))]
         [f.delete() for f in all_f]
         return 0
+
+
+class CommentAdd(View):
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs = json.loads(request.body)
+        if kwargs.keys() != {'did', 'uid', 'threadId', 'commentId', 'content'}:
+            return E.k
+
+        did = kwargs.get('did')
+
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent
+        new_comment = Comment(did=Entity.objects.get(id=did),
+                              uid=User.objects.get(id=kwargs.get('uid')),
+                              threadId=kwargs.get('threadId'),
+                              commentId=kwargs.get('commentId'),
+                              content=kwargs.get('content'),
+                              createdAt=int(time.time()))
+        new_comment.save()
+        return 0
+
+
+class CommentGet(View):
+    @JSR('status', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au, None
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au, None
+        kwargs = eval(list(request.GET.keys())[0])
+        if kwargs.keys() != {'did', 'threadId'}:
+            return E.k, None
+
+        did = kwargs.get('did')
+
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent, None
+        items = list(Comment.objects.filter(did=Entity.objects.get(id=did),
+                                         threadId=kwargs.get('threadId')).values())
+        res = []
+        for it in items:
+            dic = {'commentId': it.get('commentId'),
+                   'authorId': str(it.get('uid_id')),
+                   'content': it.get('content'),
+                   'createdAt': it.get('createdAt')}
+            res.append(dic)
+        print(res)
+        return 0, res
+

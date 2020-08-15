@@ -15,7 +15,7 @@ class HellWords(View):
         return HELL_WORDS, 0
 
 
-class uploadImg(View):
+class UploadImg(View):
     @JSR('code', 'url')
     def post(self, request):
         print('receive img')

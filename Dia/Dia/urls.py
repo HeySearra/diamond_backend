@@ -45,6 +45,8 @@ urlpatterns = [
     path('doc/all', DocAll.as_view(), name='doc_all'),
     path('doc/info', DocInfo.as_view(), name='doc_info'),
     path('doc/lock', DocLock.as_view(), name='doc_lock'),
+    path('doc/comment/add', CommentAdd.as_view(), name='doc_comment_add'),
+    path('doc/comment/get_comments_of_thread', CommentGet.as_view(), name='doc_comment_get_comments_of_thread'),
 
     # 文件系统 -- 工作台
     path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
@@ -89,7 +91,7 @@ urlpatterns = [
     path('hell/words', HellWords.as_view(), name='hell_words'),
 
     # ckeditor image upload
-    path('uploadImg', uploadImg.as_view(), name='uploadImg'),
+    path('uploadImg', UploadImg.as_view(), name='uploadImg'),
     url(r'^store/(?P<path>.*)$', static.serve, {'document_root': os.path.join(BASE_DIR, settings.MEDIA_ROOT)}), #lucien
 
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),

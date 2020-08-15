@@ -231,3 +231,12 @@ class Entity(models.Model):
             else:
                 return False
 
+
+class Comment(models.Model):
+
+    did = models.ForeignKey('Entity', on_delete=models.CASCADE)
+    uid = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    threadId = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
+    commentId = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
+    content = models.CharField(unique=False, max_length=COMMENT_MAX_LEN)
+    createdAt = models.BigIntegerField(default=0)
