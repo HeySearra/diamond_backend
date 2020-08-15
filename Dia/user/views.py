@@ -90,10 +90,27 @@ def send_team_admin_message(team: Team, su: User, mu: User):
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = su.name + " 将你设为团队管理员：" + team.name
+    m.title = su.name + " 将你设为团队 " + team.name + " 的管理员"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'admin'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_admin_cancel_message(team: Team, su: User, mu: User):
+    # tid:团队id，su:发起解除管理员的用户，mu：刚被解除管理的用户
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = su.name + " 已解除你在团队 " + team.name + " 的管理员"
+    m.portrait = team.portrait if team.portrait else ''
+    m.related_id = team.id
+    m.type = 'out'
     try:
         m.save()
     except:
