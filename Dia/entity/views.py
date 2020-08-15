@@ -1,3 +1,5 @@
+import time
+
 from django.views import View
 from easydict import EasyDict as ED
 import json
@@ -36,15 +38,16 @@ class WorkbenchCreate(View):
 
         ls = u.create_records.all()
         amount = ls.count()
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted][(page - 1) * each: page * each]
+        ents = [_.ent for _ in ls if not _.ent.backtrace_deleted][(page - 1) * each: page * each]
 
         return 0, amount, cur_time(), [{
-            'type': l.type,
-            'pfid': l.father.encoded_id,
-            'dt': l.create_dt_str,
-            'name': l.name,
-            'id': l.encoded_id
-        } for l in ls]
+            'pfid': e.father.encoded_id,
+            'name': e.name,
+            'dt': e.create_dt_str,
+            'type': e.type,
+            'id': e.encoded_id,
+            'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+        } for e in ents]
 
 
 class WorkbenchRecentView(View):
@@ -62,14 +65,14 @@ class WorkbenchRecentView(View):
         if kwargs.keys() != {}.keys():
             return E.k
         ls = u.read_records.all().order_by('-dt')
-        ls = [_.ent for _ in ls if not _.ent.backtrace_deleted and _.ent.is_doc()][:15]
-        print(ls)
+        ents = [_.ent for _ in ls if not _.ent.backtrace_deleted and _.ent.is_doc()][:15]
         return 0, cur_time(), [{
-            'name': l.name,
-            'dt': l.create_dt_str,
-            'id': l.encoded_id,
-            'is_starred': Collection.objects.filter(user=u, ent=l).exists(),
-        } for l in ls]
+            'name': e.name,
+            'dt': e.create_dt_str,
+            'type': e.type,
+            'id': e.encoded_id,
+            'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+        } for e in ents]
 
 
 class WorkbenchStar(View):
@@ -96,9 +99,9 @@ class WorkbenchStar(View):
         return 0, amount, [{
                 'name': ent.name,
                 'dt': ent.create_dt_str,
+                'type': ent.type,
                 'id': ent.encoded_id,
                 'is_starred': Collection.objects.filter(user=u, ent=ent).exists(),
-                'type': ent.type,
             } for ent in ents]
 
 
@@ -211,10 +214,14 @@ class DocInfo(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
+        
+        cnm, cid, cdt = e.create_name_uid_dt_str
+        enm, eid, edt = e.edit_name_uid_dt_str
+        
         return (
             0, e.name, Collection.objects.filter(user=u, ent=e).exists(),
-            e.create_dt_str, e.creator.encoded_id, e.creator.name,
-            e.edit_dt_str, e.editor.encoded_id, e.editor.name,
+            cdt, cid, cnm,
+            edt, eid, enm,
         )
 
 
@@ -319,18 +326,28 @@ class FSFoldElem(View):
             return E.no_f, '', [], []
 
         path: List[Entity] = e.path
-        sons: List[Tuple[Entity, bool]] = [(s, False) for s in e.sons.filter(is_deleted=False)]
+        sons: List[Tuple[Entity, bool]] = [(s, False) for s in e.sons.filter(is_deleted=False).order_by('name')]
         if e.is_user_root():
-            sons.extend([(lk.ent, True) for lk in Links.objects.filter(user=u) if not lk.ent.backtrace_deleted])
-
+            sons.extend(
+                sorted(
+                    [(lk.ent, True) for lk in Links.objects.filter(user=u) if not lk.ent.backtrace_deleted],
+                    key=lambda tu: tu[0].name
+                )
+            )
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in path]
-        cre_edi = [(f[0].creat_name_uid_dt_str, f[0].edit_name_uid_dt_str) for f in sons]
+        # st = time.time()
+        
+        cre_edi = [(f[0].create_name_uid_dt_str, f[0].edit_name_uid_dt_str) for f in sons]
+        # cre_edi = [(('1', '2', '3'), ('4', '5', '6'))] * len(sons)
+        
+        # print(f'time cost: {time.time()-st:.2f}\t\t' * 100)
+        
         sons_s = [{
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
-            'create_dt': cdt, 'cuid': cuid, 'cname': cname,
-            'edit_dt': edt, 'euid': euid, 'ename': ename,
-        } for (f, is_link), ((cdt, cuid, cname), (edt, euid, ename)) in zip(sons, cre_edi)]
+            'create_dt': cdt, 'cuid': cuid, 'cname': cnm,
+            'edit_dt': edt, 'euid': euid, 'ename': enm,
+        } for (f, is_link), ((cnm, cuid, cdt), (enm, euid, edt)) in zip(sons, cre_edi)]
 
         return 0, cur_time(), path_s, sons_s, e.name
 
@@ -354,7 +371,7 @@ class FSRecycleElem(View):
 
         ret = [{
             'type': f.ent.type, 'id': f.ent.encoded_id, 'name': f.ent.name,
-            'delete_dt': f.ent.delete_dt, 'is_dia': False,  # todo
+            'delete_dt': f.ent.delete_dt_str, 'is_dia': False,  # todo
         } for f in fs]
 
         return 0, cur_time(), ret
@@ -404,9 +421,10 @@ class FSDocInfo(View):
         if e is None or e.father is None:
             return E.no
 
+        cnm, cid, cdt = e.create_name_uid_dt_str
         return (
             0, e.name, len(e.plain_content),
-            e.creator.encoded_id, e.creator.name,
+            cid, cnm,
             e.is_locked, [{'fid': f.encoded_id, 'name': f.name} for f in e.path]
         )
 
@@ -430,10 +448,10 @@ class FSFoldInfo(View):
         e = Entity.get_via_encoded_id(kwargs.get('fid'))
         if e is None or e.father is None:
             return E.no
-
+        cnm, cid, cdt = e.create_name_uid_dt_str
         return (
             0, e.name,
-            e.creator.encoded_id, e.creator.name,
+            cid, cnm,
             [{'fid': f.encoded_id, 'name': f.name} for f in e.path]
         )
 
