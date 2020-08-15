@@ -321,7 +321,7 @@ class FindPwd(View):
         return 0
 
 
-class SetPwd(View):
+class ForgetSetPwd(View):
     @JSR('status')
     def post(self, request):
         kwargs: dict = json.loads(request.body)
@@ -490,7 +490,7 @@ class UserEditInfo(View):
         return 0
 
 
-class ChangePwd(View):
+class SetPwd(View):
     @JSR('status')
     def post(self, request):
         if not request.session['is_login']:

@@ -27,8 +27,8 @@ urlpatterns = [
     path('user/register/submit', Register.as_view(), name='register_submit'),  # 注册和请求注册验证码
     path('user/logout/submit', Login.as_view(), name='logout_submit'),  # 注销登录
     path('user/forget/send_email', FindPwd.as_view(), name='forget_send_email'),  # 找回密码
-    path('user/forget/set_pwd', SetPwd.as_view(), name='forget_set_pwd'),  # 找回密码设置新密码
-    path('user/change_password', ChangePwd.as_view(), name='user_change_password'),  # 修改密码
+    path('user/forget/set_pwd', ForgetSetPwd.as_view(), name='forget_set_pwd'),  # 找回密码设置新密码
+    path('user/set_pwd', SetPwd.as_view(), name='user_set_pwd'),  # 修改密码
     path('upload/port', ChangeProfile.as_view(), name='user_change_profile'),
 
     # 消息
@@ -38,7 +38,7 @@ urlpatterns = [
     path('msg/ar', SetMsgRead.as_view(), name='msg_ar'),
     path('msg/ar_all', SetAllMsgRead.as_view(), name='msg_ar_all'),
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰
-    
+
     # 文档编辑
     path('doc/edit', DocEdit.as_view(), name='doc_edit'),
     path('doc/comment', DocComment.as_view(), name='doc_comment'),
