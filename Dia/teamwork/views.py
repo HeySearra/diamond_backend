@@ -395,6 +395,8 @@ class InvitationConfirm(View):
             return E.uk, ''
         if kwargs['result']:
             if Member.objects.filter(team=team, member=msg.owner).exists():
+                msg.is_process = True
+                msg.save()
                 return E.exist, ''
             try:
                 Member.objects.create(team=team, member=msg.owner, auth='member')
@@ -403,6 +405,10 @@ class InvitationConfirm(View):
             except:
                 return E.uk, ''
         else:
+            if Member.objects.filter(team=team, member=msg.owner).exists():
+                msg.is_process = True
+                msg.save()
+                return E.exist, ''
             if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=False):
                 return E.uk, ''
         return 0, encode(team.id)

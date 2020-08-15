@@ -30,7 +30,9 @@ def send_team_invite_message(team: Team, su: User, mu: User):
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'join'
+    print(1)
     m.team_name = team.name
+    print(2)
     try:
         m.save()
     except:
@@ -317,7 +319,7 @@ class FindPwd(View):
             acc = str(request.GET.get('acc'))
             u = User.objects.filter(acc=acc)
             if not u.exists():
-                return 2,
+                return 3,
         except:
             return -1
         send_code(acc, 'forget')
