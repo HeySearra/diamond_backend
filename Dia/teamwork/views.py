@@ -202,11 +202,15 @@ class Info(View):
             elif m.auth == 'admin':
                 admin.append({
                     'uid': encode(str(m.member.id)),
+                    'acc': m.member.acc,
+                    'src': m.member.portrait,
                     'name': m.member.name
                 })
             else:
                 norm.append({
                     'uid': encode(str(m.member.id)),
+                    'acc': m.member.acc,
+                    'src': m.member.portrait,
                     'name': m.member.name
                 })
         return 0, name, intro, portrait, create_dt, doc_num, cuid, cname, norm, admin
