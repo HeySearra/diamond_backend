@@ -360,8 +360,10 @@ class InvitationConfirm(View):
             msg = Message.objects.get(id=int(decode(kwargs['mid'])))
         except:
             return E.mid, ''
+        msg.is_process = True
         try:
             team = Team.objects.get(id=msg.related_id)  # 消息里的id未加密
+            msg.save()
         except:
             return E.uk, ''
         if kwargs['result']:
