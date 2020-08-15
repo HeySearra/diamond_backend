@@ -36,7 +36,7 @@ class WorkbenchRecentView(View):
         ls = u.read_records.all().order_by('-dt')
         ents = [_.ent for _ in ls if not _.ent.backtrace_deleted and _.ent.is_doc()][:15]
         return 0, cur_time(), [{
-            'pfid': e.father.encoded_id,
+            'pfid': e.father.encoded_id if e.father.first_person(u) else '',
             'name': e.name,
             'dt': e.create_dt_str,
             'type': e.type,
@@ -67,13 +67,13 @@ class WorkbenchStar(View):
         amount = len(ents)
         ents = ents[(page - 1) * each: page * each]
         return 0, amount, [{
-            'pfid': ent.father.encoded_id,
-            'name': ent.name,
-            'dt': ent.create_dt_str,
-            'type': ent.type,
-            'id': ent.encoded_id,
-            'is_starred': Collection.objects.filter(user=u, ent=ent).exists(),
-        } for ent in ents]
+            'pfid': e.father.encoded_id if e.father.first_person(u) else '',
+            'name': e.name,
+            'dt': e.create_dt_str,
+            'type': e.type,
+            'id': e.encoded_id,
+            'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+        } for e in ents]
 
 
 class WorkbenchCreate(View):
@@ -333,10 +333,11 @@ class FSFoldElem(View):
         sons: List[Tuple[Entity, str, bool]] = [(s, e.encoded_id, False) for s in e.sons.filter(is_deleted=False).order_by('name')]
         if e.is_user_root():
             sons.extend(
-                sorted(
-                    [(lk.ent, lk.ent.father.encoded_id, True) for lk in Links.objects.filter(user=u) if not lk.ent.backtrace_deleted],
-                    key=lambda tu: tu[0].name
-                )
+                sorted([
+                    (lk.ent, lk.ent.father.encoded_id if lk.ent.first_person(u) else '', True)
+                    for lk in Links.objects.filter(user=u)
+                    if not lk.ent.backtrace_deleted
+                ], key=lambda tu: tu[0].name)
             )
         path_s = [{'fid': f.encoded_id, 'name': f.name} for f in e.path]
         # st = time.time()
