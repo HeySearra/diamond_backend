@@ -41,8 +41,25 @@ def send_team_out_message(team: Team, mu: User):
     # mu: 被踢出的
     m = Message()
     m.owner = mu
-    m.title = "团队邀请"
+    m.title = "团队消息"
     m.content = "您已被移出团队：" + team.name
+    m.portrait = team.portrait if team.portrait else ''
+    m.related_id = team.id
+    m.type = 'out'
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_member_out_message(team: Team, su: User, mu: User):
+    # mu: 退出的
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = "团队消息"
+    m.content = su.name + " 已经退出团队：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'out'
@@ -61,7 +78,7 @@ def send_team_dismiss_message(team: Team, mu: User, su:User):
     m.content = "团队 " + team.name + " 已被 " + su.name + " 解散"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'dismiss'
+    m.type = 'out'
     try:
         m.save()
     except:
@@ -76,10 +93,10 @@ def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     m.owner = mu
     m.sender = su
     m.title = "团队邀请"
-    m.content = mu.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
+    m.content = su.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'accept'
+    m.type = 'accept' if if_accept else 'reject'
     try:
         m.save()
     except:
@@ -304,7 +321,7 @@ class FindPwd(View):
         return 0
 
 
-class SetPwd(View):
+class ForgetSetPwd(View):
     @JSR('status')
     def post(self, request):
         kwargs: dict = json.loads(request.body)
@@ -473,7 +490,7 @@ class UserEditInfo(View):
         return 0
 
 
-class ChangePwd(View):
+class SetPwd(View):
     @JSR('status')
     def post(self, request):
         if not request.session['is_login']:
