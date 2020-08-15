@@ -15,14 +15,17 @@ source activate "${dj_name}"
 
 django_proj_root="Dia"
 lg_info "venv \`${dj_name}\` activated, rm caches..."
+find . -name 'migrations' -type d -exec rm -rf {} +
+find . -name '__pycache__' -type d -exec rm -rf {} +
+
 rm -rf "${django_proj_root}/**/migrations"
 rm -rf "${django_proj_root}/**/migrations/*"
 rm -rf "${django_proj_root}/**/migrations/00*"
-rm -rf "${django_proj_root}/**/migrations/__pycache__"
+rm -rf "${django_proj_root}/**/__pycache__"
 
 
 cd "${django_proj_root}" || exit
-cwd=$(pwd)
+django_proj_root=$(pwd)
 lg_dir="logging"
 if [ ! -d "${lg_dir}" ]
 then
@@ -33,14 +36,14 @@ fi
 lg_file="${lg_dir}/run.sh.log"
 :> "${lg_file}"
 lg_info "caches removed, auto-make migs... (outputs are redirected to \`${lg_file}\`)"
-for dir in $(find . -name views.py)''
+for app_dir in $(find . -name views.py)''
 do
-  cd "$(dirname "$dir")" || exit
+  cd "$(dirname "${app_dir}")" || exit
   pack=${PWD##*/}
-  cd "${cwd}" || exit
+  cd "${django_proj_root}" || exit
   python manage.py makemigrations "${pack}" >> "${lg_file}"
   lg_info "app \`${pack}\` detected, auto-make migs..."
-done;
+done
 python manage.py migrate >> "${lg_file}"
 
 

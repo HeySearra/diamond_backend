@@ -1,10 +1,8 @@
 # mysql -u root -p
 # ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
 
-rm -rf Dia/**/migrations
-rm -rf Dia/**/migrations/*
-rm -rf Dia/**/migrations/00*
-rm -rf Dia/**/migrations/__pycache__
+find . -name 'migrations' -type d -exec rm -rf {} +
+find . -name '__pycache__' -type d -exec rm -rf {} +
 
 function mys_call() {
   l="$1"
