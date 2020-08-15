@@ -158,7 +158,7 @@ class SearchUser(View):
             ulist.append({
                 'name': u.name,
                 'portrait': u.portrait,
-                'acc': u.email,
+                'acc': u.acc,
                 'uid': encode(u.id)
             })
         return ulist, 0
