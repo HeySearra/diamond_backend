@@ -15,6 +15,7 @@ store
 
 Dia/logging/**
 Dia/uwsgi.ini
+Dia/store/**
 
 upload/
 

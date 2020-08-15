@@ -24,7 +24,7 @@ STATICFILES_DIRS = (
 )
 
 MEDIA_ROOT = 'store'
-
+MEDIA_URL = '/store/'  # add for ckeditor
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -133,7 +133,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'Diadb',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'qQ333005',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {'charset': 'utf8mb4'},
