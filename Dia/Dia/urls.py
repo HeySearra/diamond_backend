@@ -32,18 +32,20 @@ urlpatterns = [
     path('msg/ar', SetMsgRead.as_view(), name='msg_ar'),
     path('msg/ar_all', SetAllMsgRead.as_view(), name='msg_ar_all'),
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰
-
-    # 文件系统
-    path('workbench/create', WorkbenchCreate.as_view(), name='workbench_create'),
-    path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
-    path('workbench/star', WorkbenchStar.as_view(),),
-
+    
+    # 文档编辑
     path('doc/edit', DocEdit.as_view(), name='doc_edit'),
     path('doc/comment', DocComment.as_view(), name='doc_comment'),
     path('doc/all', DocAll.as_view(), name='doc_all'),
     path('doc/info', DocInfo.as_view(), name='doc_info'),
     path('doc/lock', DocLock.as_view(), name='doc_lock'),
 
+    # 文件系统 -- 工作台
+    path('workbench/create', WorkbenchCreate.as_view(), name='workbench_create'),
+    path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
+    path('workbench/star', WorkbenchStar.as_view(), name='workbench_star'),
+
+    # 文件系统 -- 文件夹系统
     path('fs/new', FSNew.as_view(), name='fs_new'), # 请求新建文件or夹
     path('fs/fold/elem', FSFoldElem.as_view(), name='fs_fold_elem'), # 请求文件夹下的所有条目
     path('fs/recycle/elem', FSRecycleElem.as_view(), name='fs_recycle_elem'), # 请求回收站下的所有条目
