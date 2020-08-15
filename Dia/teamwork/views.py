@@ -104,7 +104,7 @@ class Auth(View):
             return E.tid
         try:
             user = User.objects.get(id=int(decode(request.session['uid'])))
-            owner = Member.objects.get(member=u, team=team)
+            owner = Member.objects.get(member=user, team=team)
         except:
             return E.auth
         if owner.auth != 'owner':
