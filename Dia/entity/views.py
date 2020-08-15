@@ -545,20 +545,20 @@ class FSMove(View):
         if e is None:
             return E.u
         
-        fa = Entity.get_via_encoded_id(kwargs['pfid'])
-        if fa is None or fa.is_doc():
+        dest = Entity.get_via_encoded_id(kwargs['pfid'])
+        if dest is None or dest.is_doc():
             return E.not_found
         
-        if e.father is not None and e.father.id == fa.id:
+        if e.father is not None and e.father.id == dest.id:
             return E.already
         
-        if fa.sons_dup_name(e.name):
+        if dest.sons_dup_name(e.name):
             return E.uni
         
-        if fa.id == e.id:
+        if any(e.bfs_apply(func=lambda ent: ent.id == dest.id)):
             return E.taowa
         
-        e.move(fa)
+        e.move(dest)
         
         return 0
 
