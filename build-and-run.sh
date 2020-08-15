@@ -18,11 +18,6 @@ lg_info "venv \`${dj_name}\` activated, rm caches..."
 find . -name 'migrations' -type d -exec rm -rf {} +
 find . -name '__pycache__' -type d -exec rm -rf {} +
 
-rm -rf "${django_proj_root}/**/migrations"
-rm -rf "${django_proj_root}/**/migrations/*"
-rm -rf "${django_proj_root}/**/migrations/00*"
-rm -rf "${django_proj_root}/**/__pycache__"
-
 
 cd "${django_proj_root}" || exit
 django_proj_root=$(pwd)
