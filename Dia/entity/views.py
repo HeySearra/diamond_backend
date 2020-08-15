@@ -7,8 +7,8 @@ import os
 from user.models import User
 from datetime import datetime, timedelta
 from dateutil import relativedelta
-from entity.models import Entity, Comment
-from fusion.models import Collection, Links
+from entity.models import Entity
+from fusion.models import Collection, Links, Comment
 from record.models import upd_record, CreateRecord, WriteRecord, record_create
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q

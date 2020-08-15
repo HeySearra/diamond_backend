@@ -1,6 +1,7 @@
 from ckeditor.fields import RichTextField
 from django.db import models
 
+from entity.hypers import BASIC_DATA_MAX_LEN, COMMENT_MAX_LEN
 from meta_config import TIME_FMT, KB
 
 
@@ -33,3 +34,13 @@ class Template(models.Model):
 
     class Meta:
         ordering = ['-create_dt']
+
+
+class Comment(models.Model):
+
+    did = models.ForeignKey('entity.Entity', on_delete=models.CASCADE)
+    uid = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    threadId = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
+    commentId = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
+    content = models.CharField(unique=False, max_length=COMMENT_MAX_LEN)
+    createdAt = models.BigIntegerField(default=0)
