@@ -25,10 +25,14 @@ def send_team_invite_message(team: Team, su: User, mu: User):
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = su.name + " 邀请你加入团队：" + team.name
+    m.title = "团队邀请"
+    m.content = su.name + " 邀请你加入团队：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'join'
+    print(1)
+    m.team_name = team.name
+    print(2)
     try:
         m.save()
     except:
@@ -40,10 +44,30 @@ def send_team_out_message(team: Team, mu: User):
     # mu: 被踢出的
     m = Message()
     m.owner = mu
-    m.title = "您已被移出团队：" + team.name
+    m.title = "团队消息"
+    m.content = "您已被移出团队：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'out'
+    m.team_name = team.name
+    try:
+        m.save()
+    except:
+        return False
+    return True
+
+
+def send_team_member_out_message(team: Team, su: User, mu: User):
+    # mu: 退出的
+    m = Message()
+    m.owner = mu
+    m.sender = su
+    m.title = "团队消息"
+    m.content = su.name + " 已经退出团队：" + team.name
+    m.portrait = team.portrait if team.portrait else ''
+    m.related_id = team.id
+    m.type = 'out'
+    m.team_name = team.name
     try:
         m.save()
     except:
@@ -55,10 +79,12 @@ def send_team_dismiss_message(team: Team, mu: User, su:User):
     # mu: 团队解散
     m = Message()
     m.owner = mu
-    m.title = "团队 " + team.name + " 已被 " + su.name + " 解散"
+    m.title = "团队消息"
+    m.content = "团队 " + team.name + " 已被 " + su.name + " 解散"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'dismiss'
+    m.type = 'out'
+    m.team_name = team.name
     try:
         m.save()
     except:
@@ -72,10 +98,12 @@ def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = mu.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
+    m.title = "团队邀请"
+    m.content = su.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'accept'
+    m.type = 'accept' if if_accept else 'reject'
+    m.team_name = team.name
     try:
         m.save()
     except:
@@ -89,10 +117,12 @@ def send_team_admin_message(team: Team, su: User, mu: User):
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = su.name + " 将你设为团队 " + team.name + " 的管理员"
+    m.title = "团队消息"
+    m.content = su.name + " 将你设为团队 " + team.name + " 的管理员"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'admin'
+    m.team_name = team.name
     try:
         m.save()
     except:
@@ -106,10 +136,12 @@ def send_team_admin_cancel_message(team: Team, su: User, mu: User):
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = su.name + " 已解除你在团队 " + team.name + " 的管理员"
+    m.title = "团队消息"
+    m.content = su.name + " 已解除你在团队 " + team.name + " 的管理员"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'out'
+    m.team_name = team.name
     try:
         m.save()
     except:
@@ -223,7 +255,6 @@ class Login(View):
                 u = User.objects.get(id=int(decode(request.session['uid'])))
             except:
                 return 0, -1
-            print(1)
             if u.login_date != date.today():
                 u.login_date = date.today()
                 u.wrong_count = 0
@@ -232,19 +263,16 @@ class Login(View):
                 except:
                     return 0, -1
             return 0, 0
-        print(2)
         E = EasyDict()
         E.uk = -1
         E.key, E.exist, E.pwd, E.many = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'acc', 'pwd'}:
             return 0, E.key
-        print(3)
         u = User.objects.filter(acc=kwargs['acc'])
         if not u.exists():
             return 0, E.exist
         u = u.get()
-        print(4)
         if u.login_date != date.today():
             u.login_date = date.today()
             u.wrong_count = 0
@@ -255,16 +283,13 @@ class Login(View):
 
         if u.wrong_count == MAX_WRONG_PWD:
             return u.wrong_count, E.many
-        print(4.5)
         if u.pwd != str(hash_password(kwargs['pwd'])):
-            print(5)
             u.wrong_count += 1
             try:
                 u.save()
             except:
                 return 0, -1
             return u.wrong_count, E.pwd
-        print(6)
         request.session['is_login'] = True
         request.session['uid'] = encode(u.id)
         request.session['name'] = u.name
@@ -292,13 +317,16 @@ class FindPwd(View):
             return 1
         try:
             acc = str(request.GET.get('acc'))
+            u = User.objects.filter(acc=acc)
+            if not u.exists():
+                return 3,
         except:
             return -1
         send_code(acc, 'forget')
         return 0
 
 
-class SetPwd(View):
+class ForgetSetPwd(View):
     @JSR('status')
     def post(self, request):
         kwargs: dict = json.loads(request.body)
@@ -355,25 +383,25 @@ class AskMessageList(View):
 
 
 class AskMessageInfo(View):
-    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'content', 'cur_dt', 'dt')
+    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'name', 'content', 'cur_dt', 'dt')
     def get(self, request):
         if dict(request.GET).keys() != {'mid'}:
-            return 1, [] * 13
+            return 1, [] * 11
         try:
             mid = int(decode(request.GET.get('mid')))
         except ValueError:
-            return -1, [] * 13
+            return -1, [] * 11
 
         u = User.objects.filter(id=int(decode(request.session['uid'])))
 
         if not u.exists():
-            return -1, [] * 13
+            return -1, [] * 11
         u = u.get()
         msg = Message.objects.filter(id=mid)
         if not msg.exists():
-            return -1, [] * 13
+            return -1, [] * 11
         msg = msg.get()
-        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.content, cur_time(), msg.dt_str
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.team_name, msg.content, cur_time(), msg.dt_str
 
 
 class SetMsgRead(View):
@@ -467,7 +495,7 @@ class UserEditInfo(View):
         return 0
 
 
-class ChangePwd(View):
+class SetPwd(View):
     @JSR('status')
     def post(self, request):
         if not request.session['is_login']:
@@ -484,7 +512,7 @@ class ChangePwd(View):
             return E.uk
         u = u.get()
 
-        if kwargs['old_pwd'] != u.pwd:
+        if str(hash_password(kwargs['old_pwd'])) != u.pwd:
             return E.wr_pwd
         if not CHECK_PWD(kwargs['new_pwd']):
             return E.ill_pwd

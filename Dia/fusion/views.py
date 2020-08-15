@@ -52,3 +52,10 @@ class FSStar(View):
         else:
             Collection.objects.filter(ent=ent, user_id=int(decode(request.session['uid']))).delete()
         return 0
+
+
+class TempAll(View):
+    @JSR('status', 'my_list', 'official_list')
+    def get(self, request):
+
+        pass

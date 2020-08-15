@@ -183,12 +183,15 @@ def send_code(acc, email_type, storage=True):
     if storage:
         from user.models import EmailRecord
         ver_code = EmailRecord()
-        ver_code.code = storage_code
+        ver_code.code = code_num
         ver_code.acc = acc
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now() + timedelta(minutes=60)
         ver_code.email_type = email_type
         try:
+            es = EmailRecord.objects.filter(acc=acc)
+            for e in es:
+                e.delete()
             ver_code.save()
         except:
             return False

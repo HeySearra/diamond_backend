@@ -69,9 +69,11 @@ class WorkbenchStar(View):
         return 0, amount, [{
             'pfid': e.father.encoded_id if e.father.first_person(u) else '',
             'name': e.name,
-            'dt': e.create_dt_str,
+            'create_dt': e.create_dt_str,
+            'edit_dt': e.edit_dt_str,
             'type': e.type,
             'id': e.encoded_id,
+            'cname': e.creator.name,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
         } for e in ents]
 
@@ -100,9 +102,11 @@ class WorkbenchCreate(View):
         return 0, amount, cur_time(), [{
             'pfid': e.father.encoded_id,
             'name': e.name,
-            'dt': e.create_dt_str,
+            'create_dt': e.create_dt_str,
+            'edit_dt': e.edit_dt_str,
             'type': e.type,
             'id': e.encoded_id,
+            'cname': e.creator.name,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
         } for e in ents]
 
