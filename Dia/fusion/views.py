@@ -10,7 +10,7 @@ from entity.models import Entity
 from fusion.models import Collection
 from user.models import User
 from utils.cast import decode
-from utils.response import JSR
+from utils.meta_wrapper import JSR
 
 
 class StarCondition(View):

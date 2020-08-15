@@ -11,7 +11,7 @@ from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message
 from utils.cast import encode, decode
-from utils.response import JSR
+from utils.meta_wrapper import JSR
 from teamwork.models import *
 from teamwork.hypers import *
 from entity.models import Entity
@@ -80,7 +80,6 @@ class Invitation(View):
             return E.exist
         try:
             # Member.objects.create(member=user2, team=team, author='member')
-            print(111)
             if not send_team_invite_message(team, user1, user2):
                 return E.uk
         except:
@@ -168,7 +167,6 @@ class Info(View):
     @JSR('status', 'name', 'intro', 'portrait', 'create_dt', 'doc_num',
          'cuid', 'cname', 'norm', 'admin')
     def get(self, request):
-        print(request.GET)
         E = EasyDict()
         E.uk = -1
         E.key, E.auth, E.tid = 1, 2, 3
@@ -191,7 +189,7 @@ class Info(View):
         intro = team.intro
         portrait = team.portrait if team.portrait else ''
         create_dt = team.create_dt_str
-        doc_num = len(team.root.subtree)
+        doc_num = team.root.count(recursive=True)
         cuid = ''
         cname = ''
         norm = []
@@ -240,7 +238,6 @@ class Delete(View):
             return E.auth
         try:
             for m in members:
-                print(111)
                 if not send_team_dismiss_message(team=team, mu=m.member, su=user):
                     return E.uk
             team.root.move(user.root)

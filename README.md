@@ -1,5 +1,5 @@
 ### Introduction
-A toy backend for a file-sharing website (**DiaDoc**) based on django 3.0.
+A toy backend for a file-sharing website (**DiaDoc**) based on django 3.1.
 
 <br>
 

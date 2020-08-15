@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Callable, Tuple
+from typing import Callable, Tuple, List, Iterable
 
 from ckeditor.fields import RichTextField
 from django.db import models
@@ -14,7 +14,7 @@ from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
 
 class Entity(models.Model):
     @staticmethod
-    def get_not_deleted(*args, **kwargs):
+    def get_not_deleted(*args, **kwargs) -> List:
         return [f for f in Entity.objects.get(*args, **kwargs) if not f.backtrace_deleted]
 
     @staticmethod
@@ -35,7 +35,7 @@ class Entity(models.Model):
     content = RichTextField(default='', max_length=32 * KB)
 
     @property
-    def plain_content(self):
+    def plain_content(self) -> str:
         return striptags(self.content)
 
     father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.SET_NULL)
@@ -50,7 +50,7 @@ class Entity(models.Model):
         return CreateRecord.objects.get(ent_id=self.id).user
 
     @property
-    def create_dt_str(self):
+    def create_dt_str(self) -> str:
         return CreateRecord.objects.get(ent_id=self.id).dt_str
     
     @property
@@ -64,7 +64,7 @@ class Entity(models.Model):
         return WriteRecord.objects.get(ent_id=self.id).user
 
     @property
-    def edit_dt_str(self):
+    def edit_dt_str(self) -> str:
         return WriteRecord.objects.get(ent_id=self.id).dt_str
 
     @property
@@ -78,19 +78,19 @@ class Entity(models.Model):
     is_locked = models.BooleanField(default=False)
 
     @property
-    def delete_dt_str(self):
+    def delete_dt_str(self) -> str:
         return self.delete_dt.strftime(TIME_FMT)
 
-    def is_fold(self):
+    def is_fold(self) -> bool:
         return self.type == 'fold'
 
-    def is_doc(self):
+    def is_doc(self) -> bool:
         return self.type == 'doc'
 
-    def for_each(self, func: Callable, cond: Callable = lambda _: True):
+    def for_each(self, func: Callable, cond: Callable = lambda _: True) -> List:
         return [func(e) for e in self.sons.all() if cond(e)]
 
-    def bfs_apply(self, func: Callable, cond: Callable = lambda _: True):
+    def bfs_apply(self, func: Callable, cond: Callable = lambda _: True) -> List:
         ret = [func(self)] if cond(self) else []
         q = deque(f for f in self.sons.all())
         while len(q):
@@ -101,22 +101,36 @@ class Entity(models.Model):
         return ret
 
     @property
-    def subtree(self):
+    def subtree(self) -> List:
         return self.bfs_apply(func=lambda _: _)
-
+    
+    def count(self, recursive: bool) -> int:
+        if self.backtrace_deleted:
+            return 0
+        if not recursive:
+            return self.sons.filter(is_deleted=False).count()
+        
+        cnt = 0
+        q = deque(f for f in self.sons.filter(is_deleted=False))
+        while len(q):
+            f = q.popleft()
+            cnt += 1
+            q.extend(ff for ff in f.sons.filter(is_deleted=False))
+        return cnt
+    
     @staticmethod
     def _dfs(f, func, cond, ret):
         if cond(f):
             ret.append(func(f))
         [Entity._dfs(ff, func, cond, ret) for ff in f.sons.all()]
 
-    def dfs_apply(self, func: Callable, cond: Callable = lambda _: True):
+    def dfs_apply(self, func: Callable, cond: Callable = lambda _: True) -> List:
         ret = []
         Entity._dfs(self, func, cond, ret)
         return ret
 
     @property
-    def path(self):
+    def path(self) -> Iterable:
         p = []
         f = self.father
         while f is not None:
@@ -134,7 +148,7 @@ class Entity(models.Model):
         return f
 
     @property
-    def backtrace_deleted(self):
+    def backtrace_deleted(self) -> bool:
         if self.is_deleted:
             return True
         f = self.father
@@ -146,10 +160,10 @@ class Entity(models.Model):
             f = f.father
         return False
 
-    def is_user_root(self):
+    def is_user_root(self) -> bool:
         return self.root_user.exists()
 
-    def is_team_root(self):
+    def is_team_root(self) -> bool:
         return self.root_team.exists()
 
     @property
@@ -162,8 +176,7 @@ class Entity(models.Model):
         t = self.root.root_team
         return t.get() if t.exists() else None
 
-    def can_convert_to_team(self):
-        # todo: 别忘了把团队根的father变成None
+    def can_convert_to_team(self) -> bool:
         r = self.backtrace_root_user
         return all((
             not self.backtrace_deleted,
@@ -172,12 +185,12 @@ class Entity(models.Model):
             r.id == self.father.id
         ))
 
-    def brothers_dup_name(self, name):
+    def brothers_dup_name(self, name) -> bool:
         if self.father is None:
             return False
         return name in [e.name for e in self.father.sons.filter(~Q(id=self.id), is_deleted=False)]
 
-    def sons_dup_name(self, name):
+    def sons_dup_name(self, name) -> bool:
         return name in [e.name for e in self.sons.filter(is_deleted=False)]
 
     def replicate(self, user, dest):
@@ -191,7 +204,8 @@ class Entity(models.Model):
 
         return new_ent
 
-    def move(self, dest):
+    def move(self, dest) -> bool:
+        # todo: 移动权限判断？
         self.father = dest
         try:
             self.save()
@@ -199,16 +213,18 @@ class Entity(models.Model):
             return False
         return True
 
-    def first_person(self, p):
+    def first_person(self, p) -> bool:
         """
         :param p: User类型
         :return: 是否是第一批写权限者。
         """
-        u, t = self.backtrace_root_user, self.backtrace_root_team
+        u = self.backtrace_root_user
         if u is not None:
             return u.id == p.id
-        elif t is not None:
-            return t.contains_user(p.id)
         else:
-            return False
+            t = self.backtrace_root_team
+            if t is not None:
+                return t.contains_user(p.id)
+            else:
+                return False
 
