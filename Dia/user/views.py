@@ -30,9 +30,7 @@ def send_team_invite_message(team: Team, su: User, mu: User):
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'join'
-    print(1)
     m.team_name = team.name
-    print(2)
     try:
         m.save()
     except:
@@ -98,7 +96,7 @@ def send_team_accept_message(team: Team, su: User, mu: User, if_accept: bool):
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = "团队邀请"
+    m.title = "团队邀请结果"
     m.content = su.name + (" 接受" if if_accept else " 拒绝") + "了您的团队邀请：" + team.name
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
