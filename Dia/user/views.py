@@ -51,11 +51,11 @@ def send_team_out_message(team: Team, mu: User):
     return True
 
 
-def send_team_dismiss_message(team: Team, mu: User):
+def send_team_dismiss_message(team: Team, mu: User, su:User):
     # mu: 团队解散
     m = Message()
     m.owner = mu
-    m.title = "团队已解散：" + team.name
+    m.title = "团队 " + team.name + " 已被 " + su.name + " 解散"
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
     m.type = 'dismiss'

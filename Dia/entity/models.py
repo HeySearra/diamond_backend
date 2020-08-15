@@ -181,10 +181,10 @@ class Entity(models.Model):
     def brothers_dup_name(self, name):
         if self.father is None:
             return False
-        return self.father.sons.filter(~Q(id=self.id), is_deleted=False, name=name)
+        return name in [e.name for e in self.father.sons.filter(~Q(id=self.id), is_deleted=False)]
 
     def sons_dup_name(self, name):
-        return self.sons.filter(is_deleted=False, name=name).exists()
+        return name in [e.name for e in self.sons.filter(is_deleted=False)]
 
     def replicate(self, user, dest):
         new_ent = Entity.objects.create(

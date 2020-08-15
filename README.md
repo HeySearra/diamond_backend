@@ -27,12 +27,12 @@ sh ./drop.sh
 
 ##### run server:
 ```sh
-sh ./build.sh
+sh ./build-and-run.sh
 ```
 
 ##### debug in the shell:
 ```sh
-sh ./build.sh sh
+sh ./build-and-run.sh sh
 ```
 
 ##### directories & files:
