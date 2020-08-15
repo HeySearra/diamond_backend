@@ -79,4 +79,4 @@ class Message(models.Model):
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
     type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type, default='')
     team_name = models.CharField(max_length=TEAM_NAME_MAX_LENGTH, null=True, blank=True)
-    result_content = models.CharField(max_length=128, null=True, blank=True, verbose_name='处理后提示信息')
+    result_content = models.CharField(max_length=128, verbose_name='处理后提示信息', default='')
