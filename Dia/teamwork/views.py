@@ -245,7 +245,7 @@ class Delete(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.tid = 1, 2, 3
+        E.key, E.auth, E.tid, E.name = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'tid'}:
             return E.key
@@ -263,6 +263,8 @@ class Delete(View):
             return E.auth
         if owner.auth != 'owner':
             return E.auth
+        if owner.member.root.sons_dup_name(name=team.root.name):
+            return E.name
         try:
             for m in members:
                 if not send_team_dismiss_message(team=team, mu=m.member, su=user):
@@ -326,10 +328,12 @@ class TeamEditInfo(View):
         if not 0 < len(kwargs['intro']) <= TEAM_INTRO_MAX_LENGTH:
             return E.intro
         team.name = kwargs['name']
+        team.root.name = kwargs['name'] + ROOT_SUFFIX
         team.intro = kwargs['intro']
         team.portrait = kwargs['img']
         try:
             team.save()
+            team.root.save()
         except:
             return E.uk
         return 0
@@ -388,6 +392,7 @@ class InvitationConfirm(View):
         except:
             return E.mid, ''
         msg.is_process = True
+        msg.result_content = '您已' + ('接受' if kwargs['result'] else '拒绝') + '该邀请'
         try:
             team = Team.objects.get(id=msg.related_id)  # 消息里的id未加密
             msg.save()
@@ -395,8 +400,6 @@ class InvitationConfirm(View):
             return E.uk, ''
         if kwargs['result']:
             if Member.objects.filter(team=team, member=msg.owner).exists():
-                msg.is_process = True
-                msg.save()
                 return E.exist, ''
             try:
                 Member.objects.create(team=team, member=msg.owner, auth='member')
@@ -406,8 +409,6 @@ class InvitationConfirm(View):
                 return E.uk, ''
         else:
             if Member.objects.filter(team=team, member=msg.owner).exists():
-                msg.is_process = True
-                msg.save()
                 return E.exist, ''
             if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=False):
                 return E.uk, ''
