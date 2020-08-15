@@ -130,8 +130,6 @@ class Auth(View):
                         return E.uk
                     if not send_team_admin_message(team=team, su=user, mu=u):
                         return E.uk
-                if not send_team_admin_message(team=team, su=user, mu=u):
-                    return E.uk
             except:
                 return E.uid
         return 0
