@@ -52,7 +52,7 @@ class Invitation(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.typo, E.exist = 1, 2, 3, 4
+        E.key, E.auth, E.tid, E.exist, E.no = 1, 2, 3, 4, 5
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'tid', 'acc'}:
             return E.key
@@ -60,11 +60,20 @@ class Invitation(View):
             return E.auth
         try:
             user1 = User.objects.get(id=int(decode(request.session['uid'])))
-            user2 = User.objects.get(acc=kwargs['acc'])
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
-            auth = Member.objects.get(member=user1, team=team).auth
         except:
             return E.uk
+        try:
+            user2 = User.objects.get(acc=kwargs['acc'])
+        except:
+            return E.no
+        try:
+            team = Team.objects.get(id=int(decode(kwargs['tid'])))
+        except:
+            return E.tid
+        try:
+            auth = Member.objects.get(member=user1, team=team).auth
+        except:
+            return E.no
         if auth == 'member':
             return E.auth
         if Member.objects.filter(member=user2, team=team).exists():
@@ -232,7 +241,7 @@ class Delete(View):
         try:
             for m in members:
                 print(111)
-                if not send_team_dismiss_message(team=team, mu=m.member):
+                if not send_team_dismiss_message(team=team, mu=m.member, su=user):
                     return E.uk
             team.root.move(user.root)
             # 篡位嗷
