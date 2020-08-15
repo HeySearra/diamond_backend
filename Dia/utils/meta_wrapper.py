@@ -16,7 +16,6 @@ from typing import List
 from collections import OrderedDict
 
 
-# todo: auto decoder of id
 def JSR(*keys):
     def decorator(req_func):
         @functools.wraps(req_func)
@@ -49,9 +48,10 @@ def JSR(*keys):
                 values = req_func(*args, **kw)
             except Exception as e:
                 time_cost = time.time() - prev_time
-                time.sleep(0.3)
-                print(Fore.RED + f'[{func_name}] ====! FATAL ERR !==== : {e}\n input: {inputs}, time: {time_cost:.2f}s')
-                time.sleep(0.3)
+                time.sleep(0.2)
+                print(Fore.MAGENTA + f'[{func_name}] ====! FATAL ERR !==== : {e}, {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+                                     f'\n input: {inputs}, time: {time_cost:.2f}s')
+                time.sleep(0.2)
                 # traceback.print_exc()
                 raise e
             else:

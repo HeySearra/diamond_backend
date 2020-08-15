@@ -691,7 +691,7 @@ class FSRecycleRecover(View):
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.not_found = 2, 3
+        E.au, E.not_found, E.dup_name, E.no_fa = 2, 3, 4, 5
         if not request.session.get('is_login', False):
             return E.au
         u = User.get_via_encoded_id(request.session['uid'])
@@ -708,8 +708,11 @@ class FSRecycleRecover(View):
         e = e.get()
         if not e.is_deleted:
             return E.not_found
+        
         if e.father.backtrace_deleted:
-            return E.not_found
+            return E.no_fa
+        if e.brothers_dup_name(e.name):
+            return E.dup_name
         e.is_deleted = False
         e.save()
 
