@@ -170,7 +170,7 @@ def send_code(acc, email_type, storage=True):
     msg['To'] = Header(to_addr)
 
     # 开启发信服务，这里使用的是加密传输
-    if not DEBUG and email_type != 'register':
+    if email_type != 'register':
         server = smtplib.SMTP_SSL(host='smtp.163.com')
         server.connect(smtp_server, 465)
         # 登录发信邮箱
