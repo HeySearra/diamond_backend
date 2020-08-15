@@ -11,7 +11,7 @@ from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message
 from utils.cast import encode, decode
-from utils.response import JSR
+from utils.meta_wrapper import JSR
 from teamwork.models import *
 from teamwork.hypers import *
 from entity.models import Entity

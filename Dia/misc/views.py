@@ -1,6 +1,6 @@
 from django.views import View
 from meta_config import HELL_WORDS
-from utils.response import JSR
+from utils.meta_wrapper import JSR
 
 
 class HellWords(View):

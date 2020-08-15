@@ -15,7 +15,7 @@ from user.models import User, EmailRecord, Message
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
 from utils.network import send_code
-from utils.response import JSR
+from utils.meta_wrapper import JSR
 from entity.models import Entity
 
 

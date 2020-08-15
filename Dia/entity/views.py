@@ -13,7 +13,7 @@ from record.models import upd_record, CreateRecord, WriteRecord, record_create
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 from utils.cast import encode, decode, cur_time
-from utils.response import JSR
+from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
 from teamwork.models import Team
