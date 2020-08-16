@@ -3,6 +3,7 @@ from django.db import models
 
 from entity.hypers import BASIC_DATA_MAX_LEN, COMMENT_MAX_LEN
 from meta_config import TIME_FMT, KB
+from utils.cast import encode, decode
 
 
 class Collection(models.Model):
@@ -24,6 +25,15 @@ class Links(models.Model):
 
 
 class UserTemplate(models.Model):
+    @property
+    def encoded_id(self) -> str:
+        return encode(self.id)
+    
+    @staticmethod
+    def get_via_encoded_id(encoded_id: str):
+        u = UserTemplate.objects.filter(id=int(decode(encoded_id)))
+        return u.get() if u.exists() else None
+    
     creator = models.ForeignKey(to='user.User', on_delete=models.CASCADE, verbose_name='创建者')
     name = models.CharField(verbose_name='个人模板名称', unique=False, default='未命名', max_length=65)
     content = RichTextField(verbose_name='内容', default='', max_length=32 * KB)
@@ -36,6 +46,15 @@ class UserTemplate(models.Model):
 
 
 class OfficialTemplate(models.Model):
+    @property
+    def encoded_id(self) -> str:
+        return encode(self.id)
+    
+    @staticmethod
+    def get_via_encoded_id(encoded_id: str):
+        o = OfficialTemplate.objects.filter(id=int(decode(encoded_id)))
+        return o.get() if o.exists() else None
+    
     name = models.CharField(verbose_name='官方模板名称', unique=False, default='未命名', max_length=65)
     title = models.CharField(verbose_name='官方模板类型', unique=False, default='通用', max_length=65)
     portrait = models.CharField(verbose_name='官方模板预览图', blank=True, null=True, default='', max_length=512)
@@ -45,7 +64,10 @@ class OfficialTemplate(models.Model):
 
 
 class Comment(models.Model):
-
+    @property
+    def encoded_id(self) -> str:
+        return encode(self.id)
+    
     did = models.ForeignKey('entity.Entity', on_delete=models.CASCADE)
     uid = models.ForeignKey('user.User', on_delete=models.CASCADE)
     threadId = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
