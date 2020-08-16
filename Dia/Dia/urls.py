@@ -40,19 +40,19 @@ urlpatterns = [
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰
 
     # 文档编辑
-    path('doc/edit', DocEdit.as_view(), name='doc_edit'),
-    path('doc/comment', DocComment.as_view(), name='doc_comment'),
-    path('doc/all', DocAll.as_view(), name='doc_all'),
-    path('doc/info', DocInfo.as_view(), name='doc_info'),
-    path('doc/lock', DocLock.as_view(), name='doc_lock'),
-    path('doc/comment/add', CommentAdd.as_view(), name='doc_comment_add'),
-    path('doc/comment/get_comments_of_thread', CommentGet.as_view(), name='doc_comment_get_comments_of_thread'),
-    path('doc/comment/update', CommentUpdate.as_view(), name='doc_comment_update'),
-    path('doc/comment/remove', CommentRemove.as_view(), name='doc_comment_update'),
-    path('doc/comment/get_users', CommentUsers.as_view(), name='doc_comment_users'),
-    path('doc/add_read', AddReadAuth.as_view(), name='add_read_auth'),
-    path('doc/add_comment', AddCommentAuth.as_view(), name='add_comment_auth'),
-    path('doc/add_write', AddWriteAuth.as_view(), name='add_write_auth'),
+    path('document/edit', DocEdit.as_view(), name='document_edit'),
+    path('document/comment', DocComment.as_view(), name='document_comment'),
+    path('document/all', DocAll.as_view(), name='document_all'),
+    path('document/info', DocInfo.as_view(), name='document_info'),
+    path('document/lock', DocLock.as_view(), name='document_lock'),
+    path('document/comment/add', CommentAdd.as_view(), name='document_comment_add'),
+    path('document/comment/get_comments_of_thread', CommentGet.as_view(), name='doc_comment_get_comments_of_thread'),
+    path('document/comment/update', CommentUpdate.as_view(), name='document_comment_update'),
+    path('document/comment/remove', CommentRemove.as_view(), name='document_comment_update'),
+    path('document/comment/get_users', CommentUsers.as_view(), name='document_comment_users'),
+    path('document/add_read', AddReadAuth.as_view(), name='add_read_auth'),
+    path('document/add_comment', AddCommentAuth.as_view(), name='add_comment_auth'),
+    path('document/add_write', AddWriteAuth.as_view(), name='add_write_auth'),
 
     # 文件系统 -- 工作台
     path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
