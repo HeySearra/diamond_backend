@@ -203,7 +203,7 @@ class DocAll(View):
         if u is None:
             return E.au
         kwargs = request.GET
-        if kwargs.keys() != {'did', 'ver'}:
+        if kwargs.keys() != {'did'}:
             return E.k
 
         did = kwargs.get('did')
