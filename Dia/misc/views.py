@@ -103,7 +103,7 @@ class FSShareKey(View):
             else:
                 ra = ra.get()
             ca = CommentAuth.objects.filter()
-            if (ca.exists() and u in ca.get().user.all()) or u in ra.user.all():
+            if (ca.exists() and u in ca.get().user.all()) or u in ra.user.all() or u in wa.user.all():
                 return 0, ra.key
             else:
                 return E.au, ''
