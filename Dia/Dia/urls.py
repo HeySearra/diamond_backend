@@ -50,7 +50,9 @@ urlpatterns = [
     path('doc/comment/update', CommentUpdate.as_view(), name='doc_comment_update'),
     path('doc/comment/remove', CommentRemove.as_view(), name='doc_comment_update'),
     path('doc/comment/get_users', CommentUsers.as_view(), name='doc_comment_users'),
-    path('doc/read', AddReadAuth.as_view(),),
+    path('doc/add_read', AddReadAuth.as_view(), name='add_read_auth'),
+    path('doc/add_comment', AddCommentAuth.as_view(), name='add_comment_auth'),
+    path('doc/add_write', AddWriteAuth.as_view(), name='add_write_auth'),
 
     # 文件系统 -- 工作台
     path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),

@@ -118,10 +118,61 @@ class AddReadAuth(View):
         E.u, E.k = -1, 1
         kwargs = request.GET
         if kwargs.keys() != {'dk'}:
-            return redirect(reverse('workbench_recent_view'))
+            return redirect('/workbench/recent_view')
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
-            return redirect(reverse('workbench_recent_view'))
-        ra = ReadAuth.objects.filter(key=kwargs('dk'))
+            return redirect('/login')
+        ra = ReadAuth.objects.filter(key=kwargs.get('dk'))
         if not ra.exists():
-            return redirect(reverse('workbench_recent_view'))
+            return redirect('/workbench/recent_view')
+        try:
+            ra = ra.get()
+            ra.user.add(u)
+            ra.save()
+        except:
+            return redirect('/workbench/recent_view')
+        return redirect('/doc/' + ra.ent.encoded_id)
+
+
+class AddCommentAuth(View):
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        kwargs = request.GET
+        if kwargs.keys() != {'dk'}:
+            return redirect('/workbench/recent_view')
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return redirect('/login')
+        ca = CommentAuth.objects.filter(key=kwargs.get('dk'))
+        if not ca.exists():
+            return redirect('/workbench/recent_view')
+        try:
+            ca = ca.get()
+            ca.user.add(u)
+            ca.save()
+        except:
+            return redirect('/workbench/recent_view')
+        return redirect('/doc/' + ca.ent.encoded_id)
+    
+
+class AddWriteAuth(View):
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        kwargs = request.GET
+        if kwargs.keys() != {'dk'}:
+            return redirect('/workbench/recent_view')
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return redirect('/login')
+        wa = WriteAuth.objects.filter(key=kwargs.get('dk'))
+        if not wa.exists():
+            return redirect('/workbench/recent_view')
+        try:
+            wa = wa.get()
+            wa.user.add(u)
+            wa.save()
+        except:
+            return redirect('/workbench/recent_view')
+        return redirect('/doc/' + wa.ent.encoded_id)
