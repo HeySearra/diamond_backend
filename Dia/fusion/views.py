@@ -25,14 +25,12 @@ class StarCondition(View):
         u = u.get()
         if dict(request.GET).keys() != {'id', 'type'}:
             return False, 1
-        try:
-            did = int(decode(request.GET.get('id')))
-        except:
+        
+        ent = Entity.get_via_encoded_id(request.GET.get('id'))
+        if ent is None:
             return False, -1
-        is_starred = False
-        if not Collection.objects.filter(Q(user_id=u.id) | Q(ent_id=did)).exists():
-            is_starred = True
-        return is_starred, 0
+        
+        return Collection.objects.filter(user_id=u.id, ent_id=ent.id).exists(), 0
 
 
 class FSStar(View):
