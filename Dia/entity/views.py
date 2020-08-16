@@ -936,13 +936,16 @@ class CommentUsers(View):
         try:
             comments = Comment.objects.filter(did=did)
             users = []
+            user = User.get_via_encoded_id(request.session['uid'])
+            dic = {'id': str(user.id),
+                   'name': user.name,
+                   'avatar': 'http://localhost:8000/' + user.portrait}
+            users.append(dic)
             for comment in comments:
                 user = User.get_via_encoded_id(comment.uid.id)
-                print(user.id, user.name, user.portrait)
                 dic = {'id': str(user.id),
                        'name': user.name,
                        'avatar': 'http://localhost:8000/' + user.portrait}
-                print(dic)
                 if dic not in users:
                     users.append(dic)
         except:
