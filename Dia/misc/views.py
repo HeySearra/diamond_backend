@@ -1,6 +1,7 @@
 from django.views import View
 from meta_config import HELL_WORDS
 from utils.meta_wrapper import JSR
+from misc.models import *
 
 # for ckeditor image upload
 from Dia import settings
