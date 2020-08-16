@@ -78,7 +78,7 @@ class Entity(models.Model):
         return u.name, u.encoded_id, r.dt_str
 
     @property
-    def read_dt_str(self) -> Tuple[str, str, str]:
+    def read_dt_str(self) -> str:
         return ReadRecord.objects.first().dt_str
 
     delete_dt = models.DateTimeField(null=True)
