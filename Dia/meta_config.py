@@ -1,7 +1,4 @@
 import re
-import colorama
-
-colorama.init(autoreset=True)
 
 DEBUG = True
 

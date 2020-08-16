@@ -3,6 +3,8 @@
 import os
 import sys
 
+import colorama
+
 
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Dia.settings')
@@ -14,6 +16,7 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+    colorama.init(autoreset=True)
     execute_from_command_line(sys.argv)
 
 
