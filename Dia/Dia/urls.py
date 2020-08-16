@@ -69,6 +69,7 @@ urlpatterns = [
     path('fs/copy', FSCopy.as_view(), name='fs_copy'), # 复制文档
     path('fs/delete', FSDelete.as_view(), name='fs_delete'), # 删除文档or文件夹
     path('fs/delete_link', FSDeleteLink.as_view(), name='fs_delete_link'), # 从桌面移除快捷方式
+    path('fs/share', FSShareKey.as_view(), name='fs_share_key'), # 请求分享内容
     path('fs/star', FSStar.as_view(), name='fs_star'), # 收藏文件or夹
     path('fs/user/root', FSUserRoot.as_view(), name='fs_user_root'), # 请求个人根文件夹fid
     path('fs/team/root', FSTeamRoot.as_view(), name='fs_team_root'), # 请求团队根文件夹fid
