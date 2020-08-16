@@ -1,5 +1,5 @@
 from django.views import View
-from meta_config import HELL_WORDS
+from meta_config import HELL_WORDS, HOST_IP
 from utils.meta_wrapper import JSR
 from misc.models import *
 
@@ -28,6 +28,6 @@ class UploadImg(View):
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
         print(request.FILES.get('img'))
-        return 0, 'http://localhost:8000/store/' + file_name
+        return 0, f'http://{HOST_IP}:8000/store/' + file_name
 
 

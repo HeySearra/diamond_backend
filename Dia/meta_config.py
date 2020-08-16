@@ -5,6 +5,8 @@ colorama.init(autoreset=True)
 
 DEBUG = True
 
+HOST_IP = 'localhost'
+
 CLS_PARSE_REG = re.compile(r"['](.*?)[']", re.S)
 
 KB = 1 << 10
