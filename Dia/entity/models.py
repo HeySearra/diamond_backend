@@ -22,8 +22,9 @@ class Entity(models.Model):
         e = Entity.objects.filter(id=int(decode(encoded_id)))
         if e.exists():
             e = e.get()
-            if e.backtrace_deleted:
-                return e
+            return None if e.backtrace_deleted else e
+        else:
+            return None
 
     @property
     def encoded_id(self) -> str:
@@ -50,35 +51,35 @@ class Entity(models.Model):
 
     @property
     def creator(self):
-        return CreateRecord.objects.first(ent_id=self.id).user
+        return CreateRecord.objects.first().user
 
     @property
     def create_dt_str(self) -> str:
-        return CreateRecord.objects.first(ent_id=self.id).dt_str
+        return CreateRecord.objects.first().dt_str
 
     @property
     def create_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = CreateRecord.objects.first(ent_id=self.id)
+        r = CreateRecord.objects.first()
         u = r.user
         return u.name, u.encoded_id, r.dt_str
 
     @property
     def editor(self):
-        return WriteRecord.objects.first(ent_id=self.id).user
+        return WriteRecord.objects.first().user
 
     @property
     def edit_dt_str(self) -> str:
-        return WriteRecord.objects.first(ent_id=self.id).dt_str
+        return WriteRecord.objects.first().dt_str
 
     @property
     def edit_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = WriteRecord.objects.first(ent_id=self.id)
+        r = WriteRecord.objects.first()
         u = r.user
         return u.name, u.encoded_id, r.dt_str
 
     @property
     def read_dt_str(self) -> Tuple[str, str, str]:
-        return ReadRecord.objects.get(ent_id=self.id).dt_str
+        return ReadRecord.objects.first().dt_str
 
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
