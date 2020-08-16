@@ -45,11 +45,11 @@ class FSStar(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'is_starred'}:
             return 1,
-
+        
         ent = Entity.get_via_encoded_id(kwargs['id'])
         if ent is None:
             return 3
-
+        
         if kwargs['is_starred']:
             Collection.objects.get_or_create(user=u, ent=ent)
         else:
@@ -221,17 +221,17 @@ class CommentAdd(View):
         if u is None:
             return E.au
         kwargs = json.loads(request.body)
-        if kwargs.keys() != {'did', 'uid', 'threadId', 'commentId', 'content'}:
+        if kwargs.keys() != {'did', 'threadId', 'commentId', 'content'}:
             return E.k
-
+        
         did = kwargs.get('did')
-
-        e = Entity.get_via_encoded_id(did)
-        if e is None:
+        
+        ent = Entity.get_via_encoded_id(did)
+        if ent is None:
             return E.no_ent
         try:
-            new_comment = Comment(did=Entity.objects.get(id=did),
-                                  uid=User.objects.get(id=kwargs.get('uid')),
+            new_comment = Comment(did=ent,
+                                  uid=u,
                                   threadId=kwargs.get('threadId'),
                                   commentId=kwargs.get('commentId'),
                                   content=kwargs.get('content'),
@@ -253,13 +253,20 @@ class CommentGet(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, None
-        kwargs = eval(list(request.GET.keys())[0])
+        
+        kwargs = request.GET
         if kwargs.keys() != {'did', 'threadId'}:
             return E.k, None
-
+        did = kwargs.get('did')
+        threadId = kwargs.get('threadId')
+        
+        ent = Entity.get_via_encoded_id(did)
+        if ent is None:
+            return E.no_ent
+        
         try:
-            items = list(Comment.objects.filter(did=Entity.objects.get(id=kwargs.get('did')),
-                                                threadId=kwargs.get('threadId')).values())
+            items = list(Comment.objects.filter(did_id=ent.id,
+                                                threadId=threadId).values())
         except:
             return E.u, None
         if items is None:
@@ -286,12 +293,18 @@ class CommentUpdate(View):
         if u is None:
             return E.au
         kwargs = json.loads(request.body)
-        if kwargs.keys() != {'did', 'uid', 'threadId', 'commentId', 'content'}:
+        if kwargs.keys() != {'did', 'threadId', 'commentId', 'content'}:
             return E.k
-
+        
+        did = kwargs['did']
+        
+        ent = Entity.get_via_encoded_id(did)
+        if ent is None:
+            return E.no_ent
+        
         try:
-            upd_comment = Comment.objects.get(did=Entity.objects.get(id=kwargs.get('did')),
-                                              uid=User.objects.get(id=kwargs.get('uid')),
+            upd_comment = Comment.objects.get(did_id=ent.id,
+                                              uid_id=u.id,
                                               threadId=kwargs.get('threadId'),
                                               commentId=kwargs.get('commentId'))
             if upd_comment is None:
@@ -315,11 +328,18 @@ class CommentRemove(View):
         if u is None:
             return E.au
         kwargs = json.loads(request.body)
-        if kwargs.keys() != {'did', 'uid', 'threadId', 'commentId'}:
+        if kwargs.keys() != {'did', 'threadId', 'commentId'}:
             return E.k
+
+        did = kwargs['did']
+        
+        ent = Entity.get_via_encoded_id(did)
+        if ent is None:
+            return E.no_ent
+        
         try:
-            rmv_comment = Comment.objects.get(did=Entity.objects.get(id=kwargs.get('did')),
-                                              uid=User.objects.get(id=kwargs.get('uid')),
+            rmv_comment = Comment.objects.get(did_id=ent.id,
+                                              uid_id=u.id,
                                               threadId=kwargs.get('threadId'),
                                               commentId=kwargs.get('commentId'))
             if rmv_comment is None:
@@ -341,31 +361,30 @@ class CommentUsers(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, None
-        kwargs = eval(list(request.GET.keys())[0])
+        kwargs = request.GET
         if kwargs.keys() != {'did'}:
             return E.k, None
-
+        
         did = kwargs.get('did')
-
-        e = Entity.get_via_encoded_id(did)
-        if e is None:
+        
+        ent = Entity.get_via_encoded_id(did)
+        if ent is None:
             return E.no_ent, None
         try:
-            comments = Comment.objects.filter(did=did)
+            comments = Comment.objects.filter(did_id=ent.id)
             users = []
             user = User.get_via_encoded_id(request.session['uid'])
-            dic = {'id': str(user.id),
+            dic = {'id': user.encoded_id,
                    'name': user.name,
                    'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
             users.append(dic)
             for comment in comments:
-                user = User.get_via_encoded_id(comment.uid.id)
-                dic = {'id': str(user.id),
+                user = comment.uid
+                dic = {'id': user.encoded_id,
                        'name': user.name,
                        'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
                 if dic not in users:
                     users.append(dic)
         except:
-
             return E.u, None
         return 0, users
