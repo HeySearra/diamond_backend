@@ -133,7 +133,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'Diadb',
         'USER': 'root',
-        'PASSWORD': '',
+        'PASSWORD': 'qQ333005',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {'charset': 'utf8mb4'},

@@ -182,7 +182,7 @@ class DocAll(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        kwargs = eval(list(request.GET.keys())[0])
+        kwargs = request.GET
         if kwargs.keys() != {'did'}:
             return E.k
 
