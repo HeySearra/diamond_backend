@@ -24,7 +24,7 @@ STATICFILES_DIRS = (
 )
 
 MEDIA_ROOT = 'store'
-MEDIA_URL = '/store/'  # add for ckeditor
+MEDIA_URL = f'/{MEDIA_ROOT}/'  # add for ckeditor
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
