@@ -817,7 +817,7 @@ class CommentAdd(View):
                               threadId=kwargs.get('threadId'),
                               commentId=kwargs.get('commentId'),
                               content=kwargs.get('content'),
-                              createdAt=int(time.time()))
+                              createdAt=int(time.time() * 1000))
         new_comment.save()
         return 0
 
@@ -825,6 +825,7 @@ class CommentAdd(View):
 class CommentGet(View):
     @JSR('status', 'list')
     def get(self, request):
+        print('Getting comment')
         E = ED()
         E.u, E.k = -1, 1
         E.au, E.no_ent = 2, 3

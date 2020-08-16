@@ -92,7 +92,7 @@ urlpatterns = [
 
     # ckeditor image upload
     path('uploadImg', UploadImg.as_view(), name='uploadImg'),
-    url(r'^store/(?P<path>.*)$', static.serve, {'document_root': os.path.join(BASE_DIR, settings.MEDIA_ROOT)}), #lucien
+    url(r'^store/(?P<path>.*)$', static.serve, {'document_root': os.path.join(BASE_DIR, settings.MEDIA_ROOT)}),
 
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),
 ]
