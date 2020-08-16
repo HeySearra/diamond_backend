@@ -20,14 +20,14 @@ def JSR(*keys):
     def decorator(req_func):
         @functools.wraps(req_func)
         def wrapper(*args, **kw):
-            req_type, func_name = '?', '?'
+            req_type, func_name = '', ''
             debug = meta_config.DEBUG and len(args) == 2
             
             self, request = args
             req_type = req_func.__name__.upper()
             # req_type = 'POST' if hasattr(request, 'body') and len(request.body) > 0 else 'GET'
             func_name: str = meta_config.CLS_PARSE_REG.findall(str(type(self)))[0].replace(".views.", ".")
-            func_name = '?' if len(func_name) < 2 else func_name
+            func_name = '' if len(func_name) < 2 else func_name
             func_name += f'.{req_type}'
             # func_name += f'.{req_type} ({random.choice(ascii_uppercase) + random.choice(ascii_uppercase)})'
             # func_name += '.' + req_type.lower()

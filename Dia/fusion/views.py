@@ -7,6 +7,7 @@ from easydict import EasyDict as ED
 
 from entity.models import Entity
 from fusion.models import Collection, Comment
+from meta_config import HOST_IP
 from user.models import User
 from utils.cast import decode
 from utils.meta_wrapper import JSR
@@ -203,15 +204,19 @@ class CommentUsers(View):
         try:
             comments = Comment.objects.filter(did=did)
             users = []
+            user = User.get_via_encoded_id(request.session['uid'])
+            dic = {'id': str(user.id),
+                   'name': user.name,
+                   'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
+            users.append(dic)
             for comment in comments:
                 user = User.get_via_encoded_id(comment.uid.id)
-                print(user.id, user.name, user.portrait)
                 dic = {'id': str(user.id),
                        'name': user.name,
-                       'avatar': 'http://localhost:8000/' + user.portrait}
-                print(dic)
+                       'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
                 if dic not in users:
                     users.append(dic)
         except:
+            
             return E.u, None
         return 0, users
