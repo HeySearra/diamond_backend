@@ -183,15 +183,19 @@ class DocAll(View):
         if u is None:
             return E.au
         kwargs = request.GET
-        if kwargs.keys() != {'did'}:
+        if kwargs.keys() != {'did', 'ver'}:
             return E.k
 
         did = kwargs.get('did')
-
-        e = Entity.get_via_encoded_id(did)
-        if e is None:
-            return E.no_ent
-        return 0, e.name, e.content
+        ver = kwargs.get('ver')
+        if ver < 0:
+            pass
+        else:
+            # todo
+            e = Entity.get_via_encoded_id(did)
+            if e is None:
+                return E.no_ent
+            return 0, e.name, e.content
 
 
 class DocInfo(View):
