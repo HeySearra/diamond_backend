@@ -47,6 +47,9 @@ urlpatterns = [
     path('doc/lock', DocLock.as_view(), name='doc_lock'),
     path('doc/comment/add', CommentAdd.as_view(), name='doc_comment_add'),
     path('doc/comment/get_comments_of_thread', CommentGet.as_view(), name='doc_comment_get_comments_of_thread'),
+    path('doc/comment/update', CommentUpdate.as_view(), name='doc_comment_update'),
+    path('doc/comment/remove', CommentRemove.as_view(), name='doc_comment_update'),
+    path('doc/comment/get_users', CommentUsers.as_view(), name='doc_comment_users'),
 
     # 文件系统 -- 工作台
     path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
