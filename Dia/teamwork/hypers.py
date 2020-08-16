@@ -18,3 +18,4 @@ DOC_AUTH = namedtuple('___', ['write', 'comment', 'read'])('write', 'comment', '
 
 TEAM_NAME_MAX_LENGTH = 64
 TEAM_INTRO_MAX_LENGTH = 1024
+

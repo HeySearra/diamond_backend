@@ -4,17 +4,29 @@ from django.views import View
 
 from entity.models import Entity
 from meta_config import HELL_WORDS, HOST_IP
+from teamwork.hypers import DOC_AUTH_CHS
 from user.models import User
 from utils.meta_wrapper import JSR
 from misc.models import *
 from easydict import EasyDict as ED
 
-# for ckeditor image upload
 from Dia import settings
 import random
 import string
 import json
 from user.hypers import *
+
+
+def check_auth(user: User, ent: Entity, auth: str) -> bool:
+    if ent.first_person(user):
+        return True
+    if ent.is_locked:
+        return False
+
+    assert auth in list(zip(*DOC_AUTH_CHS))[0]
+
+    if auth == 'write':
+        pass
 
 
 class HellWords(View):
@@ -158,7 +170,7 @@ class AddCommentAuth(View):
         except:
             return redirect('/workbench/recent_view')
         return redirect('/doc/' + ca.ent.encoded_id)
-    
+
 
 class AddWriteAuth(View):
     def get(self, request):

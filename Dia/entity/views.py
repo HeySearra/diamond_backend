@@ -203,11 +203,15 @@ class DocAll(View):
         if u is None:
             return E.au
         kwargs = request.GET
-        if kwargs.keys() != {'did'}:
+        if kwargs.keys() != {'did', 'ver'}:
             return E.k
 
         did = kwargs.get('did')
-
+        # ver = kwargs.get('ver')
+        # if ver < 0:
+        #     pass
+        # else:
+        #     # todo
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
