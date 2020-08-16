@@ -22,9 +22,8 @@ class Entity(models.Model):
         e = Entity.objects.filter(id=int(decode(encoded_id)))
         if e.exists():
             e = e.get()
-            return None if e.backtrace_deleted else e
-        else:
-            return None
+            if e.backtrace_deleted:
+                return e
 
     @property
     def encoded_id(self) -> str:
