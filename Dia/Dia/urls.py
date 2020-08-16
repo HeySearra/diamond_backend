@@ -90,6 +90,12 @@ urlpatterns = [
     path('team/quit', Quit.as_view(), name='team_quit'),
     path('team/invitation/confirm', InvitationConfirm.as_view(), name='team_invitation_confirm'),
 
+    # 模板库
+    path('temp/all', TempAll.as_view(), name='temp_all'),
+    path('temp/content', TempContent.as_view(), name='temp_content'),
+    path('temp/delete', TempDelete.as_view(), name='temp_delete'),
+    path('temp/new_doc', TempNewDoc.as_view(), name='temp_new_doc'),
+    path('temp/new', TempNew.as_view(), name='temp_new'),
     # 阴间
     path('hell/words', HellWords.as_view(), name='hell_words'),
 

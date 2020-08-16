@@ -23,17 +23,25 @@ class Links(models.Model):
     ent = models.ForeignKey(null=False, to='entity.Entity', related_name='links', on_delete=models.CASCADE)
 
 
-class Template(models.Model):
-    creator = models.ForeignKey(to='user.User', null=True, on_delete=models.SET_NULL)
-    name = models.CharField(unique=False, default='未命名', max_length=65)
-    content = RichTextField(default='', max_length=32 * KB)
-    create_dt = models.DateTimeField(auto_now_add=True)
-    delete_dt = models.DateTimeField(null=True)
-    is_deleted = models.BooleanField(default=False)
-    only_vip = models.BooleanField(default=False)
+class UserTemplate(models.Model):
+    creator = models.ForeignKey(to='user.User', on_delete=models.CASCADE, verbose_name='创建者')
+    name = models.CharField(verbose_name='个人模板名称', unique=False, default='未命名', max_length=65)
+    content = RichTextField(verbose_name='内容', default='', max_length=32 * KB)
+    create_dt = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
+    # delete_dt = models.DateTimeField(verbose_name='删除时间', null=True)
+    # is_deleted = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['-create_dt']
+
+
+class OfficialTemplate(models.Model):
+    name = models.CharField(verbose_name='官方模板名称', unique=False, default='未命名', max_length=65)
+    title = models.CharField(verbose_name='官方模板类型', unique=False, default='通用', max_length=65)
+    portrait = models.CharField(verbose_name='官方模板预览图', blank=True, null=True, default='', max_length=512)
+    content = RichTextField(verbose_name='内容', default='', max_length=32 * KB)
+    create_dt = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)
+    only_vip = models.BooleanField(default=False)
 
 
 class Comment(models.Model):
