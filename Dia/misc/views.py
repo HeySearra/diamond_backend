@@ -1,3 +1,5 @@
+from django.shortcuts import redirect
+from django.urls import reverse
 from django.views import View
 
 from entity.models import Entity
@@ -102,10 +104,24 @@ class FSShareKey(View):
                 ra.save()
             else:
                 ra = ra.get()
-            ca = CommentAuth.objects.filter()
+            ca = CommentAuth.objects.filter(ent=e)
             if (ca.exists() and u in ca.get().user.all()) or u in ra.user.all() or u in wa.user.all():
                 return 0, ra.key
             else:
                 return E.au, ''
         return E.k, ''
 
+
+class AddReadAuth(View):
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        kwargs = request.GET
+        if kwargs.keys() != {'dk'}:
+            return redirect(reverse('workbench_recent_view'))
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return redirect(reverse('workbench_recent_view'))
+        ra = ReadAuth.objects.filter(key=kwargs('dk'))
+        if not ra.exists():
+            return redirect(reverse('workbench_recent_view'))
