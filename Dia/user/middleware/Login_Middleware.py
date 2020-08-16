@@ -38,7 +38,6 @@ class IsLogin(MiddlewareMixin):
     ]
 
     def process_view(self, request, callback, callback_args, callback_kwargs):
-        print("path:", request.path)
         # print("is_login:", request.session.get('is_login', None))
         # print(request.session.get('user_id'))
         # print(request.META.get('HTTP_USER_AGENT'))
