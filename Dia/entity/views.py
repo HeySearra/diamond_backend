@@ -187,15 +187,15 @@ class DocAll(View):
             return E.k
 
         did = kwargs.get('did')
-        ver = kwargs.get('ver')
-        if ver < 0:
-            pass
-        else:
-            # todo
-            e = Entity.get_via_encoded_id(did)
-            if e is None:
-                return E.no_ent
-            return 0, e.name, e.content
+        # ver = kwargs.get('ver')
+        # if ver < 0:
+        #     pass
+        # else:
+        #     # todo
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.no_ent
+        return 0, e.name, e.content
 
 
 class DocInfo(View):
