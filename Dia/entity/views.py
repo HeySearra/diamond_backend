@@ -11,6 +11,7 @@ from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
 from teamwork.models import Team
+from misc.models import *
 
 
 class WorkbenchRecentView(View):
@@ -32,7 +33,7 @@ class WorkbenchRecentView(View):
         return 0, cur_time(), [{
             'pfid': e.father.encoded_id if e.father.first_person(u) else '',
             'name': e.name,
-            'dt': e.create_dt_str,
+            'dt': e.read_dt_str,
             'type': e.type,
             'id': e.encoded_id,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
@@ -40,27 +41,18 @@ class WorkbenchRecentView(View):
 
 
 class WorkbenchStar(View):
-    @JSR('status', 'amount', 'list')
+    @JSR('status', 'cur_dt', 'list')
     def get(self, request):
         E = ED()
         E.u, E.k, E.au = -1, 1, 2
         if not request.session.get('is_login', False):
             return E.au
 
-        kwargs: dict = request.GET
-        if kwargs.keys() != {'page', 'each'}:
-            return E.k
-
-        page, each = int(kwargs.get('page')), int(kwargs.get('each'))
-
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
         ents = [c.ent for c in u.related_collection.all() if not c.ent.backtrace_deleted]
-
-        amount = len(ents)
-        ents = ents[(page - 1) * each: page * each]
-        return 0, amount, [{
+        return 0, cur_time(), [{
             'pfid': e.father.encoded_id if e.father.first_person(u) else '',
             'name': e.name,
             'create_dt': e.create_dt_str,
@@ -103,6 +95,34 @@ class WorkbenchCreate(View):
             'cname': e.creator.name,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
         } for e in ents]
+
+
+class WorkbenchShare(View):
+    @JSR('status', 'cur_dt', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k, E.au = -1, 1, 2
+        if not request.session.get('is_login', False):
+            return E.au
+
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.write_auth.ent.backtrace_deleted]
+        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.comment_auth.ent.backtrace_deleted]
+        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.read_auth.ent.backtrace_deleted]
+        ents = sorted(ws + cs + rs, key=lambda e: e.dt)
+        ents = [a.write_auth.ent if isinstance(a, WriteMem) else a.comment_auth.ent if isinstance(a, CommentMem) else a.read_auth.ent for a in ents]
+        return 0, cur_time(), [{
+            'type': e.type,
+            'auth': 'write' if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else 'read',
+            'view_dt': e.read_dt_str,
+            'edit_dt': e.edit_dt_str,
+            'name': e.name,
+            'id': e.encoded_id,
+            'cname': e.creator.name,
+            'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+        } for e in ents if e.creator != u]
 
 
 class DocEdit(View):

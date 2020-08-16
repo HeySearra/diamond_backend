@@ -73,6 +73,10 @@ class Entity(models.Model):
         u = r.user
         return u.name, u.encoded_id, r.dt_str
 
+    @property
+    def read_dt_str(self) -> Tuple[str, str, str]:
+        return ReadRecord.objects.get(ent_id=self.id).dt_str
+
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)

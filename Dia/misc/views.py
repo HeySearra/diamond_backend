@@ -73,14 +73,14 @@ class FSShareKey(View):
         wa = WriteAuth.objects.filter(ent=e)
         if not wa.exists():
             wa = WriteAuth.objects.create(ent=e)
-            wa.user.add(e.creator)
+            wa.add_auth(e.creator)
             wa.key = self.get_key('write')
             wa.save()
         else:
             wa = wa.get()
 
         if auth == 'write':
-            if u not in wa.user.all():
+            if not WriteMem.objects.filter(user=u, write_auth=wa).exists():
                 return E.au, ''
             else:
                 return 0, wa.key
@@ -92,7 +92,7 @@ class FSShareKey(View):
                 ca.save()
             else:
                 ca = ca.get()
-            if u not in ca.user.all() and u not in wa.user.all():
+            if not CommentMem.objects.filter(user=u, comment_auth=ca).exists() and not WriteMem.objects.filter(user=u, write_auth=wa).exists():
                 return E.au, ''
             else:
                 return 0, ca.key
@@ -105,7 +105,9 @@ class FSShareKey(View):
             else:
                 ra = ra.get()
             ca = CommentAuth.objects.filter(ent=e)
-            if (ca.exists() and u in ca.get().user.all()) or u in ra.user.all() or u in wa.user.all():
+            wf = True if WriteMem.objects.filter(user=u, write_auth=wa).exists() else False
+            rf = True if ReadMem.objects.filter(user=u, read_auth=ra).exists() else False
+            if (ca.exists() and CommentMem.objects.filter(user=u, comment_auth=ca.get()).exists()) or rf or wf:
                 return 0, ra.key
             else:
                 return E.au, ''
@@ -127,8 +129,9 @@ class AddReadAuth(View):
             return redirect('/workbench/recent_view')
         try:
             ra = ra.get()
-            ra.user.add(u)
-            ra.save()
+            if ra.ent.is_locked:
+                return redirect('/workbench/recent_view')
+            ra.add_auth(u)
         except:
             return redirect('/workbench/recent_view')
         return redirect('/doc/' + ra.ent.encoded_id)
@@ -149,8 +152,9 @@ class AddCommentAuth(View):
             return redirect('/workbench/recent_view')
         try:
             ca = ca.get()
-            ca.user.add(u)
-            ca.save()
+            if ca.ent.is_locked:
+                return redirect('/workbench/recent_view')
+            ca.add_auth(u)
         except:
             return redirect('/workbench/recent_view')
         return redirect('/doc/' + ca.ent.encoded_id)
@@ -171,8 +175,9 @@ class AddWriteAuth(View):
             return redirect('/workbench/recent_view')
         try:
             wa = wa.get()
-            wa.user.add(u)
-            wa.save()
+            if wa.ent.is_locked:
+                return redirect('/workbench/recent_view')
+            wa.add_auth(u)
         except:
             return redirect('/workbench/recent_view')
         return redirect('/doc/' + wa.ent.encoded_id)

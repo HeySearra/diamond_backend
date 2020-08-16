@@ -58,6 +58,7 @@ urlpatterns = [
     path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),
     path('workbench/star', WorkbenchStar.as_view(), name='workbench_star'),
     path('workbench/create', WorkbenchCreate.as_view(), name='workbench_create'),
+    path('workbench/share', WorkbenchShare.as_view(), name='workbench_share'),
 
     # 文件系统 -- 文件夹系统
     path('fs/new', FSNew.as_view(), name='fs_new'), # 请求新建文件or夹
