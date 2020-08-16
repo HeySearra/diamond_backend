@@ -935,7 +935,6 @@ class CommentUsers(View):
             return E.no_ent, None
         try:
             comments = Comment.objects.filter(did=did)
-            print(comments)
             users = []
             for comment in comments:
                 user = User.get_via_encoded_id(comment.uid.id)
@@ -946,7 +945,6 @@ class CommentUsers(View):
                 print(dic)
                 if dic not in users:
                     users.append(dic)
-            print(users)
         except:
             return E.u, None
         return 0, users
