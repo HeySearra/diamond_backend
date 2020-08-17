@@ -105,6 +105,48 @@ class AhoCorasick(object):
         return result
 
 
-def longest_common_subsequence(s1, s2):
-    return ''
+def LCS(leq, riq, eq_fn=lambda x, y: x == y):
+    
+    start = 0
+    lend = lslen = len(leq)
+    rend = rslen = len(riq)
+    
+    while start < lend and start < rend and eq_fn(leq[start], riq[start]):
+        start += 1
+    while start < lend and start < rend and eq_fn(leq[lend - 1], riq[rend - 1]):
+        lend -= 1
+        rend -= 1
+    
+    left = leq[start:lend]
+    right = riq[start:rend]
+    lmax, rmax = len(left), len(right)
+    furthest = {1: (0, [])}
+    
+    if not lmax + rmax:
+        r = range(lslen)
+        return zip(r, r)
+    for d in range(0, lmax + rmax + 1):
+        for k in range(-d, d + 1, 2):
+            if (k == -d or
+                    (k != d and furthest[k - 1][0] < furthest[k + 1][0])):
+                old_x, history = furthest[k + 1]
+                x = old_x
+            else:
+                old_x, history = furthest[k - 1]
+                x = old_x + 1
+            
+            history = history[:]
+            y = x - k
+            
+            while x < lmax and y < rmax and eq_fn(left[x], right[y]):
+                history.append((x + start, y + start))
+                x += 1
+                y += 1
+            
+            if x >= lmax and y >= rmax:
+                # This is the best match
+                return [(e, e) for e in range(start)] + history + \
+                       list(zip(range(lend, lslen), range(rend, rslen)))
+            else:
+                furthest[k] = (x, history)
 
