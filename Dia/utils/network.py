@@ -153,7 +153,6 @@ def send_code(acc, email_type, storage=True):
         code = random.sample(code_list, 6)  # 随机取6位数
         code_num = ''.join(code)
         # 数据库保存验证码！！！！！！！！！！！
-        code_num = code_num
         # 邮箱正文内容，第一个参数为内容，第二个参数为格式(plain 为纯文本)，第三个参数为编码
         msg = MIMEText(content % ('验证码', code_num, "-" * 3 * len(sent), sent), 'html', 'utf-8')
         msg['Subject'] = Header('DiaDoc 注册验证码' + random.choice(HELL_WORDS))
@@ -184,6 +183,7 @@ def send_code(acc, email_type, storage=True):
         from user.models import EmailRecord
         ver_code = EmailRecord()
         ver_code.code = code_num
+        print('验证码：'+code_num)
         ver_code.acc = acc
         ver_code.send_time = datetime.now()
         ver_code.expire_time = datetime.now() + timedelta(minutes=60)
