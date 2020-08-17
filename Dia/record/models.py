@@ -2,6 +2,7 @@ from django.db import models
 from datetime import datetime
 
 from meta_config import TIME_FMT
+from record.hypers import DEFOCUS_SECS
 from teamwork.hypers import DOC_AUTH
 from typing import List, Tuple
 
@@ -53,19 +54,19 @@ def upd_record(auth: str, user, ent, delete):
             o.upd_dt()
 
 
-def record_create(user, ent, delete=False):
+def upd_record_create(user, ent, delete=False):
     return upd_record('create', user, ent, delete)
 
 
-def record_write(user, ent, delete=False):
+def upd_record_write(user, ent, delete=False):
     return upd_record('write', user, ent, delete)
 
 
-def record_comment(user, ent, delete=False):
+def upd_record_comment(user, ent, delete=False):
     return upd_record('comment', user, ent, delete)
 
 
-def record_read(user, ent, delete=False):
+def upd_record_read(user, ent, delete=False):
     return upd_record('read', user, ent, delete)
 
 
@@ -135,3 +136,35 @@ class ReadRecord(models.Model):
     @property
     def dt_str(self):
         return self.dt.strftime(TIME_FMT)
+
+
+class FocusingRecord(models.Model):
+    class Meta:
+        ordering = ['-dt']
+    
+    user = models.ForeignKey(to='user.User', related_name='focusing_records', on_delete=models.CASCADE)
+    ent = models.ForeignKey(to='entity.Entity', related_name='focusing_records', on_delete=models.CASCADE)
+    dt = models.DateTimeField(null=True)
+    
+    @staticmethod
+    def focus(user, ent):
+        r = FocusingRecord.objects.get_or_create(user=user, ent=ent)
+        r.obj_focus()
+    
+    @staticmethod
+    def focusing(user, ent) -> bool:
+        q = FocusingRecord.objects.filter(user=user, ent=ent)
+        if not q.exists():
+            return False
+        r = q.get()
+        return r.obj_focusing()
+
+    def obj_focus(self):
+        self.dt = datetime.now()
+        self.save()
+
+    def obj_focusing(self) -> bool:
+        focusing = (datetime.now() - self.dt).seconds <= DEFOCUS_SECS
+        if not focusing:
+            self.delete()
+        return focusing

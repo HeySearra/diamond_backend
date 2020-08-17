@@ -104,3 +104,7 @@ class AhoCorasick(object):
             index += 1
         return result
 
+
+def longest_common_subsequence(s1, s2):
+    return ''
+

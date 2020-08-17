@@ -1,10 +1,9 @@
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.views import View
 
 from entity.models import Entity
 from meta_config import HELL_WORDS, HOST_IP
-from teamwork.hypers import DOC_AUTH_CHS
+from teamwork.hypers import DOC_AUTH_CHS, DOC_AUTH
 from user.models import User
 from utils.meta_wrapper import JSR
 from misc.models import *
@@ -17,21 +16,24 @@ import json
 from user.hypers import *
 
 
-def check_auth(user: User, ent: Entity, auth: str) -> bool:
+def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = True) -> bool:
+    if user is None or ent is None:
+        return False
+    if double_check_deleted and ent.backtrace_deleted:
+        return False
     if ent.first_person(user):
         return True
     if ent.is_locked:
         return False
     assert auth in list(zip(*DOC_AUTH_CHS))[0]
-    if auth == 'write':
-        wf = True if WriteMem.objects.filter(user=user, write_auth__ent=ent).exists() else False
-        return wf
-    elif auth == 'read':
-        rf = True if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists() else False
-        return rf
-    elif auth == 'comment':
-        cf = True if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists() else False
-        return cf
+    
+    if auth == DOC_AUTH.write:
+        return WriteMem.objects.filter(user=user, write_auth__ent=ent).exists()
+    elif auth == DOC_AUTH.read:
+        return ReadMem.objects.filter(user=user, read_auth__ent=ent).exists()
+    elif auth == DOC_AUTH.comment:
+        return CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists()
+
 
 class HellWords(View):
     @JSR('words', 'status')
@@ -67,7 +69,7 @@ class FSShareKey(View):
             if ReadAuth.objects.filter(key=key).exists():
                 return self.get_key('read')
         return key
-
+    
     @JSR('status', 'key')
     def post(self, request):
         E = ED()
@@ -85,7 +87,7 @@ class FSShareKey(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.k
-
+        
         wa = WriteAuth.objects.filter(ent=e)
         if not wa.exists():
             wa = WriteAuth.objects.create(ent=e)
@@ -94,7 +96,7 @@ class FSShareKey(View):
             wa.save()
         else:
             wa = wa.get()
-
+        
         if auth == 'write':
             if not WriteMem.objects.filter(user=u, write_auth=wa).exists():
                 return E.au, ''

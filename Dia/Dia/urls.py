@@ -54,6 +54,9 @@ urlpatterns = [
     path('document/add_read', AddReadAuth.as_view(), name='add_read_auth'),
     path('document/add_comment', AddCommentAuth.as_view(), name='add_comment_auth'),
     path('document/add_write', AddWriteAuth.as_view(), name='add_write_auth'),
+    path('document/online', DocumentOnline.as_view(), name='online'),
+    path('document/ver_condition', VersionQuery.as_view(), name='version_query'),
+    path('document/history', DocumentHistory.as_view(), name='document_history'),
 
     # 文件系统 -- 工作台
     path('workbench/recent', WorkbenchRecentView.as_view(), name='workbench_recent_view'),

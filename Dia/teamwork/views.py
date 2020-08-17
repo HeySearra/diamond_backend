@@ -5,9 +5,9 @@ import json
 from django.views import View
 from easydict import EasyDict
 
-from fusion.models import Links
+from fusion.models import Links, Collection
 from meta_config import ROOT_SUFFIX
-from record.models import record_create, upd_record_user
+from record.models import upd_record_create, upd_record_user
 from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message
@@ -43,7 +43,8 @@ class NewFromFold(View):
             entity.name = team.name + ROOT_SUFFIX
             entity.save()
             Links.objects.filter(user=user, ent=entity).delete()
-            record_create(user, entity, delete=True)
+            Collection.objects.filter(user=user, ent=entity).delete()
+            upd_record_create(user, entity, delete=True)
         except:
             return None, E.uk
         return team.id, 0
@@ -271,7 +272,7 @@ class Delete(View):
                     return E.uk
             team.root.move(user.root)
             # 篡位嗷
-            record_create(user, team.root)
+            upd_record_create(user, team.root)
             team.root.bfs_apply(
                 func=lambda f: upd_record_user('create', f, old_user=None, new_user=user)
             )

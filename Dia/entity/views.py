@@ -1,16 +1,18 @@
 from django.views import View
 from easydict import EasyDict as ED
 import json
+
+from misc.views import check_auth
 from user.models import User
 from datetime import datetime
 from entity.models import Entity
-from fusion.models import Collection, Links
-from record.models import record_create
+from fusion.models import Collection, Links, Trajectory
+from record.models import upd_record_create, upd_record_write, FocusingRecord
 from utils.cast import decode, cur_time
 from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
-from teamwork.models import Team
+from teamwork.models import Team, DOC_AUTH
 from misc.models import *
 
 
@@ -28,16 +30,21 @@ class WorkbenchRecentView(View):
         kwargs: dict = request.GET
         if kwargs.keys() != {}.keys():
             return E.k
-        ls = u.read_records.all().order_by('-dt')
-        ents = [_.ent for _ in ls if not _.ent.backtrace_deleted and _.ent.is_doc()][:15]
+        
+        records = u.read_records.all()
+        ent_dt: List[Tuple[Entity, str]] = [
+            (rec.ent, rec.dt_str)
+            for rec in records if not rec.ent.backtrace_deleted and rec.ent.is_doc()
+        ][:15]
+        
         return 0, cur_time(), [{
-            'pfid': e.father.encoded_id if e.father.first_person(u) else '',
+            'pfid': e.father.encoded_id if e.father is not None and e.father.first_person(u) else '',
             'name': e.name,
-            'dt': e.read_dt_str,
+            'dt': dt,
             'type': e.type,
             'id': e.encoded_id,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
-        } for e in ents]
+        } for e, dt in ent_dt]
 
 
 class WorkbenchStar(View):
@@ -47,20 +54,22 @@ class WorkbenchStar(View):
         E.u, E.k, E.au = -1, 1, 2
         if not request.session.get('is_login', False):
             return E.au
-
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
+        if request.GET.keys() != set():
+            return E.k
+        
         ents = [c.ent for c in u.related_collection.all() if not c.ent.backtrace_deleted]
         return 0, cur_time(), [{
-            'pfid': e.father.encoded_id if e.father.first_person(u) else '',
+            'pfid': e.father.encoded_id if e.father is not None and e.father.first_person(u) else '',
             'name': e.name,
             'create_dt': e.create_dt_str,
             'edit_dt': e.edit_dt_str,
             'type': e.type,
             'id': e.encoded_id,
             'cname': e.creator.name,
-            'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+            'is_starred': True # Collection.objects.filter(user=u, ent=e).exists(),
         } for e in ents]
 
 
@@ -79,14 +88,17 @@ class WorkbenchCreate(View):
         if kwargs.keys() != {'page', 'each'}:
             return E.k
 
-        page, each = int(kwargs.get('page')), int(kwargs.get('each'))
+        try:
+            page, each = int(kwargs.get('page')), int(kwargs.get('each'))
+        except (TypeError, ValueError):
+            return E.u
 
-        ls = u.create_records.all()
-        amount = ls.count()
-        ents = [_.ent for _ in ls if not _.ent.backtrace_deleted][(page - 1) * each: page * each]
+        records = u.create_records.all()
+        amount = records.count()
+        ents = [rec.ent for rec in records if not rec.ent.backtrace_deleted][(page - 1) * each: page * each]
 
         return 0, amount, cur_time(), [{
-            'pfid': e.father.encoded_id,
+            'pfid': e.father.encoded_id if e.father is not None else '',
             'name': e.name,
             'create_dt': e.create_dt_str,
             'edit_dt': e.edit_dt_str,
@@ -98,6 +110,7 @@ class WorkbenchCreate(View):
 
 
 class WorkbenchShare(View):
+    # todo: tky double-check
     @JSR('status', 'cur_dt', 'list')
     def get(self, request):
         E = ED()
@@ -126,42 +139,56 @@ class WorkbenchShare(View):
 
 
 class DocEdit(View):
-    # todo: upd record
-    @JSR('status')
+    @JSR('status', 'ver')
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.inv_name, E.inv_cont, E.rename = 2, 3, 4, 5
+        E.au, E.inv_name, E.inv_cont, E.rename, E.need_to_merge, E.auto_merged = 2, 3, 4, 5, 6, 7
         if not request.session.get('is_login', False):
             return E.au
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'did', 'content'}:
+        if kwargs.keys() != {'name', 'did', 'ver', 'content'}:
             return E.k
 
-        name, did, content = kwargs['name'], kwargs['did'], kwargs['content']
+        name, did, ver, content = kwargs['name'], kwargs['did'], kwargs['ver'], kwargs['content']
 
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
+        if not check_auth(user=u, ent=e, auth=DOC_AUTH.write, double_check_deleted=False):
+            return E.au
+        
         if e.brothers_dup_name(name):
             return E.rename
         if not CHECK_ENAME(name):
             return E.inv_name
         e.name = name
+        
+        cvi = e.cur_ver_id
+        if cvi != ver:
+            return E.need_to_merge, cvi
+        
         e.content = content
+        upd_record_write(user=u, ent=e)
+        traj = Trajectory(
+            ent=e,
+            user=u,
+            updated_content=content
+        )
+        
         try:
+            traj.save()
             e.save()
         except:
             return E.u
-
-        return 0
+        
+        return 0, traj.id
 
 
 class DocComment(View):
-    # todo: upd record
     @JSR('status')
     def post(self, request):
         E = ED()
@@ -181,6 +208,12 @@ class DocComment(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
+        
+        if not check_auth(user=u, ent=e, auth=DOC_AUTH.write, double_check_deleted=False):
+            return E.au
+        
+        # todo: version-controlling validation
+        
         e.content = content
         try:
             e.save()
@@ -192,7 +225,7 @@ class DocComment(View):
 
 class DocAll(View):
     # todo: upd record
-    @JSR('status', 'name', 'content')
+    @JSR('status', 'ver', 'name', 'content')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -203,19 +236,27 @@ class DocAll(View):
         if u is None:
             return E.au
         kwargs = request.GET
-        if kwargs.keys() != {'did'}:
+        if kwargs.keys() != {'did', 'ver'}:
             return E.k
-
         did = kwargs.get('did')
-        # ver = kwargs.get('ver')
-        # if ver < 0:
-        #     pass
-        # else:
-        #     # todo
+        ver = kwargs.get('ver')
+
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        return 0, e.name, e.content
+        if check_auth(u, e, DOC_AUTH.read):
+            return E.au
+        
+        cvi = e.cur_ver_id
+        if ver == '-1':
+            ver = cvi
+        
+        q = e.trajectories.filter(id=ver)
+        if not q.exists():
+            return E.no_ent
+        traj: Trajectory = q.get()
+        
+        return 0, e.cur_ver_id, e.name, traj.updated_content
 
 
 class DocInfo(View):
@@ -326,7 +367,13 @@ class FSNew(View):
             e.save()
         except:
             return '', E.u
-        record_create(u, e)
+        upd_record_create(u, e)
+        if e.is_doc():
+            Trajectory.objects.create(
+                ent=e,
+                user=u,
+                updated_content=''
+            )
         return e.encoded_id, 0
 
 
@@ -616,7 +663,12 @@ class FSCopy(View):
         if fa.sons_dup_name(e.name):
             return E.uni
 
-        e.replicate(u, fa)
+        new_ent = e.replicate(u, fa)
+        Trajectory.objects.create(
+            ent=new_ent,
+            user=u,
+            updated_content=new_ent.content
+        )
 
         return 0
 
@@ -820,7 +872,6 @@ class FSStarCondition(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return False, E.au
-        # todo: 更多权限判断
         kwargs: dict = request.GET
         if kwargs.keys() != {'id', 'type'}:
             return False, E.k
@@ -837,3 +888,88 @@ class FSStarCondition(View):
             return Collection.objects.filter(user=u, ent=e).exists(), 0
         else:
             return False, 0
+
+
+class DocumentOnline(View):
+    @JSR('status', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.no_ent = -1, 1, 2, 3
+        
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs = request.GET
+        if kwargs.keys() != {'did'}:
+            return E.k
+
+        e: Entity = Entity.get_via_encoded_id(kwargs.get('did'))
+        if e is None:
+            return E.no_ent
+
+        FocusingRecord.focus(u, e)
+        
+        return 0, [
+            {
+                'uid': r.user.encoded_id,
+                'acc': r.user.acc,
+                'name': r.user.name,
+                'portrait': r.user.portrait
+            }
+            for r in e.focusing_records
+            if r.obj_focusing()
+        ]
+
+
+class VersionQuery(View):
+    @JSR('status', 'is_newest')
+    def get(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.no_ent = -1, 1, 2, 3
+        
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs = request.GET
+        if kwargs.keys() != {'did', 'ver'}:
+            return E.k
+
+        e = Entity.get_via_encoded_id(kwargs.get('did'))
+        if e is None:
+            return E.no_ent
+        
+        return 0, kwargs.get('ver') == e.cur_ver_id
+
+
+class DocumentHistory(View):
+    @JSR('status', 'cur_dt', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.no_ent = -1, 1, 2, 3
+        
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs = request.GET
+        if kwargs.keys() != {'did'}:
+            return E.k
+
+        e: Entity = Entity.get_via_encoded_id(kwargs.get('did'))
+        if e is None:
+            return E.no_ent
+        
+        return 0, cur_time(), [
+            {
+                'ver': traj.id,
+                'dt': traj.dt_str,
+                'portrait': traj.user.portrait,
+                'name': traj.user.name,
+            }
+            for traj in e.trajectories
+        ][:-1]  # cut the tail (the first traj, indicating the file-creation)

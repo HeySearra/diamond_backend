@@ -1,0 +1,1 @@
+DEFOCUS_SECS = 30

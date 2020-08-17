@@ -1,15 +1,36 @@
-from collections import deque
+import xml.etree.cElementTree as ET
+from collections import deque, defaultdict
 from typing import Callable, Tuple, List, Iterable
 
 from ckeditor.fields import RichTextField
 from django.db import models
 from django.db.models import Q
 from django.template.defaultfilters import striptags
+from xmldiff.actions import DeleteNode
+from xmldiff.main import diff_texts
 
 from entity.hypers import *
 from meta_config import KB, TIME_FMT, ROOT_SUFFIX
+from record.models import upd_record_create, CreateRecord, WriteRecord, ReadRecord
+from utils.algorithm import longest_common_subsequence
 from utils.cast import encode, decode
-from record.models import record_create, CreateRecord, WriteRecord, ReadRecord
+
+
+def auto_merge_available(xml1: str, xml2: str):
+    xml1 = f'<diadoc>{xml1}</diadoc>'
+    xml2 = f'<diadoc>{xml2}</diadoc>'
+    return all(
+        isinstance(n, DeleteNode)
+        for n in diff_texts(xml1, xml2)
+    )
+    # disc_dict = defaultdict(int)
+    #
+    # def unordered_discretize(xml_content: str):
+    #     return [1]
+    #
+    # l1, l2 = unordered_discretize(ctt1), unordered_discretize(ctt2)
+    #
+    # lcs = longest_common_subsequence('1', '2')
 
 
 class Entity(models.Model):
@@ -25,6 +46,13 @@ class Entity(models.Model):
             return None if e.backtrace_deleted else e
         else:
             return None
+    
+    @property
+    def cur_ver_id(self) -> str:
+        return str(self.trajectories.first().id)
+    
+    def is_old_version(self, ver: str) -> bool:
+        return self.cur_ver_id != ver
 
     @property
     def encoded_id(self) -> str:
@@ -36,7 +64,7 @@ class Entity(models.Model):
 
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(null=False, default=ENT_TYPE.doc, choices=ENT_TYPE_CHS, max_length=BASIC_DATA_MAX_LEN)
-    content = RichTextField(default='', max_length=32 * KB)
+    content = RichTextField(default='', max_length=32 * KB) # todo: REMOVE THIS!!!
 
     @property
     def plain_content(self) -> str:
@@ -51,35 +79,53 @@ class Entity(models.Model):
 
     @property
     def creator(self):
-        return CreateRecord.objects.first().user
+        q = CreateRecord.objects.filter(ent_id=self.id)
+        if not q.exists():
+            return None
+        return q.first().user
 
     @property
     def create_dt_str(self) -> str:
-        return CreateRecord.objects.first().dt_str
+        q = CreateRecord.objects.filter(ent_id=self.id)
+        if not q.exists():
+            return ''
+        return q.first().dt_str
 
     @property
     def create_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = CreateRecord.objects.first()
-        u = r.user
+        r = CreateRecord.objects.filter(ent_id=self.id)
+        if not r.exists():
+            return '', '', ''
+        u = r.first().user
         return u.name, u.encoded_id, r.dt_str
 
     @property
     def editor(self):
-        return WriteRecord.objects.first().user
+        q = WriteRecord.objects.filter(ent_id=self.id)
+        if not q.exists():
+            return None
+        return q.first().user
 
     @property
     def edit_dt_str(self) -> str:
-        return WriteRecord.objects.first().dt_str
+        q = WriteRecord.objects.filter(ent_id=self.id)
+        if not q.exists():
+            return ''
+        return q.first().dt_str
 
     @property
     def edit_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = WriteRecord.objects.first()
-        u = r.user
+        r = WriteRecord.objects.filter(ent_id=self.id)
+        if not r.exists():
+            return '', '', ''
+        u = r.first().user
         return u.name, u.encoded_id, r.dt_str
 
-    @property
-    def read_dt_str(self) -> str:
-        return ReadRecord.objects.first().dt_str
+    def read_dt_str(self, user) -> str:
+        q = ReadRecord.objects.filter(user_id=user.id, ent_id=self.id)
+        if not q.exists():
+            return ''
+        return q.first().dt_str
 
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
@@ -211,12 +257,11 @@ class Entity(models.Model):
             content=self.content,
             father=dest,
         )
-        record_create(user, new_ent)
+        upd_record_create(user, new_ent)
 
         return new_ent
 
     def move(self, dest) -> bool:
-        # todo: 移动权限判断？
         self.father = dest
         try:
             self.save()
