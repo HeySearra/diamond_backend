@@ -128,7 +128,7 @@ class WorkbenchShare(View):
         ents = [a.write_auth.ent if isinstance(a, WriteMem) else a.comment_auth.ent if isinstance(a, CommentMem) else a.read_auth.ent for a in ents]
         return 0, cur_time(), [{
             'type': e.type,
-            'auth': 'write' if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else 'read',
+            'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else 'read',
             'view_dt': e.read_dt_str,
             'edit_dt': e.edit_dt_str,
             'name': e.name,
@@ -959,11 +959,11 @@ class DocumentHistory(View):
             return E.no_ent
         
         return 0, cur_time(), [
-                                  {
-                                      'ver': traj.id,
-                                      'dt': traj.dt_str,
-                                      'portrait': traj.user.portrait,
-                                      'name': traj.user.name,
-                                  }
-                                  for traj in e.trajectories
-                              ][:-1]  # cut the tail (the first traj, indicating the file-creation)
+            {
+                'ver': traj.id,
+                'dt': traj.dt_str,
+                'portrait': traj.user.portrait,
+                'name': traj.user.name,
+            }
+            for traj in e.trajectories
+        ][:-1]  # cut the tail (the first traj, indicating the file-creation)

@@ -59,15 +59,15 @@ def upd_record_create(user, ent, delete=False):
 
 
 def upd_record_write(user, ent, delete=False):
-    return upd_record('write', user, ent, delete)
+    return upd_record(DOC_AUTH.write, user, ent, delete)
 
 
 def upd_record_comment(user, ent, delete=False):
-    return upd_record('comment', user, ent, delete)
+    return upd_record(DOC_AUTH.comment, user, ent, delete)
 
 
 def upd_record_read(user, ent, delete=False):
-    return upd_record('read', user, ent, delete)
+    return upd_record(DOC_AUTH.read, user, ent, delete)
 
 
 class CreateRecord(models.Model):

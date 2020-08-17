@@ -78,15 +78,15 @@ class UploadImg(View):
 class FSShareKey(View):
     def get_key(self, type):
         key = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)])
-        if type == 'write':
+        if type == DOC_AUTH.write:
             if WriteAuth.objects.filter(key=key).exists():
-                return self.get_key('write')
-        elif type == 'comment':
+                return self.get_key(DOC_AUTH.write)
+        elif type == DOC_AUTH.comment:
             if CommentAuth.objects.filter(key=key).exists():
-                return self.get_key('comment')
-        elif type == 'read':
+                return self.get_key(DOC_AUTH.comment)
+        elif type == DOC_AUTH.read:
             if ReadAuth.objects.filter(key=key).exists():
-                return self.get_key('read')
+                return self.get_key(DOC_AUTH.read)
         return key
     
     @JSR('status', 'key')
@@ -111,21 +111,21 @@ class FSShareKey(View):
         if not wa.exists():
             wa = WriteAuth.objects.create(ent=e)
             wa.add_auth(e.creator)
-            wa.key = self.get_key('write')
+            wa.key = self.get_key(DOC_AUTH.write)
             wa.save()
         else:
             wa = wa.get()
         
-        if auth == 'write':
+        if auth == DOC_AUTH.write:
             if not WriteMem.objects.filter(user=u, write_auth=wa).exists():
                 return E.au, ''
             else:
                 return 0, wa.key
-        if auth == 'comment':
+        if auth == DOC_AUTH.comment:
             ca = CommentAuth.objects.filter(ent=e)
             if not ca.exists():
                 ca = CommentAuth.objects.create(ent=e)
-                ca.key = self.get_key('comment')
+                ca.key = self.get_key(DOC_AUTH.comment)
                 ca.save()
             else:
                 ca = ca.get()
@@ -133,11 +133,11 @@ class FSShareKey(View):
                 return E.au, ''
             else:
                 return 0, ca.key
-        if auth == 'read':
+        if auth == DOC_AUTH.read:
             ra = ReadAuth.objects.filter(ent=e)
             if not ra.exists():
                 ra = ReadAuth.objects.create(ent=e)
-                ra.key = self.get_key('read')
+                ra.key = self.get_key(DOC_AUTH.read)
                 ra.save()
             else:
                 ra = ra.get()

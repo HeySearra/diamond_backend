@@ -6,11 +6,12 @@ from django.views import View
 from easydict import EasyDict as ED
 from easydict import EasyDict
 
-from entity.hypers import BASIC_DATA_MAX_LEN
+from entity.hypers import BASIC_DATA_MAX_LEN, CHECK_ENAME
 from entity.models import Entity
-from fusion.models import Collection, Comment
+from fusion.models import Collection, Comment, Trajectory
 from meta_config import HOST_IP
 from fusion.models import Collection, UserTemplate, OfficialTemplate
+from record.models import upd_record_create
 from user.models import User
 from utils.cast import decode
 from utils.meta_wrapper import JSR
@@ -160,20 +161,31 @@ class TempNewDoc(View):
         if not request.session['is_login']:
             return E.auth
         try:
+            user = User.objects.get(id=int(decode(request.session.get('uid', '-1'))))
+        except:
+            return E.auth, ''
+        
+        try:
             t = UserTemplate.objects.get(id=int(decode(kwargs['tid']))) \
                 if kwargs['type'] == 'user' else OfficialTemplate.objects.get(id=int(decode(kwargs['tid'])))
         except:
             return E.uk, ''
-        try:
-            father = Entity.objects.get(id=int(decode(kwargs['pfid'])))
-        except:
+        father = Entity.get_via_encoded_id(kwargs['pfid'])
+        if father is None:
             return E.fa, ''
-        if not (0 <= len(kwargs['name']) <= BASIC_DATA_MAX_LEN and str(kwargs['name']).isprintable()):
+        if not CHECK_ENAME(kwargs['name']):
             return E.name
         if father.sons_dup_name(kwargs['name']):
             return E.uni
         try:
             e = Entity.objects.create(father=father, name=kwargs['name'], content=t.content, type='doc')
+            upd_record_create(user, e)
+            Trajectory.objects.create(
+                ent=e,
+                user=user,
+                updated_content=e.content
+            )
+            
         except:
             return E.uk, ''
         return 0, e.id
