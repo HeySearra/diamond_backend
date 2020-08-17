@@ -13,6 +13,7 @@ from meta_config import HOST_IP
 from fusion.models import Collection, UserTemplate, OfficialTemplate
 from record.models import upd_record_create
 from user.models import User
+from user.views import send_comment_message
 from utils.cast import decode
 from utils.meta_wrapper import JSR
 
@@ -321,6 +322,8 @@ class CommentAdd(View):
                                   content=kwargs.get('content'),
                                   createdAt=int(time.time() * 1000))
             new_comment.save()
+            if not send_comment_message(comment=new_comment, su=u, mu=ent.creator):
+                return E.u
         except:
             return E.u
         return 0
@@ -356,6 +359,8 @@ class CommentUpdate(View):
                 return E.no_ent
             upd_comment.content = kwargs.get('content')
             upd_comment.save()
+            if not send_comment_message(comment=upd_comment, su=u, mu=ent.creator):
+                return E.u
         except:
             return E.u
         return 0
