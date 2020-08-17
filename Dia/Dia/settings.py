@@ -16,14 +16,13 @@ FRONTEND_ROOT = 'frontend/dist'
 # 静态资源地址
 STATIC_URL = '/static/'
 
-STATIC_ROOT=os.path.join(BASE_DIR, "/static/")
 # 模块资源引用地址
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT),
     os.path.join(BASE_DIR, FRONTEND_ROOT + '/static/'),
 )
 
-MEDIA_ROOT = os.path.join(BASE_DIR, '/store/')
+MEDIA_ROOT = '/home/cu/diadoc/diamond_backend/Dia/frontend/dist/static/upload'
 MEDIA_URL = f'/{MEDIA_ROOT}/'  # add for ckeditor
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
