@@ -22,12 +22,16 @@ def check_auth(user: User, ent: Entity, auth: str) -> bool:
         return True
     if ent.is_locked:
         return False
-
     assert auth in list(zip(*DOC_AUTH_CHS))[0]
-
     if auth == 'write':
-        pass
-
+        wf = True if WriteMem.objects.filter(user=user, write_auth__ent=ent).exists() else False
+        return wf
+    elif auth == 'read':
+        rf = True if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists() else False
+        return rf
+    elif auth == 'comment':
+        cf = True if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists() else False
+        return cf
 
 class HellWords(View):
     @JSR('words', 'status')
