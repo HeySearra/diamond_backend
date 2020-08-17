@@ -810,3 +810,30 @@ class FSRecycleClear(View):
         return 0
 
 
+class FSStarCondition(View):
+    @JSR('is_starred', 'status')
+    def get(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.ne = -1, 1, 2, 3
+        if not request.session.get('is_login', False):
+            return False, E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return False, E.au
+        # todo: 更多权限判断
+        kwargs: dict = request.GET
+        if kwargs.keys() != {'id', 'type'}:
+            return False, E.k
+        e = Entity.objects.filter(id=int(decode(kwargs.get('id'))))
+        if not e.exists():
+            return False, E.ne
+        e = e.get()
+        if e.is_deleted:
+            return False, E.ne
+        wf = True if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else False
+        cf = True if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else False
+        rf = True if ReadMem.objects.filter(user=u, read_auth__ent=e).exists() else False
+        if wf or cf or rf:
+            return Collection.objects.filter(user=u, ent=e).exists(), 0
+        else:
+            return False, 0

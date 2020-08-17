@@ -80,6 +80,7 @@ urlpatterns = [
     path('fs/recycle/recover', FSRecycleRecover.as_view(), name='fs_recycle_recover'), # 恢复回收站的内容
     path('fs/recycle/delete', FSRecycleDelete.as_view(), name='fs_recycle_delete'), # 彻底删除回收站的内容
     path('fs/recycle/clear', FSRecycleClear.as_view(), name='fs_recycle_clear'), # 彻底删回收站库
+    path('fs/star_condition', FSStarCondition.as_view(), name='fs_star_condition'),
 
     # 团队相关
     path('team/new_from_fold', NewFromFold.as_view(), name='team_new_from_fold'),
