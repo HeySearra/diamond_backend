@@ -100,7 +100,7 @@ class TempAll(View):  # 该请求复杂度高达n^2
             'only_vip': t.only_vip
         }) for t in official_template_list]
         
-        return 0, my_list, official_dict
+        return 0, my_list, [dict(title=k, temps=v) for k, v in official_dict.items()]
 
 
 class TempContent(View):
