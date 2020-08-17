@@ -169,15 +169,14 @@ def send_code(acc, email_type, storage=True):
     msg['To'] = Header(to_addr)
 
     # 开启发信服务，这里使用的是加密传输
-    if email_type != 'register':
-        server = smtplib.SMTP_SSL(host='smtp.163.com')
-        server.connect(smtp_server, 465)
-        # 登录发信邮箱
-        server.login(from_addr, password)
-        # 发送邮件
-        server.sendmail(from_addr, to_addr, msg.as_string())
-        # 关闭服务器
-        server.quit()
+    server = smtplib.SMTP_SSL(host='smtp.163.com')
+    server.connect(smtp_server, 465)
+    # 登录发信邮箱
+    server.login(from_addr, password)
+    # 发送邮件
+    server.sendmail(from_addr, to_addr, msg.as_string())
+    # 关闭服务器
+    server.quit()
 
     if storage:
         from user.models import EmailRecord
@@ -200,7 +199,7 @@ def send_code(acc, email_type, storage=True):
 
 if __name__ == '__main__':
     # req()
-    send_code('1016194674@qq.com', 'register', storage=False)
+    send_code('1134995360@qq.com', 'register', storage=False)
 
     # print(rand_sent())
     # print(rand_sent())
