@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Sequence, Callable
 
 
 class TNode(object):
@@ -105,20 +106,20 @@ class AhoCorasick(object):
         return result
 
 
-def LCS(leq, riq, eq_fn=lambda x, y: x == y):
+def _lcs(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y: x == y):
     
     start = 0
-    lend = lslen = len(leq)
-    rend = rslen = len(riq)
+    lend = lslen = len(seq1)
+    rend = rslen = len(seq2)
     
-    while start < lend and start < rend and eq_fn(leq[start], riq[start]):
+    while start < lend and start < rend and eq_fn(seq1[start], seq2[start]):
         start += 1
-    while start < lend and start < rend and eq_fn(leq[lend - 1], riq[rend - 1]):
+    while start < lend and start < rend and eq_fn(seq1[lend - 1], seq2[rend - 1]):
         lend -= 1
         rend -= 1
     
-    left = leq[start:lend]
-    right = riq[start:rend]
+    left = seq1[start:lend]
+    right = seq2[start:rend]
     lmax, rmax = len(left), len(right)
     furthest = {1: (0, [])}
     
@@ -150,3 +151,18 @@ def LCS(leq, riq, eq_fn=lambda x, y: x == y):
             else:
                 furthest[k] = (x, history)
 
+
+def lcs_mergeable(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y: x == y):
+    if isinstance(seq1, str):
+        seq1 = [ch for ch in seq1]
+    if isinstance(seq2, str):
+        seq2 = [ch for ch in seq2]
+    indices = list(_lcs(seq1, seq2, eq_fn))
+    if len(indices) == 0:
+        return False
+    lcs = [
+        seq1[idx] for idx in list(
+            zip(*indices)
+        )[0]
+    ]
+    return lcs == seq1 or lcs == seq2

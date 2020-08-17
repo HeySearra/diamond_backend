@@ -1,7 +1,7 @@
 from collections import defaultdict, deque
 from typing import List, Tuple, Callable
 
-from xmldiff.utils import longest_common_subsequence
+from utils.algorithm import lcs_mergeable
 
 
 class OuterXMLParser(object):
@@ -28,22 +28,38 @@ class OuterXMLParser(object):
             
             yield self.s[lhs_end:rhs_begin]
             cur = rhs_end
-    
-def xml_auto_merge_available(xml1, xml2):
-    disc_cnt, disc_dct = 1, defaultdict(int)
-    
-    def unordered_discretization(xml_content: str):
-        nonlocal disc_cnt, disc_dct
-        parser = OuterXMLParser(xml_content)
-        for text in parser.walk():
-            if disc_dct[text] == 0:
-                disc_dct[text] = disc_cnt
-                disc_cnt += 1
 
-    unordered_discretization(xml1)
-    unordered_discretization(xml2)
+
+def unordered_discretization(xml1: str, xml2: str):
+    def _disc_apply(s: str) -> int:
+        nonlocal disc_dct, disc_cnt
+        if disc_dct[s] == 0:
+            disc_dct[s], disc_cnt = disc_cnt, disc_cnt + 1
+        return disc_dct[s]
     
-    lcs = longest_common_subsequence('1', '2')
+    disc_dct, disc_cnt = defaultdict(int), 1
+    
+    return tuple(
+        [_disc_apply(s) for s in OuterXMLParser(xx).walk()]
+        for xx in (xml1, xml2)
+    )
+
+
+def xml_auto_merge_available(xml1, xml2):
+    
+    seq1: List[str] = list(OuterXMLParser(str(xml1)).walk())
+    seq2: List[str] = list(OuterXMLParser(str(xml2)).walk())
+    
+    print(f'seq1={seq1}, seq2={seq2}')
+    return lcs_mergeable(seq1, seq2, lcs_mergeable)
+
 
 if __name__ == '__main__':
-    print(longest_common_subsequence([10, 20, 30], [20, 30]))
+    print(xml_auto_merge_available(
+        '<p>我</p><p>你</p>',
+        '<p>我</p><p>他</p><p>你是谁</p>')
+    )
+    print(xml_auto_merge_available(
+        '<p>1</p><p>3</p><p>2</p>',
+        '<p>1</p><p>3</p>')
+    )
