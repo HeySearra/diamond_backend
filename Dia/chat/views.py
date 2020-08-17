@@ -91,7 +91,7 @@ class ChatContent(View):
         another_info = {'uid': encode(anotheru.id), 'src': anotheru.portrait}
 
         chatlist = []
-        chats = Chat.objects.filter(Q(user1_id=u.id) | Q(user2_id=u.id)).order_by('send_time')
+        chats = Chat.objects.filter((Q(user1_id=u.id) & Q(user2_id=anotheru.id)) | (Q(user1_id=anotheru.id) & Q(user2_id=u.id))).order_by('send_time')
         for chat in chats:
             if chat.content != '':
                 chatlist.append({
