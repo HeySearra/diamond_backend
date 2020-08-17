@@ -13,6 +13,7 @@ from meta_config import HOST_IP
 from fusion.models import Collection, UserTemplate, OfficialTemplate
 from record.models import upd_record_create
 from user.models import User
+from user.views import send_comment_message
 from utils.cast import decode
 from utils.meta_wrapper import JSR
 
@@ -26,11 +27,11 @@ class StarCondition(View):
         u = u.get()
         if dict(request.GET).keys() != {'id', 'type'}:
             return False, 1
-        
+
         ent = Entity.get_via_encoded_id(request.GET.get('id'))
         if ent is None:
             return False, -1
-        
+
         return Collection.objects.filter(user_id=u.id, ent_id=ent.id).exists(), 0
 
 
@@ -44,11 +45,11 @@ class FSStar(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'id', 'type', 'is_starred'}:
             return 1,
-        
+
         ent = Entity.get_via_encoded_id(kwargs['id'])
         if ent is None:
             return 3
-        
+
         if kwargs['is_starred']:
             Collection.objects.get_or_create(user=u, ent=ent)
         else:
@@ -56,7 +57,7 @@ class FSStar(View):
         return 0
 
 
-class TempAll(View):  # 该请求复杂度高达n^2
+class TempAll(View):
     @JSR('status', 'my_list', 'official_list')
     def get(self, request):
         E = EasyDict()
@@ -81,7 +82,7 @@ class TempAll(View):  # 该请求复杂度高达n^2
             return E.uk, [], []
         for user_template in user_template_list:
             my_list.append({
-                'tid': user_template.id,
+                'tid': user_template.encoded_id,
                 'title': user_template.name  # 个人模板名称
             })
         try:
@@ -92,14 +93,14 @@ class TempAll(View):  # 该请求复杂度高达n^2
 
         from collections import defaultdict
         official_dict = defaultdict(list)
-        
+
         [official_dict[t.title].append({
-            'tid': t.id,
-            'name': t.name,
+            'tid': t.encoded_id,
+            'title': t.name,
             'img': t.portrait,
             'only_vip': t.only_vip
         }) for t in official_template_list]
-        
+
         return 0, my_list, [dict(title=k, temps=v) for k, v in official_dict.items()]
 
 
@@ -159,7 +160,7 @@ class TempNewDoc(View):
             user = User.objects.get(id=int(decode(request.session.get('uid', '-1'))))
         except:
             return E.auth, ''
-        
+
         try:
             t = UserTemplate.objects.get(id=int(decode(kwargs['tid']))) \
                 if kwargs['type'] == 'user' else OfficialTemplate.objects.get(id=int(decode(kwargs['tid'])))
@@ -180,10 +181,10 @@ class TempNewDoc(View):
                 user=user,
                 updated_content=e.content
             )
-            
+
         except:
             return E.uk, ''
-        return 0, e.id
+        return 0, e.encoded_id
 
 
 class TempNew(View):
@@ -211,7 +212,7 @@ class TempNew(View):
             t = UserTemplate.objects.create(creator=user, name=kwargs['name'], content=kwargs['content'])
         except:
             return E.uk, ''
-        return 0, t.id
+        return 0, t.encoded_id
 
 
 class CommentGetUsers(View):
@@ -228,9 +229,9 @@ class CommentGetUsers(View):
         kwargs = request.GET
         if kwargs.keys() != {'did'}:
             return E.k, None
-        
+
         did = kwargs.get('did')
-        
+
         ent = Entity.get_via_encoded_id(did)
         if ent is None:
             return E.no_ent, None
@@ -265,17 +266,17 @@ class CommentGetCommentsOfThread(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au, None
-        
+
         kwargs = request.GET
         if kwargs.keys() != {'did', 'threadId'}:
             return E.k, None
         did = kwargs.get('did')
         threadId = kwargs.get('threadId')
-        
+
         ent = Entity.get_via_encoded_id(did)
         if ent is None:
             return E.no_ent
-        
+
         try:
             items = list(Comment.objects.filter(did_id=ent.id,
                                                 threadId=threadId).values())
@@ -307,9 +308,9 @@ class CommentAdd(View):
         kwargs = json.loads(request.body)
         if kwargs.keys() != {'did', 'threadId', 'commentId', 'content'}:
             return E.k
-        
+
         did = kwargs.get('did')
-        
+
         ent = Entity.get_via_encoded_id(did)
         if ent is None:
             return E.no_ent
@@ -321,6 +322,8 @@ class CommentAdd(View):
                                   content=kwargs.get('content'),
                                   createdAt=int(time.time() * 1000))
             new_comment.save()
+            if not send_comment_message(comment=new_comment, su=u, mu=ent.creator):
+                return E.u
         except:
             return E.u
         return 0
@@ -340,13 +343,13 @@ class CommentUpdate(View):
         kwargs = json.loads(request.body)
         if kwargs.keys() != {'did', 'threadId', 'commentId', 'content'}:
             return E.k
-        
+
         did = kwargs['did']
-        
+
         ent = Entity.get_via_encoded_id(did)
         if ent is None:
             return E.no_ent
-        
+
         try:
             upd_comment = Comment.objects.get(did_id=ent.id,
                                               uid_id=u.id,
@@ -356,6 +359,8 @@ class CommentUpdate(View):
                 return E.no_ent
             upd_comment.content = kwargs.get('content')
             upd_comment.save()
+            if not send_comment_message(comment=upd_comment, su=u, mu=ent.creator):
+                return E.u
         except:
             return E.u
         return 0
@@ -375,13 +380,13 @@ class CommentRemove(View):
         kwargs = json.loads(request.body)
         if kwargs.keys() != {'did', 'threadId', 'commentId'}:
             return E.k
-        
+
         did = kwargs['did']
-        
+
         ent = Entity.get_via_encoded_id(did)
         if ent is None:
             return E.no_ent
-        
+
         try:
             rmv_comment = Comment.objects.get(did_id=ent.id,
                                               uid_id=u.id,
