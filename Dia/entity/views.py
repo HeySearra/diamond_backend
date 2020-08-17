@@ -235,6 +235,8 @@ class WorkbenchSearch(View):
         if towards == 1:
             res_set.reverse()
 
+        res_set = list(filter(lambda e: not e.backtrace_deleted, res_set))
+
         return 0, cur_time(), [{
             'pfid': e.father.encoded_id if e.father is not None else '',
             'name': e.name,
