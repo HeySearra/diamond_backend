@@ -57,16 +57,17 @@ def unordered_discretization(xml1: str, xml2: str):
     )
 
 
-def xml_auto_merge_available(xml1, xml2):
+def xml_auto_merge(xml1, xml2):
     seq1: List[str] = list(OuterXMLParser(str(xml1)).walk())
     seq2: List[str] = list(OuterXMLParser(str(xml2)).walk())
 
     print(f'seq1={seq1}, seq2={seq2}')
-    return lcs_mergeable(seq1, seq2, lcs_mergeable)
+    lcs_is_1, lcs_is_2 = lcs_mergeable(seq1, seq2)
+    return lcs_is_1, lcs_is_2
 
 
 if __name__ == '__main__':
-    print(xml_auto_merge_available(
+    print(xml_auto_merge(
         '<p>123456789678890123456789000123456123456123456123456789</p>',
         '<p>123456789678890123456789000123456123456123456123456789012</p>',
     )

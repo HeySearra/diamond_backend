@@ -14,7 +14,7 @@ from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
 from teamwork.models import Team, DOC_AUTH
-from utils.xml import xml_auto_merge_available
+from utils.xml import xml_auto_merge
 
 
 class WorkbenchRecentView(View):
@@ -305,7 +305,10 @@ class DocEdit(View):
         auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            auto_mg = xml_auto_merge_available(content, e.content)
+            lcs_is_1, lcs_is_2 = xml_auto_merge(content, e.content)
+            auto_mg = lcs_is_1 or lcs_is_2
+            if lcs_is_1:
+                content = e.content
             if not auto_mg:
                 return E.need_to_merge, cvi
 

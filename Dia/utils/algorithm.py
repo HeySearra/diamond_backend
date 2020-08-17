@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Sequence, Callable
+from typing import Sequence, Callable, List
 
 
 class TNode(object):
@@ -106,15 +106,27 @@ class AhoCorasick(object):
         return result
 
 
-def _lcs(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y: x == y):
-    
+def _lcs(seq1: Sequence, seq2: Sequence):
     start = 0
     lend = lslen = len(seq1)
     rend = rslen = len(seq2)
     
-    while start < lend and start < rend and eq_fn(seq1[start], seq2[start]):
+    if isinstance(seq1, str):
+        eq_fn = lambda s1, i1, s2, i2: s1[i1] == s2[i2]
+    elif isinstance(seq1, list) and isinstance(seq1[0], str):
+        def eq_fn(s1: List[str], i1: int, s2: List[str], i2: int) -> bool:
+            lcs_is_s1, lcs_is_s2 = lcs_mergeable(s1[i1], s2[i2])
+            if lcs_is_s1:
+                s1[i1] = s2[i2]
+            else:
+                s2[i2] = s1[i1]
+            return lcs_is_s1 or lcs_is_s2
+    else:
+        raise ValueError
+    
+    while start < lend and start < rend and eq_fn(seq1, start, seq2, start):
         start += 1
-    while start < lend and start < rend and eq_fn(seq1[lend - 1], seq2[rend - 1]):
+    while start < lend and start < rend and eq_fn(seq1, lend - 1, seq2, rend - 1):
         lend -= 1
         rend -= 1
     
@@ -139,7 +151,7 @@ def _lcs(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y: x == y):
             history = history[:]
             y = x - k
             
-            while x < lmax and y < rmax and eq_fn(left[x], right[y]):
+            while x < lmax and y < rmax and eq_fn(left, x, right, y):
                 history.append((x + start, y + start))
                 x += 1
                 y += 1
@@ -152,12 +164,12 @@ def _lcs(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y: x == y):
                 furthest[k] = (x, history)
 
 
-def lcs_mergeable(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y: x == y):
+def lcs_mergeable(seq1: Sequence, seq2: Sequence):
     if isinstance(seq1, str):
         seq1 = [ch for ch in seq1]
     if isinstance(seq2, str):
         seq2 = [ch for ch in seq2]
-    indices = list(_lcs(seq1, seq2, eq_fn))
+    indices = list(_lcs(seq1, seq2))
     if len(indices) == 0:
         return False
     lcs = [
@@ -165,4 +177,4 @@ def lcs_mergeable(seq1: Sequence, seq2: Sequence, eq_fn: Callable = lambda x, y:
             zip(*indices)
         )[0]
     ]
-    return lcs == seq1 or lcs == seq2
+    return lcs == seq1, lcs == seq2
