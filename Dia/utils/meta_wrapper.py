@@ -15,6 +15,8 @@ from pprint import pprint, pformat
 from typing import List
 from collections import OrderedDict
 
+from utils.cast import cur_time
+
 
 def JSR(*keys):
     def decorator(req_func):
@@ -60,9 +62,9 @@ def JSR(*keys):
                 # values = list(map(lambda x: x.strftime('%Y-%m-%d %H:%M:%S') if isinstance(x, datetime) else x, values))
                 [values.append('') for _ in range(len(keys) - len(values))]
                 ret_dict = dict(zip(keys, values))
-                if debug and func_name != 'user.UnreadCount.GET':
+                if debug and func_name not in ['user.UnreadCount.GET', 'chat.ChatCount.GET', 'entity.DocumentOnline.GET']:
                     c = Fore.RED if ret_dict.get('status', 0) else Fore.GREEN
-                    print(c + f'[{func_name}] input: {inputs}\n ret: {pformat(ret_dict)}, time: {time_cost:.2f}s')
+                    print(c + f'[{func_name}] input: {inputs}\n ret: {pformat(ret_dict)}, time: {time_cost:.2f}s, {cur_time()[-5:]}')
                 return JsonResponse(ret_dict)
 
         return wrapper
