@@ -6,7 +6,7 @@ from ckeditor.fields import RichTextField
 from django.db import models
 from django.db.models import Q
 from django.template.defaultfilters import striptags
-from xmldiff.actions import DeleteNode
+from xmldiff.actions import DeleteNode, InsertNode
 from xmldiff.main import diff_texts
 
 from entity.hypers import *
@@ -20,7 +20,7 @@ def auto_merge_available(xml1: str, xml2: str):
     xml1 = f'<diadoc>{xml1}</diadoc>'
     xml2 = f'<diadoc>{xml2}</diadoc>'
     return all(
-        isinstance(n, DeleteNode)
+        isinstance(n, DeleteNode) or isinstance(n, InsertNode)
         for n in diff_texts(xml1, xml2)
     )
     # disc_dict = defaultdict(int)

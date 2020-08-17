@@ -148,7 +148,7 @@ class FocusingRecord(models.Model):
     
     @staticmethod
     def focus(user, ent):
-        r = FocusingRecord.objects.get_or_create(user=user, ent=ent)
+        r = FocusingRecord.objects.get_or_create(user=user, ent=ent)[0]
         r.obj_focus()
     
     @staticmethod

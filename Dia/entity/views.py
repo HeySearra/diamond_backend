@@ -912,7 +912,7 @@ class DocumentOnline(View):
                 'name': r.user.name,
                 'portrait': r.user.portrait
             }
-            for r in e.focusing_records
+            for r in e.focusing_records.all()
             if r.obj_focusing()
         ]
 
@@ -965,5 +965,5 @@ class DocumentHistory(View):
                 'portrait': traj.user.portrait,
                 'name': traj.user.name,
             }
-            for traj in e.trajectories
+            for traj in e.trajectories.all()
         ][:-1]  # cut the tail (the first traj, indicating the file-creation)
