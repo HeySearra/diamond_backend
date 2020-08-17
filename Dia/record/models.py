@@ -74,14 +74,14 @@ class CreateRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='create_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='create_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
-    
+
     class Meta:
         ordering = ['-dt']
-    
+
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
-    
+
     @property
     def dt_str(self):
         return self.dt.strftime(TIME_FMT)
@@ -91,14 +91,14 @@ class WriteRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='write_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='write_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
-    
+
     class Meta:
         ordering = ['-dt']
-    
+
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
-    
+
     @property
     def dt_str(self):
         return self.dt.strftime(TIME_FMT)
@@ -108,14 +108,14 @@ class CommentRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='comment_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='comment_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
-    
+
     class Meta:
         ordering = ['-dt']
-    
+
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
-    
+
     @property
     def dt_str(self):
         return self.dt.strftime(TIME_FMT)
@@ -125,14 +125,14 @@ class ReadRecord(models.Model):
     user = models.ForeignKey(to='user.User', related_name='read_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='read_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
-    
+
     class Meta:
         ordering = ['-dt']
-    
+
     def upd_dt(self):
         self.dt = datetime.now()
         self.save()
-    
+
     @property
     def dt_str(self):
         return self.dt.strftime(TIME_FMT)
@@ -141,16 +141,16 @@ class ReadRecord(models.Model):
 class FocusingRecord(models.Model):
     class Meta:
         ordering = ['-dt']
-    
+
     user = models.ForeignKey(to='user.User', related_name='focusing_records', on_delete=models.CASCADE)
     ent = models.ForeignKey(to='entity.Entity', related_name='focusing_records', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True)
-    
+
     @staticmethod
     def focus(user, ent):
         r = FocusingRecord.objects.get_or_create(user=user, ent=ent)[0]
         r.obj_focus()
-    
+
     @staticmethod
     def focusing(user, ent) -> bool:
         q = FocusingRecord.objects.filter(user=user, ent=ent)

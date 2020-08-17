@@ -160,7 +160,7 @@ def send_comment_message(comment: Comment, su: User, mu: User):
     m.title = su.name + " 评论了您的文档：" + comment.did.name
     m.content = striptags(comment.content)
     m.portrait = su.portrait
-    m.related_id = comment.id
+    m.related_id = comment.did.id
     m.type = 'doc'
     try:
         m.save()
