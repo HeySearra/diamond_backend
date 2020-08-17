@@ -3,10 +3,10 @@ from django.views import View
 from easydict import EasyDict as ED
 import json
 
-from misc.views import check_auth, get_auth
+from misc.views import check_auth, get_auth, WriteMem, CommentMem, ReadMem
 from user.models import User
 from datetime import datetime
-from entity.models import Entity, auto_merge_available
+from entity.models import Entity
 from fusion.models import Collection, Links, Trajectory
 from record.models import upd_record_create, upd_record_write, FocusingRecord, upd_record_comment, upd_record_read
 from utils.cast import decode, cur_time
@@ -14,7 +14,7 @@ from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
 from teamwork.models import Team, DOC_AUTH
-from misc.models import *
+from utils.xml import xml_auto_merge_available
 
 
 class WorkbenchRecentView(View):
@@ -305,7 +305,7 @@ class DocEdit(View):
         auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            auto_mg = auto_merge_available(content, e.content)
+            auto_mg = xml_auto_merge_available(content, e.content)
             if not auto_mg:
                 return E.need_to_merge, cvi
         

@@ -8,4 +8,3 @@ Pillow>=7.2.0
 pymysql>=0.10.0
 python-dateutil>=2.8.1
 requests>=2.24.0
-xmldiff==2.4
