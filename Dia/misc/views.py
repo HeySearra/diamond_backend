@@ -70,8 +70,7 @@ class UploadImg(View):
         file_path = os.path.join(DEFAULT_IMG_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        print(request.FILES.get('img'))
-        return 0, file_path
+        return 0, 'http://47.96.109.229/static/upload/img/' + file_name
 
 
 class FSShareKey(View):

@@ -212,7 +212,7 @@ class Register(View):
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         kwargs.update({'pwd': hash_password(kwargs['pwd'])})
-        kwargs.update({'portrait': os.path.join(DEFAULT_PROFILE_ROOT, 'handsome.jpg')})
+        kwargs.update({'portrait': 'http://47.96.109.229/static/upload/portrait/' + 'handsome.jpg'})
         er = EmailRecord.objects.filter(code=kwargs['ver_code'], acc=kwargs['acc'])
         if not er.exists():
             return E.code
@@ -539,7 +539,6 @@ class ChangeProfile(View):
         u = User.objects.filter(id=int(decode(request.session['uid'])))
         if not u.exists():
             return '', errc.unknown
-        u = u.get()
 
         if file.size > MAX_UPLOADED_FSIZE:
             return '', errc.toobig
@@ -550,9 +549,4 @@ class ChangeProfile(View):
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        u.portrait = file_path
-        try:
-            u.save()
-        except:
-            return '', errc.unknown
-        return u.portrait, 0
+        return 'http://47.96.109.229/static/upload/portrait/' + file_name, 0
