@@ -7,7 +7,7 @@ from user.models import User
 from datetime import datetime
 from entity.models import Entity, auto_merge_available
 from fusion.models import Collection, Links, Trajectory
-from record.models import upd_record_create, upd_record_write, FocusingRecord
+from record.models import upd_record_create, upd_record_write, FocusingRecord, upd_record_comment, upd_record_read
 from utils.cast import decode, cur_time
 from utils.meta_wrapper import JSR
 from entity.hypers import *
@@ -173,15 +173,17 @@ class DocEdit(View):
         if u is None:
             return E.au
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'did', 'ver', 'content'}:
+        if kwargs.keys() != {'name', 'did', 'ver', 'auth', 'content'}:
             return E.k
         
-        name, did, ver, content = kwargs['name'], kwargs['did'], kwargs['ver'], kwargs['content']
+        name, did, ver, auth, content = kwargs['name'], kwargs['did'], kwargs['ver'], kwargs['auth'], kwargs['content']
+        if auth not in [DOC_AUTH.write, DOC_AUTH.comment]:
+            return E.k
         
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.u
-        if not check_auth(user=u, ent=e, auth=DOC_AUTH.write, double_check_deleted=False):
+        if not check_auth(user=u, ent=e, auth=auth, double_check_deleted=False):
             return E.au
         
         if e.brothers_dup_name(name):
@@ -198,7 +200,7 @@ class DocEdit(View):
                 return E.need_to_merge, cvi
         
         e.content = content
-        upd_record_write(user=u, ent=e)
+        upd_record_write(user=u, ent=e) if auth == DOC_AUTH.write else upd_record_comment(user=u, ent=e)
         traj = Trajectory(
             ent=e,
             user=u,
@@ -212,41 +214,6 @@ class DocEdit(View):
             return E.u
         
         return E.auto_merged if auto_mg else 0, traj.id
-
-
-class DocComment(View):
-    @JSR('status')
-    def post(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        E.au, E.inv_name, E.inv_cont, E.rename = 2, 3, 4, 5
-        if not request.session.get('is_login', False):
-            return E.au
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return E.au
-        kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'did', 'content'}:
-            return E.k
-        
-        did, content = kwargs['did'], kwargs['content']
-        
-        e = Entity.get_via_encoded_id(did)
-        if e is None:
-            return E.u
-        
-        if not check_auth(user=u, ent=e, auth=DOC_AUTH.write, double_check_deleted=False):
-            return E.au
-        
-        # todo: version-controlling validation
-        
-        e.content = content
-        try:
-            e.save()
-        except:
-            return E.u
-        
-        return 0
 
 
 class DocAll(View):
@@ -281,6 +248,7 @@ class DocAll(View):
         if not q.exists():
             return E.no_ent
         traj: Trajectory = q.get()
+        upd_record_read(u, e)
         
         return 0, e.cur_ver_id, e.name, traj.updated_content
 

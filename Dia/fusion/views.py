@@ -207,40 +207,47 @@ class TempNew(View):
         return 0, t.id
 
 
-class CommentAdd(View):
-    @JSR('status')
-    def post(self, request):
+class CommentGetUsers(View):
+    @JSR('status', 'list')
+    def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
         E.au, E.no_ent = 2, 3
         if not request.session.get('is_login', False):
-            return E.au
+            return E.au, None
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
-            return E.au
-        kwargs = json.loads(request.body)
-        if kwargs.keys() != {'did', 'threadId', 'commentId', 'content'}:
-            return E.k
+            return E.au, None
+        kwargs = request.GET
+        if kwargs.keys() != {'did'}:
+            return E.k, None
         
         did = kwargs.get('did')
         
         ent = Entity.get_via_encoded_id(did)
         if ent is None:
-            return E.no_ent
+            return E.no_ent, None
         try:
-            new_comment = Comment(did=ent,
-                                  uid=u,
-                                  threadId=kwargs.get('threadId'),
-                                  commentId=kwargs.get('commentId'),
-                                  content=kwargs.get('content'),
-                                  createdAt=int(time.time() * 1000))
-            new_comment.save()
+            comments = Comment.objects.filter(did_id=ent.id)
+            users = []
+            user = User.get_via_encoded_id(request.session['uid'])
+            dic = {'id': user.encoded_id,
+                   'name': user.name,
+                   'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
+            users.append(dic)
+            for comment in comments:
+                user = comment.uid
+                dic = {'id': user.encoded_id,
+                       'name': user.name,
+                       'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
+                if dic not in users:
+                    users.append(dic)
         except:
-            return E.u
-        return 0
+            return E.u, None
+        return 0, users
 
 
-class CommentGet(View):
+class CommentGetCommentsOfThread(View):
     @JSR('status', 'list')
     def get(self, request):
         E = ED()
@@ -277,6 +284,39 @@ class CommentGet(View):
                    'createdAt': it.get('createdAt')}
             res.append(dic)
         return 0, res
+
+
+class CommentAdd(View):
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au, E.no_ent = 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        kwargs = json.loads(request.body)
+        if kwargs.keys() != {'did', 'threadId', 'commentId', 'content'}:
+            return E.k
+        
+        did = kwargs.get('did')
+        
+        ent = Entity.get_via_encoded_id(did)
+        if ent is None:
+            return E.no_ent
+        try:
+            new_comment = Comment(did=ent,
+                                  uid=u,
+                                  threadId=kwargs.get('threadId'),
+                                  commentId=kwargs.get('commentId'),
+                                  content=kwargs.get('content'),
+                                  createdAt=int(time.time() * 1000))
+            new_comment.save()
+        except:
+            return E.u
+        return 0
 
 
 class CommentUpdate(View):
@@ -328,7 +368,7 @@ class CommentRemove(View):
         kwargs = json.loads(request.body)
         if kwargs.keys() != {'did', 'threadId', 'commentId'}:
             return E.k
-
+        
         did = kwargs['did']
         
         ent = Entity.get_via_encoded_id(did)
@@ -346,43 +386,3 @@ class CommentRemove(View):
         except:
             return E.u
         return 0
-
-
-class CommentUsers(View):
-    @JSR('status', 'list')
-    def get(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        E.au, E.no_ent = 2, 3
-        if not request.session.get('is_login', False):
-            return E.au, None
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return E.au, None
-        kwargs = request.GET
-        if kwargs.keys() != {'did'}:
-            return E.k, None
-        
-        did = kwargs.get('did')
-        
-        ent = Entity.get_via_encoded_id(did)
-        if ent is None:
-            return E.no_ent, None
-        try:
-            comments = Comment.objects.filter(did_id=ent.id)
-            users = []
-            user = User.get_via_encoded_id(request.session['uid'])
-            dic = {'id': user.encoded_id,
-                   'name': user.name,
-                   'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
-            users.append(dic)
-            for comment in comments:
-                user = comment.uid
-                dic = {'id': user.encoded_id,
-                       'name': user.name,
-                       'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
-                if dic not in users:
-                    users.append(dic)
-        except:
-            return E.u, None
-        return 0, users

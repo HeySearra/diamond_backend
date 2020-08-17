@@ -47,9 +47,9 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
     
     if WriteMem.objects.filter(user=user, write_auth__ent=ent).exists():
         return DOC_AUTH.write
-    if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists()
+    if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists():
         return DOC_AUTH.comment
-    if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists()
+    if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists():
         return DOC_AUTH.read
     
 
