@@ -68,7 +68,7 @@ def xml_auto_merge(xml1, xml2):
 if __name__ == '__main__':
     print(xml_auto_merge(
         '<p>123</p><p>bcd</p>',
-        '<p>123def</p>',
+        '<p>123</p><p>bce</p>',
     )
     )
     # print(xml_auto_merge_available(
