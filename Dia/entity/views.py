@@ -239,15 +239,15 @@ class DocAll(View):
         if u is None:
             return E.au
         kwargs = request.GET
-        if kwargs.keys() != {'did', 'ver'}:
+        if kwargs.keys() != {'did', 'ver'} and kwargs.keys() != {'did'}:
             return E.k
         did = kwargs.get('did')
-        ver = kwargs.get('ver')
+        ver = kwargs.get('ver', '-1')
 
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        if check_auth(u, e, DOC_AUTH.read):
+        if not check_auth(u, e, DOC_AUTH.read):
             return E.au
         
         cvi = e.cur_ver_id
