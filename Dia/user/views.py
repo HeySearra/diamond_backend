@@ -550,7 +550,7 @@ class ChangeProfile(View):
         file_path = os.path.join(DEFAULT_PROFILE_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
-        u.portrait = os.path.join(BASE_DIR, file_path)
+        u.portrait = file_path
         try:
             u.save()
         except:

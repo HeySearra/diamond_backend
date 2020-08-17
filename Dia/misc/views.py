@@ -67,11 +67,11 @@ class UploadImg(View):
         file_name = ''.join(
             [random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)]) + '.' + \
                     str(file.name).split(".")[-1]
-        file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+        file_path = os.path.join(DEFAULT_IMG_ROOT, file_name)
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
         print(request.FILES.get('img'))
-        return 0, f'http://{HOST_IP}:8000/store/' + file_name
+        return 0, file_path
 
 
 class FSShareKey(View):

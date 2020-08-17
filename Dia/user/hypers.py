@@ -23,7 +23,8 @@ MESSAGE_type = (
     ('doc', '文档新增评论'),
 )
 IDENTITY_DICT = {e[0]: e[1] for e in IDENTITY_CHS}
-DEFAULT_PROFILE_ROOT = MEDIA_ROOT + '/profile'
+DEFAULT_PROFILE_ROOT = os.path.join(MEDIA_ROOT, 'portrait')
+DEFAULT_IMG_ROOT = os.path.join(MEDIA_ROOT, 'img')
 MAX_UPLOADED_FSIZE = 500 * 1024
 FNAME_DEFAULT_LEN = 20
 
