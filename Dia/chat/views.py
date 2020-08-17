@@ -41,12 +41,16 @@ class ChatList(View):
 
         chatlist = []
         for another_user in another_users:
-            chat = Chat.objects.filter(Q(user1_id=u.id) | Q(user2_id=another_user)).order_by('-send_time')
+            chat = Chat.objects.filter((Q(user1_id=u.id) & Q(user2_id=another_user)) | (Q(user1_id=another_user) & Q(user2_id=u.id))).order_by('send_time')
             is_read = True
             for c in chat:
                 if (not c.is_read) and (c.user2_id == u.id):
                     is_read = False
-            last_message = chat.last().content
+            try:
+                print(chat.count())
+                last_message = chat.last().content
+            except:
+                return [], E.u
             ano_u = User.objects.filter(id=another_user)
             if not ano_u.exists():
                 return [], -1
@@ -87,7 +91,7 @@ class ChatContent(View):
         another_info = {'uid': encode(anotheru.id), 'src': anotheru.portrait}
 
         chatlist = []
-        chats = Chat.objects.filter(Q(user1_id=u.id) | Q(user2_id=u.id)).order_by('-send_time')
+        chats = Chat.objects.filter(Q(user1_id=u.id) | Q(user2_id=u.id)).order_by('send_time')
         for chat in chats:
             if chat.content != '':
                 chatlist.append({
