@@ -195,7 +195,7 @@ class DocEdit(View):
         auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            auto_mg = auto_merge_available(e.content, content)
+            auto_mg = auto_merge_available(content, e.content)
             if not auto_mg:
                 return E.need_to_merge, cvi
         
