@@ -232,7 +232,7 @@ class WorkbenchSearch(View):
             res_set = sorted(list(res_set), key=lambda e: e.edit_dt_str)
         else:
             return E.k
-        if towards == 2:
+        if towards == 1:
             res_set.reverse()
 
         return 0, cur_time(), [{
