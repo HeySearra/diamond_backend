@@ -26,7 +26,7 @@ class OuterXMLParser(object):
                 raise ValueError
             rhs_end = rhs_begin + len(rhs_str)
 
-            yield self.s[lhs_end:rhs_begin] if without_tag else (lhs_begin, lhs_end, rhs_begin, rhs_end), clz
+            yield self.s[lhs_end:rhs_begin] if without_tag else ((lhs_begin, lhs_end, rhs_begin, rhs_end), clz)
             cur = rhs_end
 
 
@@ -66,6 +66,11 @@ def xml_auto_merge_available(xml1, xml2):
 
 
 if __name__ == '__main__':
+    print(xml_auto_merge_available(
+        '<p>123456789678890123456789000123456123456123456123456789</p>',
+        '<p>123456789678890123456789000123456123456123456123456789012</p>',
+    )
+    )
     # print(xml_auto_merge_available(
     #     '<p>我</p><p>你</p>',
     #     '<p>我</p><p>他</p><p>你是谁</p>')
@@ -74,5 +79,4 @@ if __name__ == '__main__':
     #     '<p>1</p><p>3</p><p>2</p>',
     #     '<p>1</p><p>3</p>')
     # )
-    print(filter_comment('''<p>123131</p><comment-start name="ee819fd12c678aae326a877e29d583e4f:09978"></comment-start><comment-start name="e7524d8e1d25636228ac7ec0652d6bc0d:e6533"></comment-start>qwsdadads<comment-end name="ee819fd12c678aae326a877e29d583e4f:09978"></comment-end><comment-end name="e7524d8e1d25636228ac7ec0652d6bc0d:e6533"></comment-end><p>21321321</p>'''))
 
