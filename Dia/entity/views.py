@@ -5,7 +5,7 @@ import json
 from misc.views import check_auth
 from user.models import User
 from datetime import datetime
-from entity.models import Entity
+from entity.models import Entity, auto_merge_available
 from fusion.models import Collection, Links, Trajectory
 from record.models import upd_record_create, upd_record_write, FocusingRecord
 from utils.cast import decode, cur_time
@@ -166,10 +166,13 @@ class DocEdit(View):
         if not CHECK_ENAME(name):
             return E.inv_name
         e.name = name
-        
+
+        auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            return E.need_to_merge, cvi
+            auto_mg = auto_merge_available(e.content, content)
+            if not auto_mg:
+                return E.need_to_merge, cvi
         
         e.content = content
         upd_record_write(user=u, ent=e)
@@ -185,7 +188,7 @@ class DocEdit(View):
         except:
             return E.u
         
-        return 0, traj.id
+        return E.auto_merged if auto_mg else 0, traj.id
 
 
 class DocComment(View):
