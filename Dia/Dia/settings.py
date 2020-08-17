@@ -16,7 +16,7 @@ FRONTEND_ROOT = 'frontend/dist'
 # 静态资源地址
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'frontend/dist/static')
+STATIC_ROOT = 'frontend/dist/static'
 # 模块资源引用地址
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT),
