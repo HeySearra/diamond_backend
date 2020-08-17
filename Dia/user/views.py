@@ -4,12 +4,15 @@ import string
 import hashlib
 
 from datetime import datetime, date
+
+from django.template.defaultfilters import striptags
 from easydict import EasyDict
 from django.views import View
 from django.db.utils import IntegrityError, DataError
 from django.db.models import Q
 
 from Dia.settings import BASE_DIR
+from fusion.models import Comment
 from teamwork.models import Team
 from user.models import User, EmailRecord, Message
 from user.hypers import *
@@ -147,17 +150,17 @@ def send_team_admin_cancel_message(team: Team, su: User, mu: User):
     return True
 
 
-def send_comment_message(comment=(), su=User(), mu=User()):
+def send_comment_message(comment: Comment, su: User, mu: User):
     # tid:团队id，su:发表评论的用户，mu：文档的拥有者
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     # 这里没有写完，注释的地方需要完善
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = su.name + " 评论了您的文档："  # + comment.doc.title
-    m.content = comment.content
+    m.title = su.name + " 评论了您的文档：" + comment.did.name
+    m.content = striptags(comment.content)
     m.portrait = su.portrait
-    m.related_id = comment.id
+    m.related_id = comment.did.id
     m.type = 'doc'
     try:
         m.save()

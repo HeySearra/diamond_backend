@@ -305,7 +305,7 @@ class DocEdit(View):
         auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            auto_mg = auto_merge_available(e.content, content)
+            auto_mg = auto_merge_available(content, e.content)
             if not auto_mg:
                 return E.need_to_merge, cvi
         
@@ -1022,7 +1022,7 @@ class DocumentOnline(View):
                 'name': r.user.name,
                 'portrait': r.user.portrait
             }
-            for r in e.focusing_records
+            for r in e.focusing_records.all()
             if r.obj_focusing()
         ]
 
@@ -1075,5 +1075,5 @@ class DocumentHistory(View):
                 'portrait': traj.user.portrait,
                 'name': traj.user.name,
             }
-            for traj in e.trajectories
+            for traj in e.trajectories.all()
         ][:-1]  # cut the tail (the first traj, indicating the file-creation)

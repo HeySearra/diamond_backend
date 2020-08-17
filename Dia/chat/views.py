@@ -89,6 +89,10 @@ class ChatContent(View):
 
         user_info = {'uid': encode(u.id), 'src': u.portrait}
         another_info = {'uid': encode(anotheru.id), 'src': anotheru.portrait}
+        chats = Chat.objects.filter(Q(user2_id=u.id) & Q(user1_id=anotheru.id))
+        for chat in chats:
+            chat.is_read = True
+            chat.save()
 
         chatlist = []
         chats = Chat.objects.filter((Q(user1_id=u.id) & Q(user2_id=anotheru.id)) | (Q(user1_id=anotheru.id) & Q(user2_id=u.id))).order_by('send_time')
@@ -96,7 +100,7 @@ class ChatContent(View):
             if chat.content != '':
                 chatlist.append({
                     'is_mine': True if chat.user1_id == u.id else False,
-                    'dt': chat.send_time,
+                    'dt': chat.dt_str,
                     'text': chat.content
                 })
         return cur_time(), user_info, another_info, chatlist, 0
@@ -150,7 +154,7 @@ class ChatCount(View):
             return 0, E.au
         u = u.get()
 
-        return Chat.objects.filter(user2_id=u.id).count(), 0
+        return Chat.objects.filter(Q(user2_id=u.id) & Q(is_read=False)).count(), 0
 
 
 class BuildChat(View):

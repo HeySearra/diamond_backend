@@ -18,6 +18,10 @@ class Chat(models.Model):
     def encoded_id(self) -> str:
         return encode(self.id)
 
+    @property
+    def dt_str(self):
+        return self.send_time.strftime(TIME_FMT)
+
     user1 = models.ForeignKey(to='user.User', related_name='chat_user1', verbose_name="私聊消息发送者", on_delete=models.CASCADE, null=True)
     user2 = models.ForeignKey(to='user.User', related_name='chat_user2', verbose_name="私聊消息接收者", on_delete=models.CASCADE, null=True)
     is_read = models.BooleanField(blank=True, verbose_name='私聊信息是否读取', default=False)
