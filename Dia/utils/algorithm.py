@@ -115,12 +115,12 @@ def _lcs(seq1: Sequence, seq2: Sequence):
         eq_fn = lambda s1, i1, s2, i2: s1[i1] == s2[i2]
     elif isinstance(seq1, list) and isinstance(seq1[0], str):
         def eq_fn(s1: List[str], i1: int, s2: List[str], i2: int) -> bool:
-            lcs_is_s1, lcs_is_s2 = lcs_mergeable(s1[i1], s2[i2])
-            if lcs_is_s1:
-                s1[i1] = s2[i2]
+            merged: str = greedy_merge_lcs(s1[i1], s2[i2])
+            if merged is not None:
+                s1[i1] = s2[i2] = merged
+                return True
             else:
-                s2[i2] = s1[i1]
-            return lcs_is_s1 or lcs_is_s2
+                return False
     else:
         raise ValueError
     
@@ -164,11 +164,7 @@ def _lcs(seq1: Sequence, seq2: Sequence):
                 furthest[k] = (x, history)
 
 
-def lcs_mergeable(seq1: Sequence, seq2: Sequence):
-    if isinstance(seq1, str):
-        seq1 = [ch for ch in seq1]
-    if isinstance(seq2, str):
-        seq2 = [ch for ch in seq2]
+def greedy_merge_lcs(seq1: Sequence, seq2: Sequence):
     indices = list(_lcs(seq1, seq2))
     if len(indices) == 0:
         return False
@@ -177,4 +173,14 @@ def lcs_mergeable(seq1: Sequence, seq2: Sequence):
             zip(*indices)
         )[0]
     ]
-    return lcs == seq1, lcs == seq2
+    if isinstance(seq1, str):
+        seq1 = [ch for ch in seq1]
+    if isinstance(seq2, str):
+        seq2 = [ch for ch in seq2]
+
+    # print(f'seq1={seq1}, seq2={seq2}')
+    if lcs == seq1:
+        return seq2 if isinstance(seq2, str) else ''.join(seq2)
+    if lcs == seq2:
+        return seq1 if isinstance(seq1, str) else ''.join(seq1)
+    return None

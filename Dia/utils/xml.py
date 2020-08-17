@@ -1,7 +1,7 @@
 from collections import defaultdict, deque
 from typing import List, Tuple, Callable
 
-from utils.algorithm import lcs_mergeable
+from utils.algorithm import greedy_merge_lcs
 
 
 class OuterXMLParser(object):
@@ -26,7 +26,7 @@ class OuterXMLParser(object):
                 raise ValueError
             rhs_end = rhs_begin + len(rhs_str)
 
-            yield self.s[lhs_end:rhs_begin] if without_tag else ((lhs_begin, lhs_end, rhs_begin, rhs_end), clz)
+            yield self.s[lhs_begin:rhs_end] if without_tag else ((lhs_begin, lhs_end, rhs_begin, rhs_end), clz)
             cur = rhs_end
 
 
@@ -61,15 +61,14 @@ def xml_auto_merge(xml1, xml2):
     seq1: List[str] = list(OuterXMLParser(str(xml1)).walk())
     seq2: List[str] = list(OuterXMLParser(str(xml2)).walk())
 
-    print(f'seq1={seq1}, seq2={seq2}')
-    lcs_is_1, lcs_is_2 = lcs_mergeable(seq1, seq2)
-    return lcs_is_1, lcs_is_2
+    merged = greedy_merge_lcs(seq1, seq2)
+    return merged
 
 
 if __name__ == '__main__':
     print(xml_auto_merge(
-        '<p>123456789678890123456789000123456123456123456123456789</p>',
-        '<p>123456789678890123456789000123456123456123456123456789012</p>',
+        '<p>123</p><p>bcd</p>',
+        '<p>123def</p>',
     )
     )
     # print(xml_auto_merge_available(

@@ -305,11 +305,11 @@ class DocEdit(View):
         auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            lcs_is_1, lcs_is_2 = xml_auto_merge(content, e.content)
-            auto_mg = lcs_is_1 or lcs_is_2
-            if lcs_is_1:
-                content = e.content
-            if not auto_mg:
+            merged = xml_auto_merge(content, e.content)
+            if merged is not None:
+                auto_mg = True
+                content = merged
+            else:
                 return E.need_to_merge, cvi
 
         e.content = content
