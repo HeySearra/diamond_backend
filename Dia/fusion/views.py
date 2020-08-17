@@ -89,23 +89,18 @@ class TempAll(View):  # 该请求复杂度高达n^2
         except:
             return E.uk, [], []
         # [{'title': official_template.title, 'temps': [{'tid': }...]}...]
-        for official_template in official_template_list:
-            if official_template.title not in title_list:
-                title_list.append(official_template.title)
-        for title in title_list:
-            temps = []
-            for t in OfficialTemplate.objects.filter(title=title):
-                temps.append({
-                    'tid': t.id,
-                    'name': t.name,
-                    'img': t.portrait,
-                    'only_vip': t.only_vip
-                })
-            official_list.append({
-                'title': title,
-                'temps': temps
-            })
-        return 0, my_list, official_list
+
+        from collections import defaultdict
+        official_dict = defaultdict(list)
+        
+        [official_dict[t.title].append({
+            'tid': t.id,
+            'name': t.name,
+            'img': t.portrait,
+            'only_vip': t.only_vip
+        }) for t in official_template_list]
+        
+        return 0, my_list, official_dict
 
 
 class TempContent(View):
