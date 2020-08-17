@@ -93,10 +93,11 @@ class Entity(models.Model):
 
     @property
     def create_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = CreateRecord.objects.filter(ent_id=self.id)
-        if not r.exists():
+        q = CreateRecord.objects.filter(ent_id=self.id)
+        if not q.exists():
             return '', '', ''
-        u = r.first().user
+        r = q.first()
+        u = r.user
         return u.name, u.encoded_id, r.dt_str
 
     @property
@@ -115,10 +116,11 @@ class Entity(models.Model):
 
     @property
     def edit_name_uid_dt_str(self) -> Tuple[str, str, str]:
-        r = WriteRecord.objects.filter(ent_id=self.id)
-        if not r.exists():
+        q = WriteRecord.objects.filter(ent_id=self.id)
+        if not q.exists():
             return '', '', ''
-        u = r.first().user
+        r = q.first()
+        u = r.user
         return u.name, u.encoded_id, r.dt_str
 
     def read_dt_str(self, user) -> str:
