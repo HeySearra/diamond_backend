@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'record',
     'fusion',
     'misc',
-    
+    'chat',
+
 ]
 
 # 列表有序加载，顺序不能错

@@ -7,6 +7,7 @@ from record.views import *
 from fusion.views import *
 from misc.views import *
 from teamwork.views import *
+from chat.views import *
 
 # add for ckeditor image upload
 import os
@@ -102,6 +103,14 @@ urlpatterns = [
     path('temp/delete', TempDelete.as_view(), name='temp_delete'),
     path('temp/new_doc', TempNewDoc.as_view(), name='temp_new_doc'),
     path('temp/new', TempNew.as_view(), name='temp_new'),
+
+    # 私信
+    path('chat/list', ChatList.as_view(), name='chat_list'),
+    path('chat/content', ChatContent.as_view(), name='chat_content'),
+    path('chat/send', SendChat.as_view(), name='chat_send'),
+    path('chat/count', ChatCount.as_view(), name='chat_count'),
+    path('chat/build_chat', BuildChat.as_view(), name='chat_build_chat'),
+
     # 阴间
     path('hell/words', HellWords.as_view(), name='hell_words'),
 
