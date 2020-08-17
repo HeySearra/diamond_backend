@@ -212,7 +212,7 @@ class Register(View):
         if not CHECK_NAME(kwargs['name']):
             return E.name,
         kwargs.update({'pwd': hash_password(kwargs['pwd'])})
-        kwargs.update({'portrait': DEFAULT_PROFILE_ROOT + '\handsome.jpg'})
+        kwargs.update({'portrait': os.path.join(DEFAULT_PROFILE_ROOT, 'handsome.jpg')})
         er = EmailRecord.objects.filter(code=kwargs['ver_code'], acc=kwargs['acc'])
         if not er.exists():
             return E.code
