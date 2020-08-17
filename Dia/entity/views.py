@@ -14,7 +14,7 @@ from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
 from teamwork.models import Team, DOC_AUTH
-from utils.xml import xml_auto_merge_available
+from utils.xml import xml_auto_merge
 
 
 class WorkbenchRecentView(View):
@@ -286,7 +286,7 @@ class DocEdit(View):
         if kwargs.keys() != {'name', 'did', 'ver', 'auth', 'content'}:
             return E.k
 
-        name, did, ver, auth, content = kwargs['name'], kwargs['did'], kwargs['ver'], kwargs['auth'], kwargs['content']
+        name, did, ver, auth, content = kwargs['name'], kwargs['did'], str(kwargs['ver']), kwargs['auth'], kwargs['content']
         if auth not in [DOC_AUTH.write, DOC_AUTH.comment]:
             return E.k
 
@@ -305,8 +305,11 @@ class DocEdit(View):
         auto_mg = False
         cvi = e.cur_ver_id
         if cvi != ver:
-            auto_mg = xml_auto_merge_available(content, e.content)
-            if not auto_mg:
+            merged = xml_auto_merge(content, e.content)
+            if merged is not None:
+                auto_mg = True
+                content = merged
+            else:
                 return E.need_to_merge, cvi
 
         e.content = content
@@ -342,7 +345,7 @@ class DocAll(View):
         if kwargs.keys() != {'did', 'ver'} and kwargs.keys() != {'did'}:
             return E.k
         did = kwargs.get('did')
-        ver = kwargs.get('ver', '-1')
+        ver = str(kwargs.get('ver', '-1'))
 
         e = Entity.get_via_encoded_id(did)
         if e is None:
@@ -1044,7 +1047,7 @@ class VersionQuery(View):
         if e is None:
             return E.no_ent
 
-        return 0, kwargs.get('ver') == e.cur_ver_id
+        return 0, str(kwargs.get('ver')) == e.cur_ver_id
 
 
 class DocumentHistory(View):
