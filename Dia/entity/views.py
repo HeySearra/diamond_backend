@@ -192,7 +192,7 @@ class WorkbenchShare(View):
 
 
 class WorkbenchSearch(View):
-    @JSR('status', 'cur_dt', 'amount', 'list')
+    @JSR('status', 'cur_dt', 'list')
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
