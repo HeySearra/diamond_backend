@@ -14,7 +14,7 @@ DOC_AUTH_CHS = (
     ('comment', '可评论'),
     ('read', '只读'),
 )
-DOC_AUTH = namedtuple('___', ['write', 'comment', 'read'])('write', 'comment', 'read')
+DOC_AUTH = namedtuple('___', ['write', 'comment', 'read', 'none'])('write', 'comment', 'read', 'none')
 
 TEAM_NAME_MAX_LENGTH = 64
 TEAM_INTRO_MAX_LENGTH = 1024

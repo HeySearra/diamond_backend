@@ -35,6 +35,25 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
         return CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists()
 
 
+def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
+    if user is None or ent is None:
+        return DOC_AUTH.none
+    if double_check_deleted and ent.backtrace_deleted:
+        return DOC_AUTH.none
+    if ent.first_person(user):
+        return DOC_AUTH.write
+    if ent.is_locked:
+        return DOC_AUTH.none
+    
+    if WriteMem.objects.filter(user=user, write_auth__ent=ent).exists():
+        return DOC_AUTH.write
+    if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists()
+        return DOC_AUTH.comment
+    if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists()
+        return DOC_AUTH.read
+    
+
+
 class HellWords(View):
     @JSR('words', 'status')
     def get(self, request):

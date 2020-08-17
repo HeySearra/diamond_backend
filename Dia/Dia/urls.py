@@ -41,6 +41,7 @@ urlpatterns = [
     path('msg/dnd', SetDnd.as_view(), name='msg_dnd'),  # 设置及查询消息免打扰
 
     # 文档编辑
+    path('document/auth', DocAuth.as_view(), name='document_auth'),
     path('document/edit', DocEdit.as_view(), name='document_edit'),
     path('document/comment', DocComment.as_view(), name='document_comment'),
     path('document/all', DocAll.as_view(), name='document_all'),
