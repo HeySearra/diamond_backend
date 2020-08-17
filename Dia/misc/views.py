@@ -26,7 +26,7 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
     if ent.is_locked:
         return False
     assert auth in list(zip(*DOC_AUTH_CHS))[0]
-    
+
     if auth == DOC_AUTH.write:
         return WriteMem.objects.filter(user=user, write_auth__ent=ent).exists()
     elif auth == DOC_AUTH.read:
@@ -44,14 +44,13 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         return DOC_AUTH.write
     if ent.is_locked:
         return DOC_AUTH.none
-    
+
     if WriteMem.objects.filter(user=user, write_auth__ent=ent).exists():
         return DOC_AUTH.write
     if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists():
         return DOC_AUTH.comment
     if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists():
         return DOC_AUTH.read
-    
 
 
 class HellWords(View):
@@ -88,7 +87,7 @@ class FSShareKey(View):
             if ReadAuth.objects.filter(key=key).exists():
                 return self.get_key(DOC_AUTH.read)
         return key
-    
+
     @JSR('status', 'key')
     def post(self, request):
         E = ED()
@@ -106,7 +105,7 @@ class FSShareKey(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.k
-        
+
         wa = WriteAuth.objects.filter(ent=e)
         if not wa.exists():
             wa = WriteAuth.objects.create(ent=e)
@@ -115,7 +114,7 @@ class FSShareKey(View):
             wa.save()
         else:
             wa = wa.get()
-        
+
         if auth == DOC_AUTH.write:
             if not WriteMem.objects.filter(user=u, write_auth=wa).exists():
                 return E.au, ''

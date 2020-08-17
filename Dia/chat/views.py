@@ -96,7 +96,7 @@ class ChatContent(View):
             if chat.content != '':
                 chatlist.append({
                     'is_mine': True if chat.user1_id == u.id else False,
-                    'dt': chat.send_time,
+                    'dt': chat.dt_str,
                     'text': chat.content
                 })
         return cur_time(), user_info, another_info, chatlist, 0
