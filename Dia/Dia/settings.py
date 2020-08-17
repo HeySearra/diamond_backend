@@ -32,7 +32,7 @@ MEDIA_URL = f'/{MEDIA_ROOT}/'  # add for ckeditor
 SECRET_KEY = 'da#ied!34m2ozaml)qh=$%f%70-o$vz%_k8!m+-q^d-z2h=u9a'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
