@@ -16,14 +16,14 @@ FRONTEND_ROOT = 'frontend/dist'
 # 静态资源地址
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, '/var/static/')
+STATIC_ROOT = os.path.join(BASE_DIR, 'frontend/dist/static')
 # 模块资源引用地址
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT),
     os.path.join(BASE_DIR, FRONTEND_ROOT + '/static/'),
 )
 
-MEDIA_ROOT = 'store'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'upload')
 MEDIA_URL = f'/{MEDIA_ROOT}/'  # add for ckeditor
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -32,7 +32,7 @@ MEDIA_URL = f'/{MEDIA_ROOT}/'  # add for ckeditor
 SECRET_KEY = 'da#ied!34m2ozaml)qh=$%f%70-o$vz%_k8!m+-q^d-z2h=u9a'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
