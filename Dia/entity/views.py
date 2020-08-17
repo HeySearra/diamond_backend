@@ -1,3 +1,4 @@
+from django.db.models import QuerySet, Q
 from django.views import View
 from easydict import EasyDict as ED
 import json
@@ -136,6 +137,115 @@ class WorkbenchShare(View):
             'cname': e.creator.name,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
         } for e in ents if e.creator != u]
+
+
+# class SearchMain(View):
+#     @JSR('result', 'tags', 'wrong_msg', 'amount')
+#     def post(self, request):
+#         kwargs: dict = json.loads(request.body)
+#         if kwargs.keys() != {'key', 'limit', 'order', 'tags', 'page', 'each'}:
+#             return -1, '参数错误'
+#         sent, lim, tags, page, each = kwargs['key'], kwargs['limit'], set(kwargs['tags']), kwargs['page'], kwargs[
+#             'each']
+#         if not sent:
+#             return [], [], '不准搜空字符串'
+#
+#         aset: QuerySet = Article.objects.all()[0:0]
+#         rset: QuerySet = Resource.objects.all()[0:0]
+#         for k in sent.split():
+#             if lim & 1:
+#                 rset = rset.union(
+#                     Resource.objects.filter(
+#                         Q(title__icontains=k) | Q(content__icontains=k),
+#                         blocked=False
+#                     ), *[
+#                         u.resource_author.all()
+#                         for u in User.objects.filter(name__icontains=k, blocked=False)
+#                     ]
+#                 )
+#             if lim & 2:
+#                 aset = aset.union(
+#                     Article.objects.filter(
+#                         Q(title__icontains=k) | Q(content__icontains=k),
+#                         recycled=False, blocked=False
+#                     ), *[
+#                         u.article_author.all()
+#                         for u in User.objects.filter(name__icontains=k, blocked=False)
+#                     ]
+#                 )
+#         es = sorted(
+#             [e for e in aset] + [e for e in rset],
+#             key=lambda e: e.create_time if kwargs['order'] == 1 else e.views,
+#             reverse=kwargs['order'] != 1
+#         )
+#         func = (lambda elem: set([tag.name for tag in elem.tags_qset().all()]) & tags) if len(tags) else lambda _: True
+#         res = list(filter(func, es))
+#         amount = len(res)
+#         res = res[(page - 1) * each:page * each]
+#         return (
+#             [{
+#                 'rid' if isinstance(elem, Resource) else 'aid': elem.id
+#             } for elem in res],
+#             list(set().union(*[[t.name for t in elem.tags_qset().all()] for elem in res])),
+#             '', amount
+#         )
+
+
+class WorkbenchSearch(View):
+    @JSR('status', 'cur_dt', 'amount', 'list')
+    def post(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        E.au = 2
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'key', 'limit', 'ord', 'towards'}:
+            return E.k
+        if not request.session.get('is_login', False):
+            return E.au
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        keyword, lim, ord, towards = kwargs.get('key'), kwargs.get('limit'), kwargs.get('ord'), kwargs.get('towards')
+
+        res_set = set()
+        for a in keyword.split():
+            if lim == 0:
+                res_set = res_set.union(
+                    set([e.ent for e in u.create_records.filter(Q(ent__name__icontains=a) | Q(ent__trajectories__updated_content__icontains=a))]),
+                    set([e.ent for e in u.read_records.filter(Q(ent__name__icontains=a) | Q(ent__trajectories__updated_content__icontains=a))])
+                )
+            elif lim == 1:
+                res_set = res_set.union(
+                    set([e.ent for e in u.create_records.filter(Q(ent__type='doc') & (Q(ent__name__icontains=a) | Q(ent__trajectories__updated_content__icontains=a)))]),
+                    set([e.ent for e in u.read_records.filter(Q(ent__type='doc') & (Q(ent__name__icontains=a) | Q(ent__trajectories__updated_content__icontains=a)))])
+                )
+            elif lim == 2:
+                res_set = res_set.union(
+                    set([e.ent for e in u.create_records.filter(Q(ent__type='fold') & (Q(ent__name__icontains=a) | Q(ent__trajectories__updated_content__icontains=a)))]),
+                    set([e.ent for e in u.read_records.filter(Q(ent__type='fold') & (Q(ent__name__icontains=a) | Q(ent__trajectories__updated_content__icontains=a)))])
+                )
+            else:
+                return E.k
+        if ord == 1:
+            res_set = sorted(list(res_set), key=lambda e: e.create_dt_str)
+        elif ord == 2:
+            res_set = sorted(list(res_set), key=lambda e: e.edit_dt_str)
+        else:
+            return E.k
+        if towards == 2:
+            res_set.reverse()
+
+        return 0, cur_time(), [{
+            'pfid': e.father.encoded_id if e.father is not None else '',
+            'name': e.name,
+            'content': e.trajectories.first().updated_content[:400] if e.type == 'doc' and e.trajectories.first() else '',
+            'create_dt': e.create_dt_str,
+            'edit_dt': e.edit_dt_str,
+            'type': e.type,
+            'id': e.encoded_id,
+            'cname': e.creator.name,
+            'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+        } for e in res_set]
 
 
 class DocAuth(View):
