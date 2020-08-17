@@ -1,3 +1,4 @@
-sh python manage.py makemigrations
-sh python manage.py migrate
-sh python manage.py runserver 80
+cd Dia
+sudo python manage.py makemigrations
+sudo python manage.py migrate
+sudo python manage.py runserver 80
