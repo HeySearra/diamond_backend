@@ -23,7 +23,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, FRONTEND_ROOT + '/static/'),
 )
 
-MEDIA_ROOT = os.path.join(BASE_DIR, '/static/')
+MEDIA_ROOT = os.path.join(BASE_DIR, '/store/')
 MEDIA_URL = f'/{MEDIA_ROOT}/'  # add for ckeditor
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
