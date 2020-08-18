@@ -204,8 +204,7 @@ class SearchUser(View):
         if key == 'admin_key':
             us = User.objects.all()
         else:
-            us: QuerySet = User.objects.none()
-            us.union(*[User.objects.filter(Q(name__icontains=sk) | Q(acc__icontains=sk)) for sk in key.split()])
+            us = User.objects.none().union(*[User.objects.filter(Q(name__icontains=sk) | Q(acc__icontains=sk)) for sk in key.split()])
             if us.count() > 10:
                 return [], 0
         
