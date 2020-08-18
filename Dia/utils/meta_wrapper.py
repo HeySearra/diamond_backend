@@ -33,7 +33,7 @@ def JSR(*keys):
             func_name += f'.{req_type}'
             # func_name += f'.{req_type} ({random.choice(ascii_uppercase) + random.choice(ascii_uppercase)})'
             # func_name += '.' + req_type.lower()
-
+            
             # print(Fore.BLUE + f'[{req_type}] called: {func_name}')
             if req_type == 'POST':
                 try:
@@ -44,7 +44,7 @@ def JSR(*keys):
                 inputs = f'session: {pformat(dict(request.session))}'
                 if len(dict(request.GET).keys()):
                     inputs += f', GET: {pformat(dict(request.GET))}'
-
+            
             prev_time = time.time()
             try:
                 values = req_func(*args, **kw)
@@ -64,9 +64,11 @@ def JSR(*keys):
                 ret_dict = dict(zip(keys, values))
                 if debug and func_name not in ['user.UnreadCount.GET', 'chat.ChatCount.GET', 'entity.DocumentOnline.GET']:
                     c = Fore.RED if ret_dict.get('status', 0) else Fore.GREEN
-                    print(c + f'[{func_name}] input: {inputs}\n ret: {pformat(ret_dict)}, time: {time_cost:.2f}s, {cur_time()[-5:]}')
+                    cur_dt = datetime.now()
+                    dt_str = f'{cur_dt.strftime("%H:%M:")}{round(eval(cur_dt.strftime("%H:%M:%S.%f")[6:]), 2)}'
+                    print(c + f'[{func_name}] input: {inputs}\n ret: {pformat(ret_dict)}, time: {time_cost:.2f}s, at [{dt_str}]')
                 return JsonResponse(ret_dict)
-
+        
         return wrapper
-
+    
     return decorator
