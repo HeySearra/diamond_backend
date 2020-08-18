@@ -27,10 +27,10 @@ do
   cd "$(dirname "${app_dir}")" || exit
   pack=${PWD##*/}
   cd "${django_proj_root}" || exit
-  python manage.py makemigrations "${pack}" >> "${lg_file}"
+  python manage.py makemigrations "${pack}"
   lg_info "app \`${pack}\` detected, auto-make migs..."
 done
-python manage.py migrate >> "${lg_file}"
+python manage.py migrate
 
 
 lg_info "db migrated, check log files..."
