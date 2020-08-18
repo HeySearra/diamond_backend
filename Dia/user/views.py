@@ -13,6 +13,7 @@ from django.db.models import Q, QuerySet
 
 from Dia.settings import BASE_DIR
 from fusion.models import Comment
+from meta_config import ROOT_SUFFIX
 from teamwork.models import Team, Member
 from user.models import User, EmailRecord, Message
 from user.hypers import *
@@ -543,6 +544,7 @@ class UserEditInfo(View):
             return -1
         u = u.get()
         u.name = kwargs['name']
+        u.root.name = kwargs['name'] + ROOT_SUFFIX
         u.portrait = kwargs['img']
         u.intro = kwargs['intro']
         try:
