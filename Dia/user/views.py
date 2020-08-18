@@ -512,7 +512,7 @@ class GetUserInfo(View):
         if not request.session.get('is_login', None):
             return '', '', '', '', 2, ''
         try:
-            uid = str(request.GET.get('id'))
+            uid = int(decode(request.GET.get('id')))
         except:
             return '', '', '', '', -1, ''
         u = User.objects.filter(id=uid)
