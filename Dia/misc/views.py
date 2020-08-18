@@ -289,7 +289,7 @@ class ChangeMemberAuth(View):
                 return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         elif auth == 'write':
             wa = WriteAuth.objects.get_or_create(ent=e)
-            wa.get().add_auth(u)
+            wa.add_auth(u)
             return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         ca = CommentAuth.objects.filter(ent=e)
         can_comment = ca.exists() and u in ca.get().get_user_list()
@@ -302,7 +302,7 @@ class ChangeMemberAuth(View):
                 return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         elif auth == 'comment':
             ca = CommentAuth.objects.get_or_create(ent=e)
-            ca.get().add_auth(u)
+            ca.add_auth(u)
             return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         ra = ReadAuth.objects.filter(ent=e)
         can_read = ra.exists() and u in ra.get().get_user_list()
