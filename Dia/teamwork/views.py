@@ -16,13 +16,13 @@ from utils.meta_wrapper import JSR
 
 
 def delete_records_and_workbench(ref_old_user: Union[User, None], ref_new_user: User) -> Callable:
-    
+
     def __closure_fn(ent: Entity):
         upd_record_user(auth='create', ent=ent, old_user=ref_old_user, new_user=ref_new_user)
         if ref_old_user is not None:
             ref_new_user.collections.filter(ent_id=ent.id).delete()
             ref_new_user.links.filter(ent_id=ent.id).delete()
-    
+
     return __closure_fn
 
 
@@ -45,7 +45,7 @@ class NewFromFold(View):
             return None, E.uk
         if not entity.can_convert_to_team():
             return None, E.root
-        
+
         try:
             team = Team.objects.create(root=entity, name=entity.name)
             Member.objects.create(member=user, team=team, auth=TEAM_AUTH.owner)
@@ -71,7 +71,7 @@ class Invitation(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        
+
         user1 = User.get_via_encoded_id(request.session['uid'])
         if user1 is None:
             return E.auth
@@ -79,7 +79,7 @@ class Invitation(View):
             user2 = User.objects.get(acc=kwargs['acc'])
         except:
             return E.no
-        
+
         team = Team.get_via_encoded_id(kwargs['tid'])
         if team is None:
             return E.tid
@@ -87,7 +87,7 @@ class Invitation(View):
             auth = Member.objects.get(member=user1, team=team).auth
         except:
             return E.no
-        
+
         if auth == TEAM_AUTH.member:
             return E.auth
         if Member.objects.filter(member=user2, team=team).exists():
@@ -118,7 +118,7 @@ class Auth(View):
         user = User.get_via_encoded_id(request.session['uid'])
         if user is None:
             return E.auth
-        
+
         try:
             owner = Member.objects.get(member=user, team=team)
         except:
@@ -162,7 +162,7 @@ class Remove(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-      
+
         user1 = User.get_via_encoded_id(request.session['uid'])
         team = Team.get_via_encoded_id(kwargs['tid'])
         user2 = User.get_via_encoded_id(kwargs['uid'])
@@ -172,12 +172,13 @@ class Remove(View):
             return E.tid
         if user2 is None:
             return E.uid
-        
+
         try:
-            auth = Member.objects.get(member=user1, team=team).auth
+            auth1 = Member.objects.get(member=user1, team=team).auth1
+            auth2 = Member.objects.get(member=user2, team=team).auth2
         except:
             return E.auth
-        if auth == TEAM_AUTH.member:
+        if auth1 == TEAM_AUTH.member or (auth1 == TEAM_AUTH.admin and auth2 == TEAM_AUTH.admin):
             return E.auth
         m = Member.objects.filter(member=user2, team=team)
         if not m.exists():
@@ -223,7 +224,7 @@ class Info(View):
         csrc = ''
         norm = []
         admin = []
-        
+
         for m in members:
             if m.auth == 'owner':
                 cuid = m.member.encoded_id
@@ -299,7 +300,7 @@ class New(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        
+
         owner = User.get_via_encoded_id(request.session['uid'])
         if owner is None:
             return E.auth
@@ -326,7 +327,7 @@ class TeamEditInfo(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        
+
         team = Team.get_via_encoded_id(kwargs['tid'])
         if team is None:
             return E.tid
@@ -334,7 +335,7 @@ class TeamEditInfo(View):
             return E.name
         if not CHECK_TEAM_INTRO(kwargs['intro']):
             return E.intro
-        
+
         team.name = kwargs['name']
         team.root.name = kwargs['name'] + ROOT_SUFFIX
         team.intro = kwargs['intro']
@@ -391,7 +392,7 @@ class InvitationConfirm(View):
             return E.key, ''
         if not request.session['is_login']:
             return E.auth, ''
-        
+
         msg = Message.get_via_encoded_id(kwargs['mid'])
         if msg is None:
             return E.mid, ''
@@ -435,7 +436,7 @@ class Identity(View):
         team = Team.get_via_encoded_id(request.GET.get('tid'))
         if team is None:
             return '', E.tid
-        
+
         try:
             identity = Member.objects.get(team=team, member=user).auth
         except:
@@ -457,11 +458,11 @@ class Quit(View):
         user = User.get_via_encoded_id(request.session['uid'])
         if user is None:
             return E.auth
-        
+
         team = Team.get_via_encoded_id(kwargs['tid'])
         if team is None:
             return E.tid
-        
+
         try:
             m = Member.objects.get(team=team, member=user)
         except:
@@ -495,7 +496,7 @@ class SendAll(View):
         team = Team.get_via_encoded_id(kwargs['tid'])
         if team is None:
             return E.tid
-        
+
         try:
             auth = Member.objects.get(team=team, member=user).auth
         except:
