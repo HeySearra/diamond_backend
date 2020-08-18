@@ -353,27 +353,27 @@ class ChangeMemberAuth(View):
         # return E.k, ''
 #
 #
-# class AddReadAuth(View):
-#     def get(self, request):
-#         E = ED()
-#         E.u, E.k = -1, 1
-#         kwargs = request.GET
-#         if kwargs.keys() != {'dk'}:
-#             return redirect('/workbench/recent_view')
-#         u = User.get_via_encoded_id(request.session['uid'])
-#         if u is None:
-#             return redirect('/login')
-#         ra = ReadAuth.objects.filter(key=kwargs.get('dk'))
-#         if not ra.exists():
-#             return redirect('/workbench/recent_view')
-#         try:
-#             ra = ra.get()
-#             if ra.ent.is_locked:
-#                 return redirect('/workbench/recent_view')
-#             ra.add_auth(u)
-#         except:
-#             return redirect('/workbench/recent_view')
-#         return redirect('/doc/' + ra.ent.encoded_id)
+class AddShare(View):
+    def get(self, request):
+        E = ED()
+        E.u, E.k = -1, 1
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return redirect('/login')
+        kwargs = request.GET
+        if kwargs.keys() != {'dk'}:
+            return redirect('/workbench/recent_view')
+        ra = ShareAuth.objects.filter(key=kwargs.get('dk'))
+        if not ra.exists():
+            return redirect('/workbench/recent_view')
+        try:
+            ra = ra.get()
+            if ra.ent.backtrace_deleted or ra.auth == 'no_share':
+                return redirect('/workbench/recent_view')
+            ra.add_auth(u)
+        except:
+            return redirect('/workbench/recent_view')
+        return redirect('/doc/' + ra.ent.encoded_id)
 #
 #
 # class AddCommentAuth(View):
