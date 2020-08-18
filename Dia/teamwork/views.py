@@ -10,7 +10,8 @@ from meta_config import ROOT_SUFFIX
 from record.models import upd_record_create, upd_record_user
 from user.models import Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
-    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message
+    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message, \
+    send_team_all_message
 from utils.cast import encode, decode
 from utils.meta_wrapper import JSR
 from teamwork.models import *
@@ -477,4 +478,30 @@ class Quit(View):
             if m.auth == 'owner' or m.auth == 'admin':
                 if not send_team_member_out_message(team=team, su=user, mu=m.member):
                     return E.uk
+        return 0
+
+
+class SendAll(View):
+    @JSR('status')
+    def post(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth, E.tid, E.content = 1, 2, 3, 4
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'tid', 'content'}:
+            return E.key
+        if not request.session['is_login']:
+            return E.auth
+        try:
+            team = Team.objects.get(id=int(decode(kwargs['tid'])))
+            user = User.objects.get(id=int(decode(request.session['uid'])))
+            auth = Member.objects.get(team=team, member=user).auth
+        except:
+            return E.tid
+        if auth != 'admin' and auth != 'owner':
+            return E.auth
+        if not 0 <= len(kwargs['content']) <= 1024:
+            return E.content
+        if not send_team_all_message(team=team, su=user, content=kwargs['content']):
+            return E.uk
         return 0
