@@ -309,7 +309,7 @@ class New(View):
         try:
             # 创建新根文件夹
             root = Entity.locate_root(kwargs['name'])
-            team = Team.objects.create(name=kwargs['name'], root=root)
+            team = Team.objects.create(name=kwargs['name'], root=root, portrait="team.jpg")
             Member.objects.create(team=team, member=owner, auth=TEAM_AUTH.owner)
         except:
             return E.uk
