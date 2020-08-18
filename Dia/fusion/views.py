@@ -18,6 +18,8 @@ from utils.cast import decode
 from utils.meta_wrapper import JSR
 from utils.xml import filter_comment
 
+from utils.cast import encode
+
 
 class StarCondition(View):
     @JSR('is_starred', 'status')
@@ -289,7 +291,7 @@ class CommentGetCommentsOfThread(View):
         res = []
         for it in items:
             dic = {'commentId': it.get('commentId'),
-                   'authorId': str(it.get('uid_id')),
+                   'authorId': str(encode(it.get('uid_id'))),
                    'content': it.get('content'),
                    'createdAt': it.get('createdAt')}
             res.append(dic)
