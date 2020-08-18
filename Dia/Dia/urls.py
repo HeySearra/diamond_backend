@@ -22,6 +22,7 @@ urlpatterns = [
     path('user_info', UserInfo.as_view(), name='user_info'),  # 用户信息
     path('search_user', SearchUser.as_view(), name='search_user'),  # 关键词搜索用户
     path('user/edit_info', UserEditInfo.as_view(), name='edit_info'),  # 修改个人信息
+    path('user/user_info', GetUserInfo.as_view(), name='get_user_info'),
 
     # 用户登录注册找回密码
     path('user/login/submit', Login.as_view(), name='login_submit'),  # 登录
