@@ -485,19 +485,35 @@ class SetDnd(View):
 
 
 class UserInfo(View):
-    @JSR('name', 'portrait', 'acc', 'uid', 'status')
+    @JSR('name', 'portrait', 'acc', 'uid', 'status', 'intro')
     def get(self, request):
         if not request.session.get('is_login', None):
-            return '', '', '', '', 2
+            return '', '', '', '', 2, ''
         try:
             uid = int(decode(request.session.get('uid', None)))
         except:
-            return '', '', '', '', -1
+            return '', '', '', '', -1, ''
         u = User.objects.filter(id=uid)
         if not u.exists():
-            return '', '', '', '', -1
+            return '', '', '', '', -1, ''
         u = u.get()
-        return u.name, u.portrait, u.acc, encode(u.id), 0
+        return u.name, u.portrait, u.acc, encode(u.id), 0, u.intro
+
+
+class GetUserInfo(View):
+    @JSR('name', 'portrait', 'acc', 'uid', 'status', 'intro')
+    def get(self, request):
+        if not request.session.get('is_login', None):
+            return '', '', '', '', 2, ''
+        try:
+            uid = str(request.GET.get('id'))
+        except:
+            return '', '', '', '', -1, ''
+        u = User.objects.filter(id=uid)
+        if not u.exists():
+            return '', '', '', '', -1, ''
+        u = u.get()
+        return u.name, u.portrait, u.acc, encode(u.id), 0, u.intro
 
 
 class UserEditInfo(View):
@@ -506,7 +522,7 @@ class UserEditInfo(View):
         if not request.session['is_login']:
             return 2,
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'img'}:
+        if kwargs.keys() != {'name', 'img', 'intro'}:
             return 1,
         if not CHECK_NAME(kwargs['name']):
             return 3,
@@ -519,7 +535,8 @@ class UserEditInfo(View):
             return -1
         u = u.get()
         u.name = kwargs['name']
-        u.portrait = kwargs['img'].replace('\\\\', '\\')
+        u.portrait = kwargs['img']
+        u.intro = kwargs['intro']
         try:
             u.save()
         except:

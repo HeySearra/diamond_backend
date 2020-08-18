@@ -30,6 +30,7 @@ class User(models.Model):
     login_date = models.DateField(blank=True, verbose_name='最近登录时间', auto_now_add=True)
     wrong_count = models.IntegerField(blank=True, verbose_name='最近一天密码错误次数', default=0)
     portrait = models.CharField(blank=True, verbose_name="头像路径", max_length=512, default='')
+    intro = models.CharField(blank=True, verbose_name="个人简介", max_length=512, default='')
 
 
 class EmailRecord(models.Model):
