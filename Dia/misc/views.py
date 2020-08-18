@@ -258,32 +258,36 @@ class ChangeMemberAuth(View):
             u = User.objects.get(acc=kwargs.get('acc'))
         except:
             return E.nu
+        me = User.get_via_encoded_id(request.session['uid'])
+        if me is None:
+            return E.au
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.nf
         if e.type == 'fold' or e.backtrace_deleted:
             return E.k
-        if u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
+        if me != e.creator and (me != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
             return E.au
-
+        if u == me or (me == e.backtrace_root_team.owner) if e.backtrace_root_team else False:
+            return 5
         wa = WriteAuth.objects.filter(ent=e)
         can_write = wa.exists() and u in wa.get().get_user_list()
         if can_write and auth != 'write':
             WriteMem.objects.filter(user=u, auth=wa.get()).delete()
         elif can_write and auth == 'write':
-            return 0
+            return 6
         ca = CommentAuth.objects.filter(ent=e)
         can_comment = ca.exists() and u in ca.get().get_user_list()
         if can_comment and auth != 'comment':
             CommentMem.objects.filter(user=u, auth=ca.get()).delete()
         elif can_comment and auth == 'write':
-            return 0
+            return 6
         ra = ReadAuth.objects.filter(ent=e)
         can_read = ra.exists() and u in ra.get().get_user_list()
         if can_read and auth != 'read':
             ReadMem.objects.filter(user=u, auth=ra.get()).delete()
         elif can_comment and auth == 'read':
-            return 0
+            return 6
         return 0
 
         # wa = WriteAuth.objects.filter(ent=e)
