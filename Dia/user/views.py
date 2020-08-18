@@ -212,10 +212,7 @@ class SearchUser(View):
                     for sk in key.split()
                 ]) - x.id,
                 reverse=True
-            )
-            
-            if us.count() > 10:
-                us = us[:10]
+            )[:10]
         
         ulist = []
         for u in us:
