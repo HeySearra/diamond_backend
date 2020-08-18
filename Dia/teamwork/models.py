@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import QuerySet
 
 from meta_config import *
-from teamwork.hypers import TEAM_AUTH, TEAM_NAME_MAX_LENGTH, TEAM_INTRO_MAX_LENGTH, TEAM_AUTH_CHS
+from teamwork.hypers import TEAM_AUTH, TEAM_NAME_MAX_LENGTH, TEAM_INTRO_MAX_LENGTH, TEAM_AUTH_CHS, AUTH_MAX_LENGTH
 from user.models import User
 from utils.cast import encode, decode
 

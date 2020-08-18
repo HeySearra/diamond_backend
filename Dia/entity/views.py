@@ -4,6 +4,7 @@ from easydict import EasyDict as ED
 import json
 
 from misc.views import check_auth, get_auth, WriteMem, CommentMem, ReadMem
+from teamwork.hypers import DOC_AUTH
 from user.models import User
 from datetime import datetime
 from entity.models import Entity
@@ -13,7 +14,7 @@ from utils.cast import decode, cur_time
 from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
-from teamwork.models import Team, DOC_AUTH
+from teamwork.models import Team
 from utils.xml import xml_auto_merge
 
 

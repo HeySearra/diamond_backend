@@ -1,14 +1,13 @@
 # your views here.
 import json
-from typing import Callable, Optional
+from typing import Callable, Union
 
 from django.views import View
 from easydict import EasyDict
 
 from entity.models import Entity
-from fusion.models import Links, Collection
 from record.models import upd_record_create, upd_record_user
-from teamwork.hypers import CHECK_TEAM_NAME, CHECK_TEAM_INTRO
+from teamwork.hypers import CHECK_TEAM_NAME, CHECK_TEAM_INTRO, TEAM_AUTH
 from teamwork.models import Team, Member, ROOT_SUFFIX
 from user.models import User, Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
@@ -16,7 +15,7 @@ from user.views import send_team_invite_message, send_team_out_message, send_tea
 from utils.meta_wrapper import JSR
 
 
-def delete_records_and_workbench(ref_old_user: Optional[User, None], ref_new_user: User) -> Callable:
+def delete_records_and_workbench(ref_old_user: Union[User, None], ref_new_user: User) -> Callable:
     
     def __closure_fn(ent: Entity):
         upd_record_user(auth='create', ent=ent, old_user=ref_old_user, new_user=ref_new_user)
@@ -48,7 +47,7 @@ class NewFromFold(View):
         
         try:
             team = Team.objects.create(root=entity, name=entity.name)
-            Member.objects.create(member=user, team=team, auth='owner')
+            Member.objects.create(member=user, team=team, auth=TEAM_AUTH.owner)
             entity.father = None
             entity.name = team.name + ROOT_SUFFIX
             entity.save()
@@ -88,12 +87,12 @@ class Invitation(View):
         except:
             return E.no
         
-        if auth == 'member':
+        if auth == TEAM_AUTH.member:
             return E.auth
         if Member.objects.filter(member=user2, team=team).exists():
             return E.exist
         try:
-            # Member.objects.create(member=user2, team=team, author='member')
+            # Member.objects.create(member=user2, team=team, author=TEAM_AUTH.member)
             if not send_team_invite_message(team, user1, user2):
                 return E.uk
         except:
@@ -123,15 +122,15 @@ class Auth(View):
             owner = Member.objects.get(member=user, team=team)
         except:
             return E.auth
-        if owner.auth != 'owner':
+        if owner.auth != TEAM_AUTH.owner:
             return E.auth
         user_list = Member.objects.filter(team=team)
         for member in user_list:
             u = member.member
             # 前端已判断不能设置自己权限（指创建者设置自己权限）
             # 如果本身是管理员且不在设置的uid_list里，就撤销并发信息
-            if member.auth == 'admin' and u.encoded_id not in kwargs['list']:
-                member.auth = 'member'
+            if member.auth == TEAM_AUTH.admin and u.encoded_id not in kwargs['list']:
+                member.auth = TEAM_AUTH.member
                 try:
                     member.save()
                 except:
@@ -139,8 +138,8 @@ class Auth(View):
                 if not send_team_admin_cancel_message(team=team, su=user, mu=u):
                     return E.uk
                 # print('==' * 10, 'to_member')
-            elif member.auth == 'member' and u.encoded_id in kwargs['list']:
-                member.auth = 'admin'
+            elif member.auth == TEAM_AUTH.member and u.encoded_id in kwargs['list']:
+                member.auth = TEAM_AUTH.admin
                 try:
                     member.save()
                 except:
@@ -177,7 +176,7 @@ class Remove(View):
             auth = Member.objects.get(member=user1, team=team).auth
         except:
             return E.auth
-        if auth == 'member':
+        if auth == TEAM_AUTH.member:
             return E.auth
         m = Member.objects.filter(member=user2, team=team)
         if not m.exists():
@@ -196,7 +195,7 @@ class Remove(View):
 
 class Info(View):
     @JSR('status', 'name', 'intro', 'portrait', 'create_dt', 'doc_num',
-         'cuid', 'cname', 'norm', 'admin')
+         'cuid', 'cname', 'norm', TEAM_AUTH.admin)
     def get(self, request):
         E = EasyDict()
         E.uk = -1
@@ -224,10 +223,10 @@ class Info(View):
         admin = []
         
         for m in members:
-            if m.auth == 'owner':
+            if m.auth == TEAM_AUTH.owner:
                 cuid = m.member.encoded_id
                 cname = m.member.name
-            elif m.auth == 'admin':
+            elif m.auth == TEAM_AUTH.admin:
                 admin.append({
                     'uid': m.member.encoded_id,
                     'acc': m.member.acc,
@@ -267,7 +266,7 @@ class Delete(View):
             members = Member.objects.filter(team=team)
         except:
             return E.auth
-        if owner.auth != 'owner':
+        if owner.auth != TEAM_AUTH.owner:
             return E.auth
         if owner.member.root.sons_dup_name(name=team.root.name):
             return E.name
@@ -306,7 +305,7 @@ class New(View):
             # 创建新根文件夹
             root = Entity.locate_root(kwargs['name'])
             team = Team.objects.create(name=kwargs['name'], root=root)
-            Member.objects.create(team=team, member=owner, auth='owner')
+            Member.objects.create(team=team, member=owner, auth=TEAM_AUTH.owner)
         except:
             return E.uk
         return 0
@@ -358,7 +357,7 @@ class All(View):
         join_team = []
         members = Member.get_members_via_member_encoded_id(member_encoded_id=request.session['uid'])
         for m in members:
-            if m.auth == 'owner':
+            if m.auth == TEAM_AUTH.owner:
                 my_team.append({
                     'tid': m.team.encoded_id,
                     'name': m.team.name,
@@ -403,7 +402,7 @@ class InvitationConfirm(View):
             if Member.objects.filter(team=team, member=msg.owner).exists():
                 return E.exist, ''
             try:
-                Member.objects.create(team=team, member=msg.owner, auth='member')
+                Member.objects.create(team=team, member=msg.owner, auth=TEAM_AUTH.member)
                 if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=True):
                     return E.uk, ''
             except:
@@ -469,7 +468,7 @@ class Quit(View):
             return E.uk
         members = Member.objects.filter(team=team)
         for m in members:
-            if m.auth == 'owner' or m.auth == 'admin':
+            if m.auth == TEAM_AUTH.owner or m.auth == TEAM_AUTH.admin:
                 if not send_team_member_out_message(team=team, su=user, mu=m.member):
                     return E.uk
         return 0
