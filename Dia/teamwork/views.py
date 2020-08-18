@@ -189,33 +189,35 @@ class Remove(View):
 
 class Info(View):
     @JSR('status', 'name', 'intro', 'portrait', 'create_dt', 'doc_num',
-         'cuid', 'cname', 'norm', 'admin')
+         'cuid', 'csrc', 'cname', 'cacc', 'norm', 'admin')
     def get(self, request):
         E = EasyDict()
         E.uk = -1
         E.key, E.auth, E.tid = 1, 2, 3
         if dict(request.GET).keys() != {'tid'}:
-            return E.key, '', '', '', '', 0, '', '', [], []
+            return E.key, '', '', '', '', 0, '', '', '', '', [], []
         uid = int(decode(request.session['uid']))
         tid = int(decode(request.GET.get('tid')))
         try:
             user = User.objects.get(id=uid)
         except:
-            return E.auth, '', '', '', '', 0, '', '', [], []
+            return E.auth, '', '', '', '', 0, '', '', '', '', [], []
         try:
             team = Team.objects.get(id=tid)
         except:
-            return E.tid, '', '', '', '', 0, '', '', [], []
+            return E.tid, '', '', '', '', 0, '', '', '', '', [], []
         members = Member.objects.filter(team=team)
         if not members.exists():
-            return E.tid, '', '', '', '', 0, '', '', [], []
+            return E.tid, '', '', '', '', 0, '', '', '', '', [], []
         name = team.name
         intro = team.intro
         portrait = team.portrait if team.portrait else ''
         create_dt = team.create_dt_str
         doc_num = team.root.num_leaves()
         cuid = ''
+        cacc = ''
         cname = ''
+        csrc = ''
         norm = []
         admin = []
 
@@ -223,6 +225,8 @@ class Info(View):
             if m.auth == 'owner':
                 cuid = encode(str(m.member.id))
                 cname = m.member.name
+                csrc = m.member.portrait
+                cacc = m.member.acc
             elif m.auth == 'admin':
                 admin.append({
                     'uid': encode(str(m.member.id)),
@@ -237,7 +241,7 @@ class Info(View):
                     'src': m.member.portrait,
                     'name': m.member.name
                 })
-        return 0, name, intro, portrait, create_dt, doc_num, cuid, cname, norm, admin
+        return 0, name, intro, portrait, create_dt, doc_num, cuid, csrc, cname, cacc, norm, admin
 
 
 # 解散团队
