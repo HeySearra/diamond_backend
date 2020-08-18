@@ -65,7 +65,7 @@ def JSR(*keys):
                 if debug and func_name not in ['user.UnreadCount.GET', 'chat.ChatCount.GET', 'entity.DocumentOnline.GET']:
                     c = Fore.RED if ret_dict.get('status', 0) else Fore.GREEN
                     cur_dt = datetime.now()
-                    dt_str = f'{cur_dt.strftime("%H:%M:")}{round(eval(cur_dt.strftime("%H:%M:%S.%f")[6:]), 2)}'
+                    dt_str = cur_dt.strftime("%H:%M:%S.") + f'{float(cur_dt.strftime("0.%f")):.2f}'[-2:]
                     print(c + f'[{func_name}] input: {inputs}\n ret: {pformat(ret_dict)}, time: {time_cost:.2f}s, at [{dt_str}]')
                 return JsonResponse(ret_dict)
         
