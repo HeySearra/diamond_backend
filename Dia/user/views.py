@@ -280,7 +280,6 @@ class Register(View):
 class Login(View):
     @JSR('count', 'status')
     def post(self, request):
-        request.session.flush()
         if request.session.get('is_login', None):  # 已登录
             try:
                 u = User.objects.get(id=int(decode(request.session['uid'])))
