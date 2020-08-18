@@ -204,9 +204,15 @@ class SearchUser(View):
         if key == 'admin_key':
             us = User.objects.all()
         else:
-            us = User.objects.none().union(*[User.objects.filter(Q(name__icontains=sk) | Q(acc__icontains=sk)) for sk in key.split()])
-            if us.count() > 10:
-                return [], 0
+            us = []
+            for u in User.objects.all():
+                weights = [
+                    u.name.count(x) + u.acc.count(x)
+                    for x in key.split()
+                ]
+                if all(weights):
+                    us.append((u, sum(weights) * 10000 - int(u.id)))
+            us = [tup[0] for tup in sorted(us, key=lambda tup: tup[1], reverse=True)]
         
         ulist = []
         for u in us:
