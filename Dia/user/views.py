@@ -379,10 +379,16 @@ class ForgetSetPwd(View):
 class UnreadCount(View):
     @JSR('count', 'status')
     def get(self, request):
-        u = User.objects.filter(id=int(decode(request.session['uid'])))
+        try:
+            u = User.objects.filter(id=int(decode(request.session['uid'])))
+        except:
+            uid = request.session['uid'].decode() if isinstance(request.session['uid'], bytes) else request.session['uid']
+            u = User.objects.filter(id=int(uid))
         if not u.exists():
             return 0, -1
         u = u.get()
+        request.session['uid'] = encode(u.id)
+        request.session.save()
         count = Message.objects.filter(Q(owner_id=u.id) & Q(is_read=False)).count()
         return count, 0
 
