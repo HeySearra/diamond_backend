@@ -79,7 +79,6 @@ urlpatterns = [
     path('fs/copy', FSCopy.as_view(), name='fs_copy'), # 复制文档
     path('fs/delete', FSDelete.as_view(), name='fs_delete'), # 删除文档or文件夹
     path('fs/delete_link', FSDeleteLink.as_view(), name='fs_delete_link'), # 从桌面移除快捷方式
-    path('fs/share', FSShareKey.as_view(), name='fs_share_key'), # 请求分享内容
     path('fs/star', FSStar.as_view(), name='fs_star'), # 收藏文件or夹
     path('fs/user/root', FSUserRoot.as_view(), name='fs_user_root'), # 请求个人根文件夹fid
     path('fs/team/root', FSTeamRoot.as_view(), name='fs_team_root'), # 请求团队根文件夹fid
@@ -87,6 +86,11 @@ urlpatterns = [
     path('fs/recycle/delete', FSRecycleDelete.as_view(), name='fs_recycle_delete'), # 彻底删除回收站的内容
     path('fs/recycle/clear', FSRecycleClear.as_view(), name='fs_recycle_clear'), # 彻底删回收站库
     path('fs/star_condition', FSStarCondition.as_view(), name='fs_star_condition'),
+    path('fs/share_link', FSShareKey.as_view(), name='fs_share_key'), # 请求分享内容
+    path('fs/share_change_auth', ChangeShareAuth.as_view(), name="fs_share_change_auth"),
+    path('fs/share_reset', ResetKey.as_view(), name='reset_key'),
+    path('fs/share_dtd_list', AuthFileList.as_view(), name='reset_key'),
+    path('fs/share_dtd_change', ChangeMemberAuth.as_view(), name='change_member_auth'),
 
     # 团队相关
     path('team/new_from_fold', NewFromFold.as_view(), name='team_new_from_fold'),

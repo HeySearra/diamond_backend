@@ -5,6 +5,7 @@ from entity.models import Entity
 from meta_config import HELL_WORDS, HOST_IP
 from teamwork.hypers import DOC_AUTH_CHS, DOC_AUTH
 from user.models import User
+from utils.cast import encode
 from utils.meta_wrapper import JSR
 from misc.models import *
 from easydict import EasyDict as ED
@@ -77,24 +78,88 @@ class UploadImg(View):
         return 0, 'http://47.96.109.229/static/upload/img/' + file_name
 
 
-class FSShareKey(View):
-    def get_key(self, type):
-        key = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)])
-        if type == DOC_AUTH.write:
-            if WriteAuth.objects.filter(key=key).exists():
-                return self.get_key(DOC_AUTH.write)
-        elif type == DOC_AUTH.comment:
-            if CommentAuth.objects.filter(key=key).exists():
-                return self.get_key(DOC_AUTH.comment)
-        elif type == DOC_AUTH.read:
-            if ReadAuth.objects.filter(key=key).exists():
-                return self.get_key(DOC_AUTH.read)
-        return key
+def get_key():
+    key = ''.join([random.choice(string.ascii_letters + string.digits) for _ in range(FNAME_DEFAULT_LEN)])
+    if ShareAuth.objects.filter(key=key).exists():
+        return get_key()
+    return key
 
+
+class ResetKey(View):
     @JSR('status', 'key')
     def post(self, request):
         E = ED()
-        E.u, E.k, E.au, E.update = -1, 1, 2, 3
+        E.u, E.k, E.au, E.nf = -1, 1, 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'did', 'is_clear'}:
+            return E.k
+        did = kwargs.get('did')
+        is_clear = kwargs.get('is_clear')
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.k
+        if e.type == 'fold':
+            return E.k
+        try:
+            sa = ShareAuth.objects.get(ent=e)
+        except:
+            return E.u
+        if not sa.can_share(u):
+            return E.au
+        if is_clear:
+            sa.user.clear()
+        sa.key = get_key()
+        sa.save()
+        return 0, sa.key
+
+
+class FSShareKey(View):
+    @JSR('status', 'key', 'auth')
+    def post(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.nf = -1, 1, 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'did'}:
+            return E.k
+        did = kwargs.get('did')
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.nf
+        if e.type == 'fold':
+            return E.k
+
+        sa = ShareAuth.objects.filter(ent=e)
+        if not sa.exists():
+            sa = WriteAuth.objects.create(ent=e)
+            sa.add_owner(e.creator)
+            team = e.backtrace_root_team
+            if team is not None:
+                sa.add_owner(team.owner)
+            sa.key = get_key()
+            sa.save()
+        else:
+            sa = sa.get()
+        if sa.can_share(u):
+            return 0, sa.key, sa.auth
+        else:
+            return E.au, '', 'no_share'
+
+
+class ChangeShareAuth(View):
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.nf = -1, 1, 2, 3
         if not request.session.get('is_login', False):
             return E.au
         kwargs: dict = json.loads(request.body)
@@ -102,55 +167,167 @@ class FSShareKey(View):
             return E.k
         did = kwargs.get('did')
         auth = kwargs.get('auth')
+        if auth not in ['no_share', 'write', 'comment', 'read']:
+            return E.k
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
         e = Entity.get_via_encoded_id(did)
         if e is None:
+            return E.nf
+        if e.type == 'fold':
             return E.k
+        sa = ShareAuth.objects.filter(ent=e)
+        if not sa.exists():
+            sa = WriteAuth.objects.create(ent=e)
+            sa.add_owner(e.creator)
+            team = e.backtrace_root_team
+            if team is not None:
+                sa.add_owner(team.owner)
+            sa.key = get_key()
+            sa.save()
+        else:
+            sa = sa.get()
+        if not sa.can_share(u):
+            return E.au
+        try:
+            sa.auth = auth
+            sa.save()
+        except:
+            return E.u
+        return 0
+
+class AuthFileList(View):
+    @JSR('status', 'list')
+    def get(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.nf = -1, 1, 2, 3
+        if not request.session.get('is_login', False):
+            return E.au
+        kwargs: dict = request.GET
+        if kwargs.keys() != {'did'}:
+            return E.k
+        did = kwargs.get('did')
+        u = User.get_via_encoded_id(request.session['uid'])
+        if u is None:
+            return E.au
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.nf
+        if e.type == 'fold':
+            return E.k
+        if u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
+            return E.au
+        wa = WriteAuth.objects.filter(ent=e)
+        ca = CommentAuth.objects.filter(ent=e)
+        ra = ReadAuth.objects.filter(ent=e)
+        res = []
+        if wa.exists():
+            wa = wa.get()
+            res.extend([{
+                'uid': encode(u.id), 'src': u.portrait, 'acc': u.acc, 'auth': 'write'
+            }for u in wa.get_user_list()])
+        if ca.exists():
+            ca = ca.get()
+            res.extend([{
+                'uid': encode(u.id), 'src': u.portrait, 'acc': u.acc, 'auth': 'comment'
+            }for u in ca.get_user_list()])
+        if ra.exists():
+            ra = ra.get()
+            res.extend([{
+                'uid': encode(u.id), 'src': u.portrait, 'acc': u.acc, 'auth': 'read'
+            }for u in ra.get_user_list()])
+        return 0, res
+
+
+class ChangeMemberAuth(View):
+    @JSR('status')
+    def post(self, request):
+        E = ED()
+        E.u, E.k, E.au, E.nf, E.nu = -1, 1, 2, 3, 4
+        if not request.session.get('is_login', False):
+            return E.au
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'did', 'acc', 'auth'}:
+            return E.k
+        did = kwargs.get('did')
+        auth = kwargs.get('auth')
+        if auth not in ['no_share', 'write', 'comment', 'read']:
+            return E.k
+        try:
+            u = User.objects.get(acc=kwargs.get('acc'))
+        except:
+            return E.nu
+        e = Entity.get_via_encoded_id(did)
+        if e is None:
+            return E.nf
+        if e.type == 'fold':
+            return E.k
+        if u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
+            return E.au
 
         wa = WriteAuth.objects.filter(ent=e)
-        if not wa.exists():
-            wa = WriteAuth.objects.create(ent=e)
-            wa.add_auth(e.creator)
-            wa.key = self.get_key(DOC_AUTH.write)
-            wa.save()
-        else:
-            wa = wa.get()
+        can_write = wa.exists() and u in wa.get().get_user_list()
+        if can_write and auth != 'write':
+            WriteMem.objects.filter(user=u, auth=wa.get()).delete()
+        elif can_write and auth == 'write':
+            return 0
+        ca = CommentAuth.objects.filter(ent=e)
+        can_comment = ca.exists() and u in ca.get().get_user_list()
+        if can_comment and auth != 'comment':
+            CommentMem.objects.filter(user=u, auth=ca.get()).delete()
+        elif can_comment and auth == 'write':
+            return 0
+        ra = ReadAuth.objects.filter(ent=e)
+        can_read = ra.exists() and u in ra.get().get_user_list()
+        if can_read and auth != 'read':
+            ReadMem.objects.filter(user=u, auth=ra.get()).delete()
+        elif can_comment and auth == 'read':
+            return 0
+        return 0
 
-        if auth == DOC_AUTH.write:
-            if not WriteMem.objects.filter(user=u, write_auth=wa).exists():
-                return E.au, ''
-            else:
-                return 0, wa.key
-        if auth == DOC_AUTH.comment:
-            ca = CommentAuth.objects.filter(ent=e)
-            if not ca.exists():
-                ca = CommentAuth.objects.create(ent=e)
-                ca.key = self.get_key(DOC_AUTH.comment)
-                ca.save()
-            else:
-                ca = ca.get()
-            if not CommentMem.objects.filter(user=u, comment_auth=ca).exists() and not WriteMem.objects.filter(user=u, write_auth=wa).exists():
-                return E.au, ''
-            else:
-                return 0, ca.key
-        if auth == DOC_AUTH.read:
-            ra = ReadAuth.objects.filter(ent=e)
-            if not ra.exists():
-                ra = ReadAuth.objects.create(ent=e)
-                ra.key = self.get_key(DOC_AUTH.read)
-                ra.save()
-            else:
-                ra = ra.get()
-            ca = CommentAuth.objects.filter(ent=e)
-            wf = True if WriteMem.objects.filter(user=u, write_auth=wa).exists() else False
-            rf = True if ReadMem.objects.filter(user=u, read_auth=ra).exists() else False
-            if (ca.exists() and CommentMem.objects.filter(user=u, comment_auth=ca.get()).exists()) or rf or wf:
-                return 0, ra.key
-            else:
-                return E.au, ''
-        return E.k, ''
+        # wa = WriteAuth.objects.filter(ent=e)
+        # if not wa.exists():
+        #     wa = WriteAuth.objects.create(ent=e)
+        #     wa.add_auth(e.creator)
+        #     wa.key = self.get_key(DOC_AUTH.write)
+        #     wa.save()
+        # else:
+        #     wa = wa.get()
+        #
+        # if auth == DOC_AUTH.write:
+        #     if not WriteMem.objects.filter(user=u, write_auth=wa).exists():
+        #         return E.au, ''
+        #     else:
+        #         return 0, wa.key
+        # if auth == DOC_AUTH.comment:
+        #     ca = CommentAuth.objects.filter(ent=e)
+        #     if not ca.exists():
+        #         ca = CommentAuth.objects.create(ent=e)
+        #         ca.key = self.get_key(DOC_AUTH.comment)
+        #         ca.save()
+        #     else:
+        #         ca = ca.get()
+        #     if not CommentMem.objects.filter(user=u, comment_auth=ca).exists() and not WriteMem.objects.filter(user=u, write_auth=wa).exists():
+        #         return E.au, ''
+        #     else:
+        #         return 0, ca.key
+        # if auth == DOC_AUTH.read:
+        #     ra = ReadAuth.objects.filter(ent=e)
+        #     if not ra.exists():
+        #         ra = ReadAuth.objects.create(ent=e)
+        #         ra.key = self.get_key(DOC_AUTH.read)
+        #         ra.save()
+        #     else:
+        #         ra = ra.get()
+        #     ca = CommentAuth.objects.filter(ent=e)
+        #     wf = True if WriteMem.objects.filter(user=u, write_auth=wa).exists() else False
+        #     rf = True if ReadMem.objects.filter(user=u, read_auth=ra).exists() else False
+        #     if (ca.exists() and CommentMem.objects.filter(user=u, comment_auth=ca.get()).exists()) or rf or wf:
+        #         return 0, ra.key
+        #     else:
+        #         return E.au, ''
+        # return E.k, ''
 
 
 class AddReadAuth(View):

@@ -123,11 +123,11 @@ class WorkbenchShare(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.write_auth.ent.backtrace_deleted]
-        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.comment_auth.ent.backtrace_deleted]
-        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.read_auth.ent.backtrace_deleted]
+        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
+        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
+        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
         ents = sorted(ws + cs + rs, key=lambda e: e.dt)
-        ents = [a.write_auth.ent if isinstance(a, WriteMem) else a.comment_auth.ent if isinstance(a, CommentMem) else a.read_auth.ent for a in ents]
+        ents = [a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.auth.ent for a in ents]
         return 0, cur_time(), [{
             'type': e.type,
             'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else 'read',
@@ -527,7 +527,7 @@ class FSFoldElem(View):
 
         # print(f'time cost: {time.time()-st:.2f}\t\t' * 100)
         sons_s = [{
-            'pfid': pfid,
+            'pfid': pfid, 'can_share': True if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else False) else False,
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
             'create_dt': cdt, 'cuid': cuid, 'cname': cnm,
