@@ -34,9 +34,9 @@ class WorkbenchRecentView(View):
 
         records = u.read_records.all()
         ent_dt: List[Tuple[Entity, str]] = [
-                                               (rec.ent, rec.dt_str)
-                                               for rec in records if not rec.ent.backtrace_deleted and rec.ent.is_doc()
-                                           ][:15]
+            (rec.ent, rec.dt_str)
+            for rec in records if not rec.ent.backtrace_deleted and rec.ent.is_doc()
+        ][:15]
 
         return 0, cur_time(), [{
             'pfid': e.father.encoded_id if e.father is not None and e.father.first_person(u) else '',
@@ -61,7 +61,7 @@ class WorkbenchStar(View):
         if request.GET.keys() != set():
             return E.k
 
-        ents = [c.ent for c in u.related_collection.all() if not c.ent.backtrace_deleted]
+        ents = [c.ent for c in u.collections.all() if not c.ent.backtrace_deleted]
         return 0, cur_time(), [{
             'pfid': e.father.encoded_id if e.father is not None and e.father.first_person(u) else '',
             'name': e.name,

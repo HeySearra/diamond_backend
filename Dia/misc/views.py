@@ -26,13 +26,17 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
     if ent.is_locked:
         return False
     assert auth in list(zip(*DOC_AUTH_CHS))[0]
-
-    if auth == DOC_AUTH.write:
-        return WriteMem.objects.filter(user=user, write_auth__ent=ent).exists()
-    elif auth == DOC_AUTH.read:
-        return ReadMem.objects.filter(user=user, read_auth__ent=ent).exists()
-    elif auth == DOC_AUTH.comment:
-        return CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists()
+    
+    wt, ct, rt = (WriteMem, 'write_auth'), (CommentMem, 'comment_auth'), (ReadMem, 'read_auth')
+    cfgs = {
+        DOC_AUTH.write: (wt, ),
+        DOC_AUTH.comment: (ct, wt),
+        DOC_AUTH.read: (rt, ct, wt),
+    }
+    return any(
+        clz.objects.filter(**{'user': user, f'{au}__ent': ent}).exists()
+        for clz, au in cfgs[auth]
+    )
 
 
 def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:

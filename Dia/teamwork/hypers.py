@@ -16,6 +16,8 @@ DOC_AUTH_CHS = (
 )
 DOC_AUTH = namedtuple('___', ['write', 'comment', 'read', 'none'])('write', 'comment', 'read', 'none')
 
-TEAM_NAME_MAX_LENGTH = 64
+TEAM_NAME_MAX_LENGTH = 60
 TEAM_INTRO_MAX_LENGTH = 1024
 
+CHECK_TEAM_NAME = lambda d: 0 < len(d) <= TEAM_NAME_MAX_LENGTH and d.isprintable()
+CHECK_TEAM_INTRO = lambda d: 0 < len(d) <= TEAM_INTRO_MAX_LENGTH and d.isprintable()

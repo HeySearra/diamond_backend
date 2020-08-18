@@ -1,21 +1,29 @@
-from django.shortcuts import render
-
 # your views here.
 import json
+from typing import Callable, Optional
+
 from django.views import View
 from easydict import EasyDict
 
+from entity.models import Entity
 from fusion.models import Links, Collection
-from meta_config import ROOT_SUFFIX
 from record.models import upd_record_create, upd_record_user
-from user.models import Message
+from teamwork.hypers import CHECK_TEAM_NAME, CHECK_TEAM_INTRO
+from teamwork.models import Team, Member, ROOT_SUFFIX
+from user.models import User, Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message
-from utils.cast import encode, decode
 from utils.meta_wrapper import JSR
-from teamwork.models import *
-from teamwork.hypers import *
-from entity.models import Entity
+
+
+def delete_records_and_workbench(ref_old_user: Optional[User, None], ref_new_user: User) -> Callable:
+    
+    def __closure_fn(ent: Entity):
+        upd_record_user(auth='create', ent=ent, old_user=ref_old_user, new_user=ref_new_user)
+        ref_old_user.collections.filter(ent_id=ent.id).delete()
+        ref_new_user.links.filter(ent_id=ent.id).delete()
+    
+    return __closure_fn
 
 
 class NewFromFold(View):
@@ -29,21 +37,23 @@ class NewFromFold(View):
             return None, E.key
         if not request.session['is_login']:
             return None, E.auth
-        try:
-            user = User.objects.get(id=int(decode(request.session['uid'])))
-            entity = Entity.get_via_encoded_id(kwargs['fid'])
-        except:
+        user = User.get_via_encoded_id(request.session['uid'])
+        entity = Entity.get_via_encoded_id(kwargs['fid'])
+        if user is None:
+            return None, E.auth
+        if entity is None:
             return None, E.uk
         if not entity.can_convert_to_team():
             return None, E.root
+        
         try:
             team = Team.objects.create(root=entity, name=entity.name)
             Member.objects.create(member=user, team=team, auth='owner')
             entity.father = None
             entity.name = team.name + ROOT_SUFFIX
             entity.save()
-            Links.objects.filter(user=user, ent=entity).delete()
-            Collection.objects.filter(user=user, ent=entity).delete()
+            user.links.filter(ent=entity).delete()
+            user.collections.filter(ent=entity).delete()
             upd_record_create(user, entity, delete=True)
         except:
             return None, E.uk
@@ -61,22 +71,23 @@ class Invitation(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        try:
-            user1 = User.objects.get(id=int(decode(request.session['uid'])))
-        except:
-            return E.uk
+        
+        user1 = User.get_via_encoded_id(request.session['uid'])
+        if user1 is None:
+            return E.auth
         try:
             user2 = User.objects.get(acc=kwargs['acc'])
         except:
             return E.no
-        try:
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
-        except:
+        
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        if team is None:
             return E.tid
         try:
             auth = Member.objects.get(member=user1, team=team).auth
         except:
             return E.no
+        
         if auth == 'member':
             return E.auth
         if Member.objects.filter(member=user2, team=team).exists():
@@ -101,45 +112,42 @@ class Auth(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        try:
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
-        except:
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        if team is None:
             return E.tid
+        user = User.get_via_encoded_id(request.session['uid'])
+        if user is None:
+            return E.auth
+        
         try:
-            user = User.objects.get(id=int(decode(request.session['uid'])))
             owner = Member.objects.get(member=user, team=team)
         except:
             return E.auth
         if owner.auth != 'owner':
             return E.auth
         user_list = Member.objects.filter(team=team)
-        for _ in user_list:
-            uid = _.member.id
-            try:
-                u = User.objects.get(id=uid)
-                member = Member.objects.get(member=u, team=team)
-                # 前端已判断不能设置自己权限（指创建者设置自己权限）
-                # 如果本身是管理员且不在设置的uid_list里，就撤销并发信息
-                if member.auth == 'admin' and not (encode(u.id) in kwargs['list']):
-                    member.auth = 'member'
-                    try:
-                        member.save()
-                    except:
-                        return E.uk
-                    if not send_team_admin_cancel_message(team=team, su=user, mu=u):
-                        return E.uk
-                    print('=='*10, 'to_member')
-                elif member.auth == 'member' and encode(u.id) in kwargs['list']:
-                    member.auth = 'admin'
-                    try:
-                        member.save()
-                    except:
-                        return E.uk
-                    if not send_team_admin_message(team=team, su=user, mu=u):
-                        return E.uk
-                    print('=='*10, 'to_admin')
-            except:
-                return E.uid
+        for member in user_list:
+            u = member.member
+            # 前端已判断不能设置自己权限（指创建者设置自己权限）
+            # 如果本身是管理员且不在设置的uid_list里，就撤销并发信息
+            if member.auth == 'admin' and u.encoded_id not in kwargs['list']:
+                member.auth = 'member'
+                try:
+                    member.save()
+                except:
+                    return E.uk
+                if not send_team_admin_cancel_message(team=team, su=user, mu=u):
+                    return E.uk
+                # print('==' * 10, 'to_member')
+            elif member.auth == 'member' and u.encoded_id in kwargs['list']:
+                member.auth = 'admin'
+                try:
+                    member.save()
+                except:
+                    return E.uk
+                if not send_team_admin_message(team=team, su=user, mu=u):
+                    return E.uk
+                # print('==' * 10, 'to_admin')
         return 0
 
 
@@ -154,34 +162,33 @@ class Remove(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
+      
+        user1 = User.get_via_encoded_id(request.session['uid'])
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        user2 = User.get_via_encoded_id(kwargs['uid'])
+        if user1 is None:
+            return E.auth
+        if team is None:
+            return E.tid
+        if user2 is None:
+            return E.uid
+        
         try:
-            user1 = User.objects.get(id=int(decode(request.session['uid'])))
-            user2 = User.objects.get(id=int(decode(kwargs['uid'])))
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
             auth = Member.objects.get(member=user1, team=team).auth
         except:
-            return E.uk
+            return E.auth
         if auth == 'member':
             return E.auth
-        try:
-            u = Member.objects.filter(member=user2, team=team)
-        except:
-            return E.uk
-        if not u.exists():
+        m = Member.objects.filter(member=user2, team=team)
+        if not m.exists():
             return E.exist
         try:
             if not send_team_out_message(team, user2):
                 return E.uk
-            old_user = u.get().member
-            team.root.bfs_apply(
-                func=lambda ent: upd_record_user(
-                    auth='create', ent=ent,
-                    old_user=old_user,
-                    new_user=team.owner
-                )
-            )
-
-            u.delete()
+            old_user = m.get().member
+            owner = team.owner
+            team.root.bfs_apply(func=delete_records_and_workbench(old_user, owner))
+            m.delete()
         except:
             return E.uk
         return 0
@@ -196,15 +203,12 @@ class Info(View):
         E.key, E.auth, E.tid = 1, 2, 3
         if dict(request.GET).keys() != {'tid'}:
             return E.key, '', '', '', '', 0, '', '', [], []
-        uid = int(decode(request.session['uid']))
-        tid = int(decode(request.GET.get('tid')))
-        try:
-            user = User.objects.get(id=uid)
-        except:
+        
+        user = User.get_via_encoded_id(request.session['uid'])
+        if user is None:
             return E.auth, '', '', '', '', 0, '', '', [], []
-        try:
-            team = Team.objects.get(id=tid)
-        except:
+        team = Team.get_via_encoded_id(request.GET.get('tid'))
+        if team is None:
             return E.tid, '', '', '', '', 0, '', '', [], []
         members = Member.objects.filter(team=team)
         if not members.exists():
@@ -218,21 +222,21 @@ class Info(View):
         cname = ''
         norm = []
         admin = []
-
+        
         for m in members:
             if m.auth == 'owner':
-                cuid = encode(str(m.member.id))
+                cuid = m.member.encoded_id
                 cname = m.member.name
             elif m.auth == 'admin':
                 admin.append({
-                    'uid': encode(str(m.member.id)),
+                    'uid': m.member.encoded_id,
                     'acc': m.member.acc,
                     'src': m.member.portrait,
                     'name': m.member.name
                 })
             else:
                 norm.append({
-                    'uid': encode(str(m.member.id)),
+                    'uid': m.member.encoded_id,
                     'acc': m.member.acc,
                     'src': m.member.portrait,
                     'name': m.member.name
@@ -252,12 +256,13 @@ class Delete(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        try:
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
-        except:
+        user = User.get_via_encoded_id(request.session['uid'])
+        if user is None:
+            return E.auth
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        if team is None:
             return E.tid
         try:
-            user = User.objects.get(id=int(decode(request.session['uid'])))
             owner = Member.objects.get(member=user, team=team)
             members = Member.objects.filter(team=team)
         except:
@@ -273,9 +278,7 @@ class Delete(View):
             team.root.move(user.root)
             # 篡位嗷
             upd_record_create(user, team.root)
-            team.root.bfs_apply(
-                func=lambda f: upd_record_user('create', f, old_user=None, new_user=user)
-            )
+            team.root.bfs_apply(func=delete_records_and_workbench(ref_old_user=None, ref_new_user=user))
             team.delete()
         except:
             return E.uk
@@ -293,11 +296,11 @@ class New(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        try:
-            owner = User.objects.get(id=int(decode(request.session['uid'])))
-        except:
+        
+        owner = User.get_via_encoded_id(request.session['uid'])
+        if owner is None:
             return E.auth
-        if not (0 <= len(str(kwargs['name'])) <= TEAM_NAME_MAX_LENGTH and str(kwargs['name']).isprintable()):
+        if not CHECK_TEAM_NAME(kwargs['name']):
             return E.name
         try:
             # 创建新根文件夹
@@ -320,14 +323,15 @@ class TeamEditInfo(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        try:
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
-        except:
+        
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        if team is None:
             return E.tid
-        if not (0 < len(kwargs['name']) <= TEAM_NAME_MAX_LENGTH and str(kwargs['name']).isprintable()):
+        if not CHECK_TEAM_NAME(kwargs['name']):
             return E.name
-        if not 0 < len(kwargs['intro']) <= TEAM_INTRO_MAX_LENGTH:
+        if not CHECK_TEAM_INTRO(kwargs['intro']):
             return E.intro
+        
         team.name = kwargs['name']
         team.root.name = kwargs['name'] + ROOT_SUFFIX
         team.intro = kwargs['intro']
@@ -350,17 +354,13 @@ class All(View):
             return E.key, [], []
         if not request.session['is_login']:
             return E.auth
-        uid = int(decode(request.session['uid']))
-        try:
-            members = Member.objects.filter(member=uid)
-        except:
-            return E.uk
         my_team = []
         join_team = []
+        members = Member.get_members_via_member_encoded_id(member_encoded_id=request.session['uid'])
         for m in members:
             if m.auth == 'owner':
                 my_team.append({
-                    'tid': encode(str(m.team.id)),
+                    'tid': m.team.encoded_id,
                     'name': m.team.name,
                     'intro': m.team.intro,
                     'portrait': m.team.portrait if m.team.portrait else '',
@@ -368,7 +368,7 @@ class All(View):
                 })
             else:
                 join_team.append({
-                    'tid': encode(str(m.team.id)),
+                    'tid': m.team.encoded_id,
                     'name': m.team.name,
                     'intro': m.team.intro,
                     'portrait': m.team.portrait if m.team.portrait else '',
@@ -388,9 +388,9 @@ class InvitationConfirm(View):
             return E.key, ''
         if not request.session['is_login']:
             return E.auth, ''
-        try:
-            msg = Message.objects.get(id=int(decode(kwargs['mid'])))
-        except:
+        
+        msg = Message.get_via_encoded_id(kwargs['mid'])
+        if msg is None:
             return E.mid, ''
         msg.is_process = True
         msg.result_content = '您已' + ('接受' if kwargs['result'] else '拒绝') + '该邀请'
@@ -413,7 +413,7 @@ class InvitationConfirm(View):
                 return E.exist, ''
             if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=False):
                 return E.uk, ''
-        return 0, encode(team.id)
+        return 0, team.encoded_id
 
 
 class Identity(View):
@@ -426,16 +426,13 @@ class Identity(View):
             return '', E.key
         if not request.session['is_login']:
             return 'none', E.auth
-        uid = int(decode(request.session['uid']))
-        tid = int(decode(request.GET.get('tid')))
-        try:
-            user = User.objects.get(id=uid)
-        except:
-            return '', E.uk
-        try:
-            team = Team.objects.get(id=tid)
-        except:
+        user = User.get_via_encoded_id(request.session['uid'])
+        if user is None:
+            return '', E.auth
+        team = Team.get_via_encoded_id(request.GET.get('tid'))
+        if team is None:
             return '', E.tid
+        
         try:
             identity = Member.objects.get(team=team, member=user).auth
         except:
@@ -454,12 +451,14 @@ class Quit(View):
             return E.key
         if not request.session['is_login']:
             return E.auth
-        try:
-            team = Team.objects.get(id=int(decode(kwargs['tid'])))
-            user = User.objects.get(id=int(decode(request.session['uid'])))
-
-        except:
+        user = User.get_via_encoded_id(request.session['uid'])
+        if user is None:
+            return E.auth
+        
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        if team is None:
             return E.tid
+        
         try:
             m = Member.objects.get(team=team, member=user)
         except:

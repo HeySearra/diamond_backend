@@ -2,7 +2,6 @@ from datetime import datetime
 
 from django.db import models
 
-from teamwork.hypers import TEAM_NAME_MAX_LENGTH
 from user.hypers import *
 from meta_config import TIME_FMT
 from utils.cast import encode, decode
@@ -78,5 +77,5 @@ class Message(models.Model):
     related_id = models.IntegerField(default=0) # 根据type，id所对的类型不同
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
     type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type, default='')
-    team_name = models.CharField(max_length=TEAM_NAME_MAX_LENGTH, null=True, blank=True)
+    team_name = models.CharField(max_length=BASIC_DATA_MAX_LEN, null=True, blank=True)
     result_content = models.CharField(max_length=128, verbose_name='处理后提示信息', default='')
