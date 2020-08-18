@@ -88,6 +88,7 @@ class Trajectory(models.Model):
     user = models.ForeignKey(to='user.User', related_name='trajectories', on_delete=models.CASCADE)
     dt = models.DateTimeField(null=True, default=datetime.now)
     updated_content = RichTextField(default='', max_length=32 * KB)
+    initial = models.BooleanField(default=False)
     
     @property
     def dt_str(self):

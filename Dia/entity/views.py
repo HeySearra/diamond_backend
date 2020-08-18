@@ -320,7 +320,8 @@ class DocEdit(View):
         traj = Trajectory(
             ent=e,
             user=u,
-            updated_content=content
+            updated_content=content,
+            initial=False
         )
 
         try:
@@ -482,7 +483,8 @@ class FSNew(View):
             Trajectory.objects.create(
                 ent=e,
                 user=u,
-                updated_content=''
+                updated_content='',
+                initial=True
             )
         return e.encoded_id, 0
 
@@ -777,7 +779,8 @@ class FSCopy(View):
         Trajectory.objects.create(
             ent=new_ent,
             user=u,
-            updated_content=new_ent.content
+            updated_content=new_ent.content,
+            initial=True
         )
 
         return 0
@@ -1071,6 +1074,10 @@ class DocumentHistory(View):
         e: Entity = Entity.get_via_encoded_id(kwargs.get('did'))
         if e is None:
             return E.no_ent
+        
+        trajs = e.trajectories.filter(initial=False)
+        trajs, too_old = trajs[15:], trajs[:15]
+        too_old.delete()
 
         return 0, cur_time(), [
             {
@@ -1079,5 +1086,5 @@ class DocumentHistory(View):
                 'portrait': traj.user.portrait,
                 'name': traj.user.name,
             }
-            for traj in e.trajectories.all()
-        ][:-1]  # cut the tail (the first traj, indicating the file-creation)
+            for traj in trajs
+        ]
