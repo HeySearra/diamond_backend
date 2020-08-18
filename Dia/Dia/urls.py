@@ -100,6 +100,7 @@ urlpatterns = [
     path('team/identity', Identity.as_view(), name='team_identity'),
     path('team/quit', Quit.as_view(), name='team_quit'),
     path('team/invitation/confirm', InvitationConfirm.as_view(), name='team_invitation_confirm'),
+    path('team/send_all', SendAll.as_view(), name='team_send_all'),
 
     # 模板库
     path('temp/all', TempAll.as_view(), name='temp_all'),

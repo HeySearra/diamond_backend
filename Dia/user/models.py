@@ -74,7 +74,7 @@ class Message(models.Model):
     is_read = models.BooleanField(blank=True, verbose_name='消息是否读取', default=False)
     is_process = models.BooleanField(verbose_name='消息是否被处理', default=False)
     portrait = models.CharField(max_length=512, verbose_name='头像url', default='')   # 团队或者用户的头像
-    related_id = models.IntegerField(default=0) # 根据type，id所对的类型不同
+    related_id = models.IntegerField(default=0)  # 根据type，id所对的类型不同
     dt = models.DateTimeField(default=datetime.now, verbose_name='消息产生时间')
     type = models.CharField(max_length=20, blank=False, verbose_name='消息类型', choices=MESSAGE_type, default='')
     team_name = models.CharField(max_length=BASIC_DATA_MAX_LEN, null=True, blank=True)

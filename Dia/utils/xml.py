@@ -79,4 +79,5 @@ if __name__ == '__main__':
     #     '<p>1</p><p>3</p><p>2</p>',
     #     '<p>1</p><p>3</p>')
     # )
+    print(filter_comment('''<p><comment-start name="e6ad5b8ddc49aeb18f86404b9f9f654dd:93a8b"></comment-start>123123<comment-end name="e6ad5b8ddc49aeb18f86404b9f9f654dd:93a8b"></comment-end></p><p>&nbsp;</p><p>12<comment-start name="e6b3cd85057f9854b08c3329f2615a447:4e6bb"></comment-start>32<comment-end name="e6b3cd85057f9854b08c3329f2615a447:4e6bb"></comment-end>13</p><p>&nbsp;</p><figure class="table"><table><tbody><tr><td><comment-start name="eac7ef18726c24ac4f37d57baf34cdb07:2f5b0"></comment-start>abcv<comment-end name="eac7ef18726c24ac4f37d57baf34cdb07:2f5b0"></comment-end></td></tr></tbody></table></figure><p>&nbsp;</p>'''))
 

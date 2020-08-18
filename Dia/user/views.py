@@ -13,7 +13,7 @@ from django.db.models import Q
 
 from Dia.settings import BASE_DIR
 from fusion.models import Comment
-from teamwork.models import Team
+from teamwork.models import Team, Member
 from user.models import User, EmailRecord, Message
 from user.hypers import *
 from utils.cast import encode, decode, cur_time
@@ -76,7 +76,7 @@ def send_team_member_out_message(team: Team, su: User, mu: User):
     return True
 
 
-def send_team_dismiss_message(team: Team, mu: User, su:User):
+def send_team_dismiss_message(team: Team, mu: User, su: User):
     # mu: 团队解散
     m = Message()
     m.owner = mu
@@ -150,6 +150,19 @@ def send_team_admin_cancel_message(team: Team, su: User, mu: User):
     return True
 
 
+def send_team_all_message(team: Team, su: User, content: str):
+    # tid:团队id，su:发起团队消息的用户
+    # 我存的数据库原始id，使用msg/info给我发消息时请加密
+    members = Member.objects.filter(team=team)
+    for m in members:
+        try:
+            Message.objects.create(owner=m.member, sender=su, title="团队消息", content=content, portrait=team.portrait,
+                                   related_id=team.id, type='out', team_name=team.name)
+        except:
+            return False
+    return True
+
+
 def send_comment_message(comment: Comment, su: User, mu: User):
     # tid:团队id，su:发表评论的用户，mu：文档的拥有者
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
@@ -184,7 +197,9 @@ class SearchUser(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'key'}:
             return [], 1
-        us = User.objects.filter(Q(name__icontains=kwargs['key']) | Q(acc__icontains=kwargs['key']))
+        if len(kwargs['key']) == 0:
+            return [], 0
+        us = User.objects.filter(Q(name__icontains=kwargs['key']) | Q(acc=kwargs['key']))
         ulist = []
         for u in us:
             ulist.append({
@@ -384,7 +399,8 @@ class AskMessageList(View):
 
 
 class AskMessageInfo(View):
-    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'name', 'content', 'cur_dt', 'dt', 'result_content')
+    @JSR('status', 'is_read', 'is_process', 'is_dnd', 'title', 'portrait', 'type', 'id', 'name', 'content', 'cur_dt',
+         'dt', 'result_content')
     def get(self, request):
         if dict(request.GET).keys() != {'mid'}:
             return 1, [] * 12
@@ -402,7 +418,8 @@ class AskMessageInfo(View):
         if not msg.exists():
             return -1, [] * 12
         msg = msg.get()
-        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(msg.related_id) if msg.related_id else '', msg.team_name, msg.content, cur_time(), msg.dt_str, msg.result_content
+        return 0, msg.is_read, msg.is_process, u.is_dnd, msg.title, msg.portrait, msg.type, encode(
+            msg.related_id) if msg.related_id else '', msg.team_name, msg.content, cur_time(), msg.dt_str, msg.result_content
 
 
 class SetMsgRead(View):

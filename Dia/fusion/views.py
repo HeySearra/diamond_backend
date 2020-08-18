@@ -16,6 +16,7 @@ from user.models import User
 from user.views import send_comment_message
 from utils.cast import decode
 from utils.meta_wrapper import JSR
+from utils.xml import filter_comment
 
 
 class StarCondition(View):
@@ -173,8 +174,9 @@ class TempNewDoc(View):
             return E.name
         if father.sons_dup_name(kwargs['name']):
             return E.uni
+        # print(filter_comment(t.content))
         try:
-            e = Entity.objects.create(father=father, name=kwargs['name'], content=t.content, type='doc')
+            e = Entity.objects.create(father=father, name=kwargs['name'], content=t.content, type='doc')  # 去掉评论
             upd_record_create(user, e)
             Trajectory.objects.create(
                 ent=e,
