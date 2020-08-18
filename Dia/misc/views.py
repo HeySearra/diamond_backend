@@ -228,21 +228,27 @@ class AuthFileList(View):
         ca = CommentAuth.objects.filter(ent=e)
         ra = ReadAuth.objects.filter(ent=e)
         res = []
+        ul = set()
         if wa.exists():
             wa = wa.get()
+            wu = wa.get_user_list()
+            ul = ul.union(set(wu))
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'write'
-            }for u in wa.get_user_list()])
+            }for u in wu if (u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team)]])
         if ca.exists():
             ca = ca.get()
+            cu = ca.get_user_list()
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'comment'
-            }for u in ca.get_user_list()])
+            }for u in cu if u not in ul and (u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team)]])
+            ul = ul.union(set(cu))
         if ra.exists():
             ra = ra.get()
+            ru = ra.get_user_list()
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'read'
-            }for u in ra.get_user_list()])
+            }for u in ra.get_user_list() if u not in ul and (u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team)]])
         return 0, res
 
 
