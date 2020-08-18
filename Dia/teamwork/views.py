@@ -216,6 +216,9 @@ class Info(View):
         name = team.name
         intro = team.intro
         portrait = team.portrait if team.portrait else ''
+        if team.portrait == "team.jpg":
+            team.portrait = 'http://47.96.109.229/static/upload/portrait/team.jpg'
+            team.save()
         create_dt = team.create_dt_str
         doc_num = team.root.num_leaves()
         cuid = ''
