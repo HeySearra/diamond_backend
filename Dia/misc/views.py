@@ -140,7 +140,7 @@ class FSShareKey(View):
 
         sa = ShareAuth.objects.filter(ent=e)
         if not sa.exists():
-            sa = WriteAuth.objects.create(ent=e)
+            sa = ShareAuth.objects.create(ent=e)
             sa.add_owner(e.creator)
             team = e.backtrace_root_team
             if team is not None:
