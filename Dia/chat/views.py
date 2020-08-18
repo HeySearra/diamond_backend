@@ -36,7 +36,7 @@ class ChatList(View):
         for chat in chats:
             if chat.user1_id == u.id and (chat.user2_id not in another_users):
                 another_users.append(chat.user2_id)
-            if chat.user2_id == u.id and (chat.user1_id not in another_users):
+            if chat.user2_id == u.id and (chat.user1_id not in another_users) and chat.content != '':
                 another_users.append(chat.user1_id)
 
         chatlist = []
