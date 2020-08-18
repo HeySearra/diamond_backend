@@ -208,7 +208,7 @@ class SearchUser(View):
             us = sorted(
                 [_ for _ in us],
                 key=lambda x: sum([
-                    sk in x.name or sk in x.acc
+                    x.name.count(sk) + x.acc.count(sk)
                     for sk in key.split()
                 ]) * 1e5 - x.id,
                 reverse=True
