@@ -548,6 +548,7 @@ class UserEditInfo(View):
         u.portrait = kwargs['img']
         u.intro = kwargs['intro']
         try:
+            u.root.save()
             u.save()
         except:
             return -1
