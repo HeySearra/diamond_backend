@@ -241,17 +241,18 @@ class AuthFileList(View):
 
 
 class ChangeMemberAuth(View):
-    @JSR('status')
+    @JSR('status', 'is_new', 'user_info')
     def post(self, request):
         E = ED()
         E.u, E.k, E.au, E.nf, E.nu = -1, 1, 2, 3, 4
         if not request.session.get('is_login', False):
             return E.au
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'did', 'acc', 'auth'}:
+        if kwargs.keys() != {'did', 'acc', 'auth', 'is_new'}:
             return E.k
         did = kwargs.get('did')
         auth = kwargs.get('auth')
+        is_new = kwargs.get('is_new')
         if auth not in ['no_share', 'write', 'comment', 'read']:
             return E.k
         try:
@@ -270,25 +271,43 @@ class ChangeMemberAuth(View):
             return E.au
         if u == me or (me == e.backtrace_root_team.owner) if e.backtrace_root_team else False:
             return 5
+
         wa = WriteAuth.objects.filter(ent=e)
         can_write = wa.exists() and u in wa.get().get_user_list()
-        if can_write and auth != 'write':
-            WriteMem.objects.filter(user=u, auth=wa.get()).delete()
-        elif can_write and auth == 'write':
-            return 6
+        if can_write:
+            if is_new:
+                return 6
+            if auth != 'write':
+                wa.get().remove_auth(u)
+            else:
+                return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
+        elif auth == 'write':
+            wa.get().add_auth(u)
+            return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         ca = CommentAuth.objects.filter(ent=e)
         can_comment = ca.exists() and u in ca.get().get_user_list()
-        if can_comment and auth != 'comment':
-            CommentMem.objects.filter(user=u, auth=ca.get()).delete()
-        elif can_comment and auth == 'write':
-            return 6
+        if can_comment:
+            if is_new:
+                return 6
+            if auth != 'comment':
+                ca.get().remove_auth(u)
+            else:
+                return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
+        elif auth == 'comment':
+            ca.get().add_auth(u)
+            return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         ra = ReadAuth.objects.filter(ent=e)
         can_read = ra.exists() and u in ra.get().get_user_list()
-        if can_read and auth != 'read':
-            ReadMem.objects.filter(user=u, auth=ra.get()).delete()
-        elif can_comment and auth == 'read':
-            return 6
-        return 0
+        if can_read:
+            if is_new:
+                return 6
+            if auth != 'read':
+                ra.get().remove_auth(u)
+            else:
+                return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
+        elif auth == 'read':
+            ra.get().add_auth(u)
+        return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
 
         # wa = WriteAuth.objects.filter(ent=e)
         # if not wa.exists():
