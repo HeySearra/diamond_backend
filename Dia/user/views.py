@@ -212,7 +212,7 @@ class SearchUser(View):
                 ]
                 if all(weights):
                     us.append((u, sum(weights) * 10000 - int(u.id)))
-            us = [tup[0] for tup in sorted(us, key=lambda tup: tup[1], reverse=True)]
+            us = [tup[0] for tup in sorted(us, key=lambda tup: tup[1], reverse=True)][:10]
         
         ulist = []
         for u in us:
