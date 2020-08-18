@@ -528,7 +528,7 @@ class FSFoldElem(View):
 
         # print(f'time cost: {time.time()-st:.2f}\t\t' * 100)
         sons_s = [{
-            'pfid': pfid, 'can_share': True if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else False) else False,
+            'pfid': pfid, 'can_share': False if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else False) else True,
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
             'create_dt': cdt, 'cuid': cuid, 'cname': cnm,
