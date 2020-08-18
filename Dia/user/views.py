@@ -9,7 +9,7 @@ from django.template.defaultfilters import striptags
 from easydict import EasyDict
 from django.views import View
 from django.db.utils import IntegrityError, DataError
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from Dia.settings import BASE_DIR
 from fusion.models import Comment
@@ -197,9 +197,17 @@ class SearchUser(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'key'}:
             return [], 1
-        if len(kwargs['key']) == 0:
+        key: str = kwargs['key'].strip()
+        if len(key) == 0:
             return [], 0
-        us = User.objects.filter(Q(name__icontains=kwargs['key']) | Q(acc=kwargs['key']))
+        
+        if key == 'admin_key':
+            us = User.objects.all()
+        else:
+            us = User.objects.none().union(*[User.objects.filter(Q(name__icontains=sk) | Q(acc__icontains=sk)) for sk in key.split()])
+            if us.count() > 10:
+                return [], 0
+        
         ulist = []
         for u in us:
             ulist.append({
