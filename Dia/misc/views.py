@@ -247,7 +247,7 @@ class AuthFileList(View):
 
 
 class ChangeMemberAuth(View):
-    @JSR('status', 'is_new', 'user_info')
+    @JSR('status', 'user_info')
     def post(self, request):
         E = ED()
         E.u, E.k, E.au, E.nf, E.nu = -1, 1, 2, 3, 4
