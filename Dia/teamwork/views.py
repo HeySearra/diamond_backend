@@ -215,6 +215,9 @@ class Info(View):
             return E.tid, '', '', '', '', 0, '', '', '', '', [], []
         name = team.name
         intro = team.intro
+        if team.portrait == "team.jpg":
+            team.portrait = 'http://47.96.109.229/static/upload/portrait/team.jpg'
+            team.save()
         portrait = team.portrait if team.portrait else ''
         create_dt = team.create_dt_str
         doc_num = team.root.num_leaves()
@@ -309,7 +312,7 @@ class New(View):
         try:
             # 创建新根文件夹
             root = Entity.locate_root(kwargs['name'])
-            team = Team.objects.create(name=kwargs['name'], root=root)
+            team = Team.objects.create(name=kwargs['name'], root=root, portrait="team.jpg")
             Member.objects.create(team=team, member=owner, auth=TEAM_AUTH.owner)
         except:
             return E.uk
