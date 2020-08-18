@@ -149,11 +149,17 @@ class ChatCount(View):
         if not request.session.get('is_login', False):
             return 0, E.au
 
-        u = User.objects.filter(id=int(decode(request.session['uid'])))
-        if not u.exists():
-            return 0, E.au
-        u = u.get()
+        try:
+            u = User.objects.filter(id=int(decode(request.session['uid'])))
+        except:
+            uid = request.session['uid'].decode() if isinstance(request.session['uid'], bytes) else request.session['uid']
+            u = User.objects.filter(id=int(uid))
 
+        if not u.exists():
+            return 0, 2
+        u = u.get()
+        request.session['uid'] = encode(u.id)
+        request.session.save()
         return Chat.objects.filter(Q(user2_id=u.id) & Q(is_read=False)).count(), 0
 
 
