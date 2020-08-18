@@ -288,6 +288,7 @@ class ChangeMemberAuth(View):
             else:
                 return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         elif auth == 'write':
+            wa = WriteAuth.objects.get_or_create(ent=e)
             wa.get().add_auth(u)
             return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         ca = CommentAuth.objects.filter(ent=e)
@@ -300,6 +301,7 @@ class ChangeMemberAuth(View):
             else:
                 return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         elif auth == 'comment':
+            ca = CommentAuth.objects.get_or_create(ent=e)
             ca.get().add_auth(u)
             return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         ra = ReadAuth.objects.filter(ent=e)
@@ -312,7 +314,8 @@ class ChangeMemberAuth(View):
             else:
                 return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
         elif auth == 'read':
-            ra.get().add_auth(u)
+            ra = ReadAuth.objects.get_or_create(ent=e)
+            ra.add_auth(u)
         return 0, {'uid': encode(u.id), 'name': u.name, 'src': u.portrait}
 
         # wa = WriteAuth.objects.filter(ent=e)
