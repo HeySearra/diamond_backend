@@ -779,7 +779,7 @@ class FSCopy(View):
         Trajectory.objects.create(
             ent=new_ent,
             user=u,
-            updated_content=new_ent.content,
+            updated_content=e.content,
             initial=True
         )
 
