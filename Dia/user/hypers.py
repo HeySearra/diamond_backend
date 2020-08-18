@@ -49,6 +49,8 @@ CHECK_NAME = lambda n: all([
     _PRINTABLE_UNICODES_WITHOUT_BLANK(n),
 ])
 
+CHECK_INTRO = lambda d: 0 <= len(d) <= 500
+
 _CHECK_EMAIL = lambda e: all([
     0 < len(e) <= MINI_DATA_MAX_LEN,
     _PRINTABLE_ASCIIS_WITHOUT_BLANK(e),

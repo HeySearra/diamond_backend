@@ -532,6 +532,8 @@ class UserEditInfo(View):
             return 1,
         if not CHECK_NAME(kwargs['name']):
             return 3,
+        if not CHECK_INTRO(kwargs['intro']):
+            return 5
         try:
             uid = int(decode(request.session.get('uid', None)))
         except:
