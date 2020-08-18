@@ -19,7 +19,7 @@ def delete_records_and_workbench(ref_old_user: Union[User, None], ref_new_user: 
     
     def __closure_fn(ent: Entity):
         upd_record_user(auth='create', ent=ent, old_user=ref_old_user, new_user=ref_new_user)
-        ref_old_user.collections.filter(ent_id=ent.id).delete()
+        ref_new_user.collections.filter(ent_id=ent.id).delete()
         ref_new_user.links.filter(ent_id=ent.id).delete()
     
     return __closure_fn
