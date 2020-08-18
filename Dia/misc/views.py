@@ -28,7 +28,7 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
         return False
     assert auth in list(zip(*DOC_AUTH_CHS))[0]
     
-    wt, ct, rt = (WriteMem, 'write_auth'), (CommentMem, 'comment_auth'), (ReadMem, 'read_auth')
+    wt, ct, rt = (WriteMem, 'write'), (CommentMem, 'comment'), (ReadMem, 'read')
     cfgs = {
         DOC_AUTH.write: (wt, ),
         DOC_AUTH.comment: (ct, wt),
@@ -50,11 +50,11 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
     if ent.is_locked:
         return DOC_AUTH.none
 
-    if WriteMem.objects.filter(user=user, write_auth__ent=ent).exists():
+    if WriteMem.objects.filter(user=user, auth__ent=ent).exists():
         return DOC_AUTH.write
-    if CommentMem.objects.filter(user=user, comment_auth__ent=ent).exists():
+    if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
         return DOC_AUTH.comment
-    if ReadMem.objects.filter(user=user, read_auth__ent=ent).exists():
+    if ReadMem.objects.filter(user=user, auth__ent=ent).exists():
         return DOC_AUTH.read
 
 
@@ -103,7 +103,7 @@ class ResetKey(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.k
-        if e.type == 'fold':
+        if e.type == 'fold' or e.backtrace_deleted:
             return E.k
         try:
             sa = ShareAuth.objects.get(ent=e)
@@ -135,7 +135,7 @@ class FSShareKey(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.nf
-        if e.type == 'fold':
+        if e.type == 'fold' or e.backtrace_deleted:
             return E.k
 
         sa = ShareAuth.objects.filter(ent=e)
@@ -175,7 +175,7 @@ class ChangeShareAuth(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.nf
-        if e.type == 'fold':
+        if e.type == 'fold' or e.backtrace_deleted:
             return E.k
         sa = ShareAuth.objects.filter(ent=e)
         if not sa.exists():
@@ -214,7 +214,7 @@ class AuthFileList(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.nf
-        if e.type == 'fold':
+        if e.type == 'fold' or e.backtrace_deleted:
             return E.k
         if u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
             return E.au
@@ -261,7 +261,7 @@ class ChangeMemberAuth(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.nf
-        if e.type == 'fold':
+        if e.type == 'fold' or e.backtrace_deleted:
             return E.k
         if u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
             return E.au
@@ -328,72 +328,72 @@ class ChangeMemberAuth(View):
         #     else:
         #         return E.au, ''
         # return E.k, ''
-
-
-class AddReadAuth(View):
-    def get(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        kwargs = request.GET
-        if kwargs.keys() != {'dk'}:
-            return redirect('/workbench/recent_view')
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return redirect('/login')
-        ra = ReadAuth.objects.filter(key=kwargs.get('dk'))
-        if not ra.exists():
-            return redirect('/workbench/recent_view')
-        try:
-            ra = ra.get()
-            if ra.ent.is_locked:
-                return redirect('/workbench/recent_view')
-            ra.add_auth(u)
-        except:
-            return redirect('/workbench/recent_view')
-        return redirect('/doc/' + ra.ent.encoded_id)
-
-
-class AddCommentAuth(View):
-    def get(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        kwargs = request.GET
-        if kwargs.keys() != {'dk'}:
-            return redirect('/workbench/recent_view')
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return redirect('/login')
-        ca = CommentAuth.objects.filter(key=kwargs.get('dk'))
-        if not ca.exists():
-            return redirect('/workbench/recent_view')
-        try:
-            ca = ca.get()
-            if ca.ent.is_locked:
-                return redirect('/workbench/recent_view')
-            ca.add_auth(u)
-        except:
-            return redirect('/workbench/recent_view')
-        return redirect('/doc/' + ca.ent.encoded_id)
-
-
-class AddWriteAuth(View):
-    def get(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        kwargs = request.GET
-        if kwargs.keys() != {'dk'}:
-            return redirect('/workbench/recent_view')
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return redirect('/login')
-        wa = WriteAuth.objects.filter(key=kwargs.get('dk'))
-        if not wa.exists():
-            return redirect('/workbench/recent_view')
-        try:
-            wa = wa.get()
-            if wa.ent.is_locked:
-                return redirect('/workbench/recent_view')
-            wa.add_auth(u)
-        except:
-            return redirect('/workbench/recent_view')
-        return redirect('/doc/' + wa.ent.encoded_id)
+#
+#
+# class AddReadAuth(View):
+#     def get(self, request):
+#         E = ED()
+#         E.u, E.k = -1, 1
+#         kwargs = request.GET
+#         if kwargs.keys() != {'dk'}:
+#             return redirect('/workbench/recent_view')
+#         u = User.get_via_encoded_id(request.session['uid'])
+#         if u is None:
+#             return redirect('/login')
+#         ra = ReadAuth.objects.filter(key=kwargs.get('dk'))
+#         if not ra.exists():
+#             return redirect('/workbench/recent_view')
+#         try:
+#             ra = ra.get()
+#             if ra.ent.is_locked:
+#                 return redirect('/workbench/recent_view')
+#             ra.add_auth(u)
+#         except:
+#             return redirect('/workbench/recent_view')
+#         return redirect('/doc/' + ra.ent.encoded_id)
+#
+#
+# class AddCommentAuth(View):
+#     def get(self, request):
+#         E = ED()
+#         E.u, E.k = -1, 1
+#         kwargs = request.GET
+#         if kwargs.keys() != {'dk'}:
+#             return redirect('/workbench/recent_view')
+#         u = User.get_via_encoded_id(request.session['uid'])
+#         if u is None:
+#             return redirect('/login')
+#         ca = CommentAuth.objects.filter(key=kwargs.get('dk'))
+#         if not ca.exists():
+#             return redirect('/workbench/recent_view')
+#         try:
+#             ca = ca.get()
+#             if ca.ent.is_locked:
+#                 return redirect('/workbench/recent_view')
+#             ca.add_auth(u)
+#         except:
+#             return redirect('/workbench/recent_view')
+#         return redirect('/doc/' + ca.ent.encoded_id)
+#
+#
+# class AddWriteAuth(View):
+#     def get(self, request):
+#         E = ED()
+#         E.u, E.k = -1, 1
+#         kwargs = request.GET
+#         if kwargs.keys() != {'dk'}:
+#             return redirect('/workbench/recent_view')
+#         u = User.get_via_encoded_id(request.session['uid'])
+#         if u is None:
+#             return redirect('/login')
+#         wa = WriteAuth.objects.filter(key=kwargs.get('dk'))
+#         if not wa.exists():
+#             return redirect('/workbench/recent_view')
+#         try:
+#             wa = wa.get()
+#             if wa.ent.is_locked:
+#                 return redirect('/workbench/recent_view')
+#             wa.add_auth(u)
+#         except:
+#             return redirect('/workbench/recent_view')
+#         return redirect('/doc/' + wa.ent.encoded_id)
