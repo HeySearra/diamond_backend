@@ -231,17 +231,17 @@ class AuthFileList(View):
         if wa.exists():
             wa = wa.get()
             res.extend([{
-                'uid': encode(u.id), 'src': u.portrait, 'acc': u.acc, 'auth': 'write'
+                'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'write'
             }for u in wa.get_user_list()])
         if ca.exists():
             ca = ca.get()
             res.extend([{
-                'uid': encode(u.id), 'src': u.portrait, 'acc': u.acc, 'auth': 'comment'
+                'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'comment'
             }for u in ca.get_user_list()])
         if ra.exists():
             ra = ra.get()
             res.extend([{
-                'uid': encode(u.id), 'src': u.portrait, 'acc': u.acc, 'auth': 'read'
+                'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'read'
             }for u in ra.get_user_list()])
         return 0, res
 
