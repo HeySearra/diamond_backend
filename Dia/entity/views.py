@@ -3,7 +3,7 @@ from django.views import View
 from easydict import EasyDict as ED
 import json
 
-from misc.views import check_auth, get_auth, WriteMem, CommentMem, ReadMem
+from misc.views import check_auth, get_auth, WriteMem, CommentMem, ReadMem, ShareMem
 from teamwork.hypers import DOC_AUTH
 from user.models import User
 from datetime import datetime
@@ -126,7 +126,8 @@ class WorkbenchShare(View):
         ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
         cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
         rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
-        ents = sorted(ws + cs + rs, key=lambda e: e.dt)
+        ss = [a for a in ShareMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
+        ents = sorted(ws + cs + rs + ss, key=lambda e: e.dt)
         ents = [a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.auth.ent for a in ents]
         return 0, cur_time(), [{
             'type': e.type,
