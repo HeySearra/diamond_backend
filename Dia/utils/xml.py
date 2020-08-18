@@ -32,14 +32,14 @@ class OuterXMLParser(object):
     def filter_comment(self):
         cur, n, l = 0, len(self.s), []
         while cur < n:
-            lhs_begin = self.s.find('<comment-start name=', cur)
+            lhs_begin = self.s.find('<comment-', cur)
             if lhs_begin == -1:
                 break
-            end_tag = '</comment-end>'
+            end_tag = '</comment-'
             rhs_end = self.s.find(end_tag, lhs_begin)
             if rhs_end == -1:
                 break
-            rhs_end += len(end_tag)
+            rhs_end = self.s.find('>', rhs_end) + 1
             l.append(self.s[cur:lhs_begin])
             cur = rhs_end
         l.append(self.s[cur:])
