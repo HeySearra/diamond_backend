@@ -11,7 +11,7 @@ from teamwork.hypers import CHECK_TEAM_NAME, CHECK_TEAM_INTRO, TEAM_AUTH
 from teamwork.models import Team, Member, ROOT_SUFFIX
 from user.models import User, Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
-    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message
+    send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message, send_team_all_message
 from utils.meta_wrapper import JSR
 
 
@@ -196,38 +196,41 @@ class Remove(View):
 
 class Info(View):
     @JSR('status', 'name', 'intro', 'portrait', 'create_dt', 'doc_num',
-         'cuid', 'cname', 'norm', TEAM_AUTH.admin)
+         'cuid', 'csrc', 'cname', 'cacc', 'norm', 'admin')
     def get(self, request):
         E = EasyDict()
         E.uk = -1
         E.key, E.auth, E.tid = 1, 2, 3
         if dict(request.GET).keys() != {'tid'}:
-            return E.key, '', '', '', '', 0, '', '', [], []
-        
+            return E.key, '', '', '', '', 0, '', '', '', '', [], []
         user = User.get_via_encoded_id(request.session['uid'])
         if user is None:
-            return E.auth, '', '', '', '', 0, '', '', [], []
+            return E.auth, '', '', '', '', 0, '', '', '', '', [], []
         team = Team.get_via_encoded_id(request.GET.get('tid'))
         if team is None:
-            return E.tid, '', '', '', '', 0, '', '', [], []
+            return E.tid, '', '', '', '', 0, '', '', '', '', [], []
         members = Member.objects.filter(team=team)
         if not members.exists():
-            return E.tid, '', '', '', '', 0, '', '', [], []
+            return E.tid, '', '', '', '', 0, '', '', '', '', [], []
         name = team.name
         intro = team.intro
         portrait = team.portrait if team.portrait else ''
         create_dt = team.create_dt_str
         doc_num = team.root.num_leaves()
         cuid = ''
+        cacc = ''
         cname = ''
+        csrc = ''
         norm = []
         admin = []
         
         for m in members:
-            if m.auth == TEAM_AUTH.owner:
+            if m.auth == 'owner':
                 cuid = m.member.encoded_id
                 cname = m.member.name
-            elif m.auth == TEAM_AUTH.admin:
+                csrc = m.member.portrait
+                cacc = m.member.acc
+            elif m.auth == 'admin':
                 admin.append({
                     'uid': m.member.encoded_id,
                     'acc': m.member.acc,
@@ -241,7 +244,7 @@ class Info(View):
                     'src': m.member.portrait,
                     'name': m.member.name
                 })
-        return 0, name, intro, portrait, create_dt, doc_num, cuid, cname, norm, admin
+        return 0, name, intro, portrait, create_dt, doc_num, cuid, csrc, cname, cacc, norm, admin
 
 
 # 解散团队
@@ -472,4 +475,35 @@ class Quit(View):
             if m.auth == TEAM_AUTH.owner or m.auth == TEAM_AUTH.admin:
                 if not send_team_member_out_message(team=team, su=user, mu=m.member):
                     return E.uk
+        return 0
+
+
+class SendAll(View):
+    @JSR('status')
+    def post(self, request):
+        E = EasyDict()
+        E.uk = -1
+        E.key, E.auth, E.tid, E.content = 1, 2, 3, 4
+        kwargs: dict = json.loads(request.body)
+        if kwargs.keys() != {'tid', 'content'}:
+            return E.key
+        if not request.session['is_login']:
+            return E.auth
+        user = User.get_via_encoded_id(request.session['uid'])
+        if user is None:
+            return E.auth
+        team = Team.get_via_encoded_id(kwargs['tid'])
+        if team is None:
+            return E.tid
+        
+        try:
+            auth = Member.objects.get(team=team, member=user).auth
+        except:
+            return E.tid
+        if auth != 'admin' and auth != 'owner':
+            return E.auth
+        if not 0 <= len(kwargs['content']) <= 1024:
+            return E.content
+        if not send_team_all_message(team=team, su=user, content=kwargs['content']):
+            return E.uk
         return 0
