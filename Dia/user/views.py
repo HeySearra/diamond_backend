@@ -210,7 +210,7 @@ class SearchUser(View):
                 key=lambda x: sum([
                     sk in x.name or sk in x.acc
                     for sk in key.split()
-                ]) - x.id,
+                ]) * 1e5 - x.id,
                 reverse=True
             )[:10]
         
