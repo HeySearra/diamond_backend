@@ -35,7 +35,7 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
         DOC_AUTH.read: (rt, ct, wt),
     }
     return any(
-        clz.objects.filter(**{'user': user, f'{au}__ent': ent}).exists()
+        clz.objects.filter(**{'user': user, 'auth__ent': ent}).exists() or ShareMem.objects.filter(**{'user': user, 'auth__ent': ent, 'auth__auth': au}).exists()
         for clz, au in cfgs[auth]
     )
 
