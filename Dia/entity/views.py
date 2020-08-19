@@ -903,9 +903,11 @@ class FSTeamRoot(View):
         t: Team
 
         t = Team.get_via_encoded_id(kwargs.get('tid'))
-        if t is None or not t.write_contains_user(u):
+        if t is None:
             return E.u
 
+        if not t.write_contains_user(u) and not t.comment_contains_user(u) and not t.read_contains_user(u):
+            return E.au
         return 0, t.root.encoded_id
 
 
