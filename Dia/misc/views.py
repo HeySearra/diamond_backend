@@ -394,14 +394,21 @@ class AddShare(View):
             return redirect('/workbench/recent_view')
         try:
             ra = ra.get()
-            if ra.ent.backtrace_deleted or ra.membership == 'no_share':
+            if ra.ent.backtrace_deleted or ra.auth == 'no_share':
                 return redirect('/workbench/recent_view')
             ra.add_auth(u)
         except:
             return redirect('/workbench/recent_view')
-        return redirect('/doc/' + ra.ent.encoded_id)
-#
-#
+        if ra.auth == 'write':
+            return redirect('/doc/' + ra.ent.encoded_id)
+        elif ra.auth == 'comment':
+            return redirect('/doc/comment_only' + ra.ent.encoded_id)
+        elif ra.auth == 'read':
+            return redirect('/doc/read_only' + ra.ent.encoded_id)
+        else:
+            return redirect('/workbench/recent_view')
+
+
 # class AddCommentAuth(View):
 #     def get(self, request):
 #         E = ED()
