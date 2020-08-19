@@ -223,7 +223,7 @@ class AuthFileList(View):
             return E.nf
         if e.type == 'fold' or e.backtrace_deleted:
             return E.k
-        if u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
+        if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return E.au
         wa = WriteAuth.objects.filter(ent=e)
         ca = CommentAuth.objects.filter(ent=e)
@@ -280,7 +280,7 @@ class ChangeMemberAuth(View):
             return E.nf
         if e.type == 'fold' or e.backtrace_deleted:
             return E.k
-        if me != e.creator and (me != e.backtrace_root_team.owner) if e.backtrace_root_team else False:
+        if me != e.creator and ((me != e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return E.au
         if u == me or ((me == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return 5
