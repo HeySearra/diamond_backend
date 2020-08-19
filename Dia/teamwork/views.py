@@ -500,6 +500,7 @@ class Quit(View):
             if m.membership == TEAM_MEM.owner or m.membership == TEAM_MEM.admin:
                 if not send_team_member_out_message(team=team, su=user, mu=m.member):
                     return E.uk
+        team.root.bfs_apply(func=delete_records_and_workbench(user, team.owner))
         return 0
 
 
