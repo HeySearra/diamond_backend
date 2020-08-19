@@ -529,6 +529,6 @@ class SendAll(View):
             return E.auth
         if not 0 <= len(kwargs['content']) <= 1024:
             return E.content
-        if not send_team_all_message(team=team, su=user, content=team.name+kwargs['content']):
+        if not send_team_all_message(team=team, su=user, content=kwargs['content']):
             return E.uk
         return 0
