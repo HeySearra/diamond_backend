@@ -56,19 +56,21 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
             res = s.auth.auth if s.auth.auth != 'no_share' else 'none'
         except:
             res = 'none'
-        if WriteMem.objects.filter(user=user, auth__ent=ent).exists():
-            return DOC_AUTH.write
-        if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
-            if AUTH_DICT._asdict()[res] > AUTH_DICT.comment:
-                return res
-            else:
-                return DOC_AUTH.comment
-        if ReadMem.objects.filter(user=user, auth__ent=ent).exists():
-            if AUTH_DICT._asdict()[res] > AUTH_DICT.read:
-                return res
-            else:
-                return DOC_AUTH.read
-        return res
+    else:
+        res = 'none'
+    if WriteMem.objects.filter(user=user, auth__ent=ent).exists():
+        return DOC_AUTH.write
+    if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
+        if AUTH_DICT._asdict()[res] > AUTH_DICT.comment:
+            return res
+        else:
+            return DOC_AUTH.comment
+    if ReadMem.objects.filter(user=user, auth__ent=ent).exists():
+        if AUTH_DICT._asdict()[res] > AUTH_DICT.read:
+            return res
+        else:
+            return DOC_AUTH.read
+    return res
 
 
 
