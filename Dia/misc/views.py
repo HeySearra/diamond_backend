@@ -243,9 +243,6 @@ class AuthFileList(View):
         ra = ReadAuth.objects.filter(ent=e)
         res = []
         ul = set()
-        if u != e.creator:
-            res.extend([{'uid': encode(e.creator.id), 'name': e.creator.name, 'src': e.creator.portrait,
-                     'acc': e.creator.acc, 'auth': 'write'}])
         if wa.exists():
             wa = wa.get()
             wu = wa.get_user_list()
@@ -298,7 +295,7 @@ class ChangeMemberAuth(View):
             return E.k
         if me != e.creator and ((me != e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return E.au
-        if u == me or ((u == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
+        if u == me or u == e.creator or ((u == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return 5
 
         wa = WriteAuth.objects.filter(ent=e)
