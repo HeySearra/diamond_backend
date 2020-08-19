@@ -68,7 +68,7 @@ class Invitation(View):
         E.uk = -1
         E.key, E.auth, E.tid, E.no = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'tid', 'acc', 'auth'}:
+        if kwargs.keys() != {'tid', 'acc', 'auth', 'is_new'}:
             return E.key
         if not request.session['is_login']:
             return E.auth

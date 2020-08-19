@@ -209,7 +209,7 @@ class SearchUser(View):
         key: str = kwargs['key'].strip()
         if len(key) == 0:
             return [], 0
-        
+
         if key == 'admin_key':
             us = User.objects.all()
         else:
@@ -222,7 +222,7 @@ class SearchUser(View):
                 if all(weights):
                     us.append((u, sum(weights) * 10000 - int(u.id)))
             us = [tup[0] for tup in sorted(us, key=lambda tup: tup[1], reverse=True)][:10]
-        
+
         ulist = []
         for u in us:
             ulist.append({
