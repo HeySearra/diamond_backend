@@ -128,7 +128,7 @@ class WorkbenchShare(View):
         rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
         ss = [a for a in ShareMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
         ents = sorted(ws + cs + rs + ss, key=lambda e: e.dt)
-        ents = [a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.auth.ent for a in ents]
+        ents = set([a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.auth.ent for a in ents])
         return 0, cur_time(), [{
             'type': e.type,
             'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, auth__ent=e).exists() else 'read',
