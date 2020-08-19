@@ -56,7 +56,7 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
 
     if ShareMem.objects.filter(user=user, auth__ent=ent).exists():
         try:
-            s = ShareMem.objects.get(user=user, auth__ent=ent)
+            s:ShareMem = ShareMem.objects.get(user=user, auth__ent=ent)
             res = s.auth.auth if s.auth.auth != 'no_share' else 'none'
         except:
             res = 'none'
@@ -65,17 +65,16 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
     if WriteMem.objects.filter(user=user, auth__ent=ent).exists():
         return DOC_AUTH.write
     if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
-        if AUTH_DICT._asdict()[res] > AUTH_DICT.comment:
+        if res == 'write':
             return res
         else:
             return DOC_AUTH.comment
     if ReadMem.objects.filter(user=user, auth__ent=ent).exists():
-        if AUTH_DICT._asdict()[res] > AUTH_DICT.read or ent.first_person(user, 'comment'):
+        if res == 'write' or res == 'comment':
             return res
         else:
             return DOC_AUTH.read
     return res
-
 
 
 class HellWords(View):

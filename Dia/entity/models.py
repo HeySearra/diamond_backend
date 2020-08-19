@@ -271,18 +271,16 @@ class Entity(models.Model):
             return True
         u = self.backtrace_root_user
         if u is not None:
-            return u.id == p.id
-        team = self.backtrace_root_team
-        if team is not None:
-            return team.owner == p
+            if u.id == p.id:
+                return True
         else:
-            t = self.backtrace_root_team
-            if t is not None:
-                if auth == 'write':
-                    return t.write_contains_user(p.id)
-                if auth == 'comment':
-                    return t.comment_contains_user(p.id)
-                if auth == 'read':
-                    return t.read_contains_user(p.id)
-            else:
-                return False
+            team = self.backtrace_root_team
+            if team.owner == p:
+                return True
+
+            if auth == 'write':
+                return team.write_contains_user(p.id)
+            if auth == 'comment':
+                return team.comment_contains_user(p.id)
+            if auth == 'read':
+                return team.read_contains_user(p.id)
