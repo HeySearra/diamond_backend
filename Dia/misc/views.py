@@ -58,7 +58,7 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         return DOC_AUTH.read
     if ShareMem.objects.filter(user=user, auth__ent=ent).exists():
         try:
-            s = ShareMem.objects.get(user=user,auth__ent=ent)
+            s = ShareMem.objects.get(user=user, auth__ent=ent)
         except:
             return 'none'
         return s.auth.auth if s.auth.auth != 'no_share' else 'none'

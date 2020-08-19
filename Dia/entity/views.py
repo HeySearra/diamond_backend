@@ -132,7 +132,7 @@ class WorkbenchShare(View):
         return 0, cur_time(), [{
             'type': e.type,
             'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, auth__ent=e).exists() else 'read',
-            'view_dt': e.read_dt_str,
+            'view_dt': e.read_dt_str(u),
             'edit_dt': e.edit_dt_str,
             'name': e.name,
             'id': e.encoded_id,
@@ -270,7 +270,7 @@ class DocAuth(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-
+        print(get_auth(u, e))
         return 0, get_auth(u, e)
 
 
