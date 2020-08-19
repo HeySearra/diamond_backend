@@ -8,22 +8,22 @@ class TNode(object):
         self.is_root = is_root
         self.fail, self.fa = None, None
         self._next = {}
-    
+
     def __call__(self):
         yield self._next
-    
+
     def __iter__(self):
         return iter(self._next.keys())
-    
+
     def __getitem__(self, item):
         return self._next[item]
-    
+
     def __setitem__(self, key, value):
         self._next.setdefault(key, value).fa = self
-    
+
     def __repr__(self):
         return f"<TNode object '{self.ch}' at {object.__repr__(self)[1:-1].split('at')[-1]}>"
-    
+
     def __str__(self):
         return self.__repr__()
 
@@ -40,7 +40,7 @@ class AhoCorasick(object):
             for w in word:
                 _ch_set.setdefault(w, set())
                 _ch_set[w].add(word)
-        
+
         def insert(s):
             if len(s) == 0:
                 return
@@ -60,12 +60,12 @@ class AhoCorasick(object):
             else:
                 if cur != self._root:
                     self._node_meta[id(cur)].add((s, len(s)))
-        
+
         for word in self.w_li:
             insert(word)
         self._node_all.sort(key=lambda x: x[0])
         self._build()
-    
+
     def _build(self):
         for _level, node in self._node_all:
             if node == self._root or _level <= 1:
@@ -82,7 +82,7 @@ class AhoCorasick(object):
                             break
                         else:
                             _node = _node.fail
-    
+
     def match(self, content, with_index=False):
         result = set()
         node = self._root
@@ -110,7 +110,7 @@ def _lcs(seq1: Sequence, seq2: Sequence):
     start = 0
     lend = lslen = len(seq1)
     rend = rslen = len(seq2)
-    
+
     if isinstance(seq1, str):
         eq_fn = lambda s1, i1, s2, i2: s1[i1] == s2[i2]
     elif isinstance(seq1, list) and isinstance(seq1[0], str):
@@ -123,18 +123,18 @@ def _lcs(seq1: Sequence, seq2: Sequence):
                 return False
     else:
         raise ValueError
-    
+
     while start < lend and start < rend and eq_fn(seq1, start, seq2, start):
         start += 1
     while start < lend and start < rend and eq_fn(seq1, lend - 1, seq2, rend - 1):
         lend -= 1
         rend -= 1
-    
+
     left = seq1[start:lend]
     right = seq2[start:rend]
     lmax, rmax = len(left), len(right)
     furthest = {1: (0, [])}
-    
+
     if not lmax + rmax:
         r = range(lslen)
         return zip(r, r)
@@ -147,15 +147,15 @@ def _lcs(seq1: Sequence, seq2: Sequence):
             else:
                 old_x, history = furthest[k - 1]
                 x = old_x + 1
-            
+
             history = history[:]
             y = x - k
-            
+
             while x < lmax and y < rmax and eq_fn(left, x, right, y):
                 history.append((x + start, y + start))
                 x += 1
                 y += 1
-            
+
             if x >= lmax and y >= rmax:
                 # This is the best match
                 return [(e, e) for e in range(start)] + history + \
@@ -167,7 +167,7 @@ def _lcs(seq1: Sequence, seq2: Sequence):
 def greedy_merge_lcs(seq1: Sequence, seq2: Sequence):
     indices = list(_lcs(seq1, seq2))
     if len(indices) == 0:
-        return False
+        return None
     lcs = [
         seq1[idx] for idx in list(
             zip(*indices)
