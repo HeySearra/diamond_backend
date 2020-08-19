@@ -66,7 +66,7 @@ class Invitation(View):
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.tid, E.no = 1, 2, 3, 4
+        E.key, E.auth, E.tid, E.no, E.me, E.exist, E.is_auth, E.admin = 1, 2, 3, 4, 5, 6, 7, 8
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'tid', 'acc', 'auth', 'is_new'}:
             return E.key
@@ -86,7 +86,7 @@ class Invitation(View):
         if team is None:
             return E.tid
         if user1 == user2 or user2 == team.owner:
-            return 5
+            return E.me
         try:
             mem = Member.objects.get(member=user1, team=team)
         except:
@@ -95,18 +95,18 @@ class Invitation(View):
         if mem.membership == TEAM_MEM.member:
             return E.auth
         if Member.objects.filter(member=user2, team=team).exists() and kwargs['is_new']:
-            return 6
+            return E.exist
         try:
             mem = Member.objects.get(member=user2, team=team)
             if mem.membership == TEAM_MEM.admin and user1 != team.owner:
-                return 8
+                return E.admin
             if mem.membership != kwargs['auth'] and kwargs['auth'] != 'no_share':
                 mem.membership = kwargs['auth']
                 mem.save()
                 if not send_team_invite_message(team, user1, user2, False, kwargs['auth']):
                     return E.uk
             elif mem.membership == kwargs['auth']:
-                return 8
+                return E.is_auth
             elif kwargs['auth'] == 'no_share':
                 if not send_team_out_message(team, user2):
                     return E.uk
@@ -118,7 +118,6 @@ class Invitation(View):
             Member.objects.create(member=user2, team=team, membership=TEAM_MEM.member, auth=kwargs['auth'])
             if not send_team_invite_message(team, user1, user2):
                 return E.uk
-            return E.uk
         return 0, {'uid': encode(user2.id), 'name': user2.name, 'src': user2.portrait}
 
 
