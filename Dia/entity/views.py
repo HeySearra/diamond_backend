@@ -1110,5 +1110,5 @@ class DocumentHistory(View):
                 'portrait': traj.user.portrait,
                 'name': traj.user.name,
             }
-            for traj in reversed(trajs)
+            for traj in trajs
         ]
