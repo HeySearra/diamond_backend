@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import QuerySet
 
 from meta_config import *
-from teamwork.hypers import TEAM_AUTH, TEAM_NAME_MAX_LENGTH, TEAM_INTRO_MAX_LENGTH, TEAM_AUTH_CHS, AUTH_MAX_LENGTH, \
+from teamwork.hypers import TEAM_MEM, TEAM_NAME_MAX_LENGTH, TEAM_INTRO_MAX_LENGTH, TEAM_AUTH_CHS, AUTH_MAX_LENGTH, \
     TEAM_MEM_CHS
 from user.models import User
 from utils.cast import encode, decode
@@ -21,7 +21,7 @@ class Team(models.Model):
 
     @property
     def owner(self):
-        return Member.objects.filter(team=self, auth=TEAM_AUTH.owner).get().member
+        return Member.objects.filter(team=self, auth=TEAM_MEM.owner).get().member
 
     def contains_user(self, user_or_raw_id):
         d = user_or_raw_id.id if isinstance(user_or_raw_id, User) else user_or_raw_id
@@ -50,7 +50,7 @@ class Member(models.Model):
     @property
     def encoded_id(self):
         return encode(self.id)
-    
+
     team = models.ForeignKey(to=Team, on_delete=models.CASCADE)
     member = models.ForeignKey(to=User, on_delete=models.CASCADE)
     membership = models.CharField(verbose_name='身份', choices=TEAM_MEM_CHS, default='member', max_length=AUTH_MAX_LENGTH)

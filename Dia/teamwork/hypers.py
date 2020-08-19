@@ -11,7 +11,8 @@ TEAM_AUTH_CHS = (
     ('comment', '评论'),
     ('read', '读'),
 )
-TEAM_AUTH = namedtuple('___', ['owner', 'admin', 'member'])('owner', 'admin', 'member')
+TEAM_MEM = namedtuple('___', ['owner', 'admin', 'member'])('owner', 'admin', 'member')
+TEAM_AUTH = namedtuple('___', ['write', 'comment', 'read'])('write', 'comment', 'read')
 
 DOC_AUTH_CHS = (
     ('write', '可编辑'),
