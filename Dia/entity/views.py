@@ -131,7 +131,7 @@ class WorkbenchShare(View):
         ents = [a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.auth.ent for a in ents]
         return 0, cur_time(), [{
             'type': e.type,
-            'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else 'read',
+            'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, auth__ent=e).exists() else 'read',
             'view_dt': e.read_dt_str,
             'edit_dt': e.edit_dt_str,
             'name': e.name,
