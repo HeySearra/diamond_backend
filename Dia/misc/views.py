@@ -377,8 +377,8 @@ class ChangeMemberAuth(View):
         #     else:
         #         return E.au, ''
         # return E.k, ''
-#
-#
+
+
 class AddShare(View):
     def get(self, request):
         E = ED()

@@ -163,7 +163,7 @@ def send_team_all_message(team: Team, su: User, content: str):
     members = Member.objects.filter(team=team)
     for m in members:
         try:
-            Message.objects.create(owner=m.member, sender=su, title="团队消息", content=content, portrait=team.portrait,
+            Message.objects.create(owner=m.member, sender=su, title="团队通知消息：" + team.name, content=content, portrait=team.portrait,
                                    related_id=team.id, type='admin', team_name=team.name)
         except:
             return False
