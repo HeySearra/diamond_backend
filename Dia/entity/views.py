@@ -123,12 +123,12 @@ class WorkbenchShare(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
-        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
-        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
-        ss = [a for a in ShareMem.objects.filter(user=u).all() if not a.auth.ent.backtrace_deleted]
+        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        ss = [a for a in ShareMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
         ents = sorted(ws + cs + rs + ss, key=lambda e: e.dt)
-        ents = set([a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.auth.ent for a in ents])
+        ents = set([a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.membership.ent for a in ents])
         return 0, cur_time(), [{
             'type': e.type,
             'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, auth__ent=e).exists() else 'read',

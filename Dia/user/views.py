@@ -23,17 +23,23 @@ from utils.meta_wrapper import JSR
 from entity.models import Entity
 
 
-def send_team_invite_message(team: Team, su: User, mu: User):
+def send_team_invite_message(team: Team, su: User, mu: User, is_new=True, auth='可编辑'):
     # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = "团队邀请"
-    m.content = su.name + " 邀请你加入团队：" + team.name
+    if is_new:
+        m.title = "团队邀请"
+        m.content = su.name + " 邀请你加入团队：" + team.name
+        m.type = 'join'
+    else:
+        m.title = "团队权限变更"
+        a = '仅可阅读' if auth == 'read' else '可阅读且可评论' if auth == 'comment' else '可编辑'
+        m.content = su.name + " 更改你在团队中的权限为" + a + "：" + team.name
+        m.type = 'admin'
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'join'
     m.team_name = team.name
     try:
         m.save()

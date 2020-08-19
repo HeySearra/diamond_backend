@@ -53,7 +53,7 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
     if ShareMem.objects.filter(user=user, auth__ent=ent).exists():
         try:
             s = ShareMem.objects.get(user=user, auth__ent=ent)
-            res = s.auth.auth if s.auth.auth != 'no_share' else 'none'
+            res = s.membership.membership if s.membership.membership != 'no_share' else 'none'
         except:
             res = 'none'
     else:
@@ -166,7 +166,7 @@ class FSShareKey(View):
         else:
             sa = sa.get()
         if sa.can_share(u):
-            return 0, sa.key, sa.auth
+            return 0, sa.key, sa.membership
         else:
             return E.au, '', 'no_share'
 
@@ -207,7 +207,7 @@ class ChangeShareAuth(View):
         if not sa.can_share(u):
             return E.au
         try:
-            sa.auth = auth
+            sa.membership = auth
             sa.save()
         except:
             return E.u
@@ -394,7 +394,7 @@ class AddShare(View):
             return redirect('/workbench/recent_view')
         try:
             ra = ra.get()
-            if ra.ent.backtrace_deleted or ra.auth == 'no_share':
+            if ra.ent.backtrace_deleted or ra.membership == 'no_share':
                 return redirect('/workbench/recent_view')
             ra.add_auth(u)
         except:

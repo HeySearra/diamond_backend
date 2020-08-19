@@ -7,11 +7,12 @@ from easydict import EasyDict
 
 from entity.models import Entity
 from record.models import upd_record_create, upd_record_user
-from teamwork.hypers import CHECK_TEAM_NAME, CHECK_TEAM_INTRO, TEAM_AUTH
+from teamwork.hypers import CHECK_TEAM_NAME, CHECK_TEAM_INTRO, TEAM_AUTH, AUTH_DICT
 from teamwork.models import Team, Member, ROOT_SUFFIX
 from user.models import User, Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message, send_team_all_message
+from utils.cast import encode
 from utils.meta_wrapper import JSR
 
 
@@ -61,17 +62,18 @@ class NewFromFold(View):
 
 
 class Invitation(View):
-    @JSR('status')
+    @JSR('status', 'user_info')
     def post(self, request):
         E = EasyDict()
         E.uk = -1
-        E.key, E.auth, E.tid, E.exist, E.no = 1, 2, 3, 4, 5
+        E.key, E.auth, E.tid, E.no = 1, 2, 3, 4
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'tid', 'acc'}:
+        if kwargs.keys() != {'tid', 'acc', 'auth'}:
             return E.key
         if not request.session['is_login']:
             return E.auth
-
+        if kwargs['auth'] not in ['write', 'read', 'comment', 'no_share']:
+            return E.key
         user1 = User.get_via_encoded_id(request.session['uid'])
         if user1 is None:
             return E.auth
@@ -83,22 +85,41 @@ class Invitation(View):
         team = Team.get_via_encoded_id(kwargs['tid'])
         if team is None:
             return E.tid
+        if user1 == user2 or user2 == team.owner:
+            return 5,
         try:
-            auth = Member.objects.get(member=user1, team=team).auth
+            mem = Member.objects.get(member=user1, team=team)
         except:
             return E.no
 
-        if auth == TEAM_AUTH.member:
+        if mem.membership == TEAM_AUTH.member:
             return E.auth
-        if Member.objects.filter(member=user2, team=team).exists():
-            return E.exist
+        if Member.objects.filter(member=user2, team=team).exists() and kwargs['is_new']:
+            return 6
         try:
-            # Member.objects.create(member=user2, team=team, author=TEAM_AUTH.member)
+            mem = Member.objects.get(member=user2, team=team)
+            if mem.membership == TEAM_AUTH.admin and user1 != team.owner:
+                return 8
+            if mem.membership != kwargs['auth'] and kwargs['auth'] != 'no_share':
+                mem.membership = kwargs['auth']
+                mem.save()
+                if not send_team_invite_message(team, user1, user2, False, kwargs['auth']):
+                    return E.uk
+            elif mem.membership == kwargs['auth']:
+                return 8
+            elif kwargs['auth'] == 'no_share':
+                if not send_team_out_message(team, user2):
+                    return E.uk
+                old_user = mem.member
+                owner = team.owner
+                team.root.bfs_apply(func=delete_records_and_workbench(old_user, owner))
+                mem.delete()
+        except:
+            Member.objects.create(member=user2, team=team, membership=TEAM_AUTH.member, auth=kwargs['auth'])
             if not send_team_invite_message(team, user1, user2):
                 return E.uk
-        except:
             return E.uk
-        return 0
+        return 0, {'uid': encode(user2.id), 'name': user2.name, 'src': user2.portrait}
 
 
 class Auth(View):
@@ -123,15 +144,15 @@ class Auth(View):
             owner = Member.objects.get(member=user, team=team)
         except:
             return E.auth
-        if owner.auth != TEAM_AUTH.owner:
+        if owner.membership != TEAM_AUTH.owner:
             return E.auth
         user_list = Member.objects.filter(team=team)
         for member in user_list:
             u = member.member
             # 前端已判断不能设置自己权限（指创建者设置自己权限）
             # 如果本身是管理员且不在设置的uid_list里，就撤销并发信息
-            if member.auth == TEAM_AUTH.admin and u.encoded_id not in kwargs['list']:
-                member.auth = TEAM_AUTH.member
+            if member.membership == TEAM_AUTH.admin and u.encoded_id not in kwargs['list']:
+                member.membership = TEAM_AUTH.member
                 try:
                     member.save()
                 except:
@@ -139,8 +160,8 @@ class Auth(View):
                 if not send_team_admin_cancel_message(team=team, su=user, mu=u):
                     return E.uk
                 # print('==' * 10, 'to_member')
-            elif member.auth == TEAM_AUTH.member and u.encoded_id in kwargs['list']:
-                member.auth = TEAM_AUTH.admin
+            elif member.membership == TEAM_AUTH.member and u.encoded_id in kwargs['list']:
+                member.membership = TEAM_AUTH.admin
                 try:
                     member.save()
                 except:
@@ -229,12 +250,12 @@ class Info(View):
         admin = []
 
         for m in members:
-            if m.auth == 'owner':
+            if m.membership == 'owner':
                 cuid = m.member.encoded_id
                 cname = m.member.name
                 csrc = m.member.portrait
                 cacc = m.member.acc
-            elif m.auth == 'admin':
+            elif m.membership == 'admin':
                 admin.append({
                     'uid': m.member.encoded_id,
                     'acc': m.member.acc,
@@ -246,7 +267,8 @@ class Info(View):
                     'uid': m.member.encoded_id,
                     'acc': m.member.acc,
                     'src': m.member.portrait,
-                    'name': m.member.name
+                    'name': m.member.name,
+                    'auth': m.auth,
                 })
         return 0, name, intro, portrait, create_dt, doc_num, cuid, csrc, cname, cacc, norm, admin
 
@@ -274,7 +296,7 @@ class Delete(View):
             members = Member.objects.filter(team=team)
         except:
             return E.auth
-        if owner.auth != TEAM_AUTH.owner:
+        if owner.membership != TEAM_AUTH.owner:
             return E.auth
         if owner.member.root.sons_dup_name(name=team.root.name):
             return E.name
@@ -365,7 +387,7 @@ class All(View):
         join_team = []
         members = Member.get_members_via_member_encoded_id(member_encoded_id=request.session['uid'])
         for m in members:
-            if m.auth == TEAM_AUTH.owner:
+            if m.membership == TEAM_AUTH.owner:
                 my_team.append({
                     'tid': m.team.encoded_id,
                     'name': m.team.name,
@@ -424,7 +446,7 @@ class InvitationConfirm(View):
 
 
 class Identity(View):
-    @JSR('identity', 'status')
+    @JSR('identity', 'status', 'auth')
     def get(self, request):
         E = EasyDict()
         E.uk = -1
@@ -441,10 +463,10 @@ class Identity(View):
             return '', E.tid
 
         try:
-            identity = Member.objects.get(team=team, member=user).auth
+            mem = Member.objects.get(team=team, member=user)
         except:
             return 'none', 0
-        return identity, 0
+        return mem.membership, 0, mem.auth
 
 
 class Quit(View):
@@ -476,7 +498,7 @@ class Quit(View):
             return E.uk
         members = Member.objects.filter(team=team)
         for m in members:
-            if m.auth == TEAM_AUTH.owner or m.auth == TEAM_AUTH.admin:
+            if m.membership == TEAM_AUTH.owner or m.membership == TEAM_AUTH.admin:
                 if not send_team_member_out_message(team=team, su=user, mu=m.member):
                     return E.uk
         return 0
@@ -501,7 +523,7 @@ class SendAll(View):
             return E.tid
 
         try:
-            auth = Member.objects.get(team=team, member=user).auth
+            auth = Member.objects.get(team=team, member=user).membership
         except:
             return E.tid
         if auth != 'admin' and auth != 'owner':

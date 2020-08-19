@@ -3,7 +3,8 @@ from django.db import models
 from django.db.models import QuerySet
 
 from meta_config import *
-from teamwork.hypers import TEAM_AUTH, TEAM_NAME_MAX_LENGTH, TEAM_INTRO_MAX_LENGTH, TEAM_AUTH_CHS, AUTH_MAX_LENGTH
+from teamwork.hypers import TEAM_AUTH, TEAM_NAME_MAX_LENGTH, TEAM_INTRO_MAX_LENGTH, TEAM_AUTH_CHS, AUTH_MAX_LENGTH, \
+    TEAM_MEM_CHS
 from user.models import User
 from utils.cast import encode, decode
 
@@ -52,5 +53,6 @@ class Member(models.Model):
     
     team = models.ForeignKey(to=Team, on_delete=models.CASCADE)
     member = models.ForeignKey(to=User, on_delete=models.CASCADE)
-    auth = models.CharField(verbose_name='个人权限', choices=TEAM_AUTH_CHS, default='member', max_length=AUTH_MAX_LENGTH)
+    membership = models.CharField(verbose_name='身份', choices=TEAM_MEM_CHS, default='member', max_length=AUTH_MAX_LENGTH)
+    auth = models.CharField(verbose_name='个人权限', choices=TEAM_AUTH_CHS, default='wirte', max_length=AUTH_MAX_LENGTH)
     join_dt = models.DateTimeField(verbose_name='参与团队时间', auto_now_add=True)
