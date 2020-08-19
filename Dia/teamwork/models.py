@@ -21,7 +21,7 @@ class Team(models.Model):
 
     @property
     def owner(self):
-        return Member.objects.filter(team=self, auth=TEAM_MEM.owner).get().member
+        return Member.objects.filter(team=self, membership=TEAM_MEM.owner).get().member
 
     def contains_user(self, user_or_raw_id):
         d = user_or_raw_id.id if isinstance(user_or_raw_id, User) else user_or_raw_id
