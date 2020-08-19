@@ -61,7 +61,7 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
             s = ShareMem.objects.get(user=user,auth__ent=ent)
         except:
             return 'none'
-        return s.auth if s.auth != 'no_share' else 'none'
+        return s.auth.auth if s.auth.auth != 'no_share' else 'none'
 
 
 class HellWords(View):
