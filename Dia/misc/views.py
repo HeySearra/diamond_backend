@@ -403,7 +403,7 @@ class AddShare(View):
         except:
             return redirect('/workbench/recent_view')
         if ra.auth == 'write':
-            return redirect('/doc/' + ra.ent.encoded_id)
+            return redirect('/doc/edit/' + ra.ent.encoded_id)
         elif ra.auth == 'comment':
             return redirect('/doc/comment_only/' + ra.ent.encoded_id)
         elif ra.auth == 'read':
