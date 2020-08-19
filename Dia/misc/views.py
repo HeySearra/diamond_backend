@@ -250,6 +250,7 @@ class AuthFileList(View):
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'write'
             }for u in wu if (u != e.creator and (u != e.backtrace_root_team.owner if e.backtrace_root_team else True))])
+            res.extend([{'uid': encode(e.creator.id), 'name': e.creator.name, 'src': e.creator.portrait, 'acc': e.creator.acc, 'auth': 'write'}])
         if ca.exists():
             ca = ca.get()
             cu = ca.get_user_list()
