@@ -548,9 +548,12 @@ class FSFoldElem(View):
 
         cre_edi = [(f[0].create_name_uid_dt_str, f[0].edit_name_uid_dt_str) for f in sons]
         # cre_edi = [(('1', '2', '3'), ('4', '5', '6'))] * len(sons)
-        can_share = True
-        if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else True):
-            can_share = False
+        can_share = False
+        if u == e.creator:
+            can_share = True
+        if e.backtrace_root_team:
+            if u == e.backtrace_root_team.owner:
+                can_share = True
         # print(f'time cost: {time.time()-st:.2f}\t\t' * 100)
         sons_s = [{
             'pfid': pfid, 'can_share': can_share,
