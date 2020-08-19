@@ -245,13 +245,13 @@ class CommentGetUsers(View):
             user = User.get_via_encoded_id(request.session['uid'])
             dic = {'id': user.encoded_id,
                    'name': user.name,
-                   'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
+                   'avatar': user.portrait}
             users.append(dic)
             for comment in comments:
                 user = comment.uid
                 dic = {'id': user.encoded_id,
                        'name': user.name,
-                       'avatar': f'http://{HOST_IP}:8000/' + user.portrait}
+                       'avatar': user.portrait}
                 if dic not in users:
                     users.append(dic)
         except:
