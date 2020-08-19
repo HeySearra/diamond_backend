@@ -530,7 +530,7 @@ class FSFoldElem(View):
         if e is None:
             return E.no_f, '', [], []
 
-        if not e.first_person(u, 'write'):
+        if not e.first_person(u, 'write') or not e.first_person(u, 'comment') or not e.first_person(u, 'comment'):
             return E.no_f
 
         sons: List[Tuple[Entity, str, bool]] = [(s, e.encoded_id, False) for s in e.sons.filter(is_deleted=False).order_by('name')]
