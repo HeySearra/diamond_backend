@@ -23,9 +23,35 @@ class Team(models.Model):
     def owner(self):
         return Member.objects.filter(team=self, membership=TEAM_MEM.owner).get().member
 
-    def contains_user(self, user_or_raw_id):
+    def write_contains_user(self, user_or_raw_id):
         d = user_or_raw_id.id if isinstance(user_or_raw_id, User) else user_or_raw_id
-        return self.member_set.filter(member_id=d).exists()
+        if self.member_set.filter(member_id=d).exists():
+            try:
+                if self.member_set.get(member_id=d).auth == 'write':
+                    return True
+            except:
+                return False
+        return False
+
+    def comment_contains_user(self, user_or_raw_id):
+        d = user_or_raw_id.id if isinstance(user_or_raw_id, User) else user_or_raw_id
+        if self.member_set.filter(member_id=d).exists():
+            try:
+                if self.member_set.get(member_id=d).auth == 'comment':
+                    return True
+            except:
+                return False
+        return False
+
+    def read_contains_user(self, user_or_raw_id):
+        d = user_or_raw_id.id if isinstance(user_or_raw_id, User) else user_or_raw_id
+        if self.member_set.filter(member_id=d).exists():
+            try:
+                if self.member_set.get(member_id=d).auth == 'read':
+                    return True
+            except:
+                return False
+        return False
 
     root = models.ForeignKey(to='entity.Entity', related_name='root_team', on_delete=models.CASCADE, null=True)
     name = models.CharField(verbose_name='团队名', max_length=TEAM_NAME_MAX_LENGTH+1, default='未命名', blank=True)

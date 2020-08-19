@@ -261,7 +261,7 @@ class Entity(models.Model):
             return False
         return True
 
-    def first_person(self, p) -> bool:
+    def first_person(self, p, auth) -> bool:
         """
         :param p: User类型
         :return: 是否是第一批写权限者。
@@ -272,6 +272,11 @@ class Entity(models.Model):
         else:
             t = self.backtrace_root_team
             if t is not None:
-                return t.contains_user(p.id)
+                if auth == 'write':
+                    return t.write_contains_user(p.id)
+                if auth == 'comment':
+                    return t.comment_contains_user(p.id)
+                if auth == 'read':
+                    return t.read_contains_user(p.id)
             else:
                 return False

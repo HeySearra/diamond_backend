@@ -22,7 +22,7 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
         return False
     if double_check_deleted and ent.backtrace_deleted:
         return False
-    if ent.first_person(user):
+    if ent.first_person(user, auth):
         return True
     if ent.is_locked:
         return False
@@ -45,7 +45,7 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         return DOC_AUTH.none
     if double_check_deleted and ent.backtrace_deleted:
         return DOC_AUTH.none
-    if ent.first_person(user):
+    if ent.first_person(user, 'write'):
         return DOC_AUTH.write
     if ent.is_locked:
         return DOC_AUTH.none
@@ -66,7 +66,7 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         else:
             return DOC_AUTH.comment
     if ReadMem.objects.filter(user=user, auth__ent=ent).exists():
-        if AUTH_DICT._asdict()[res] > AUTH_DICT.read:
+        if AUTH_DICT._asdict()[res] > AUTH_DICT.read or ent.first_person(user, 'comment'):
             return res
         else:
             return DOC_AUTH.read
