@@ -271,7 +271,7 @@ class DocAuth(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        # print(get_auth(u, e))
+        print(get_auth(u, e))
         return 0, get_auth(u, e)
 
 
