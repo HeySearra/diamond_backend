@@ -266,6 +266,8 @@ class Entity(models.Model):
         :param p: User类型
         :return: 是否是第一批写权限者。
         """
+        if p == self.creator:
+            return True
         u = self.backtrace_root_user
         if u is not None:
             return u.id == p.id
