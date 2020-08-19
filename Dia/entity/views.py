@@ -530,7 +530,7 @@ class FSFoldElem(View):
         if e is None:
             return E.no_f, '', [], []
 
-        if get_auth(u, e,) == 'none':
+        if get_auth(u, e,) == 'none' and e.backtrace_root_team is None:
             return E.no_f
 
         sons: List[Tuple[Entity, str, bool]] = [(s, e.encoded_id, False) for s in e.sons.filter(is_deleted=False).order_by('name')]
