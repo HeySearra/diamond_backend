@@ -40,7 +40,7 @@ class WorkbenchRecentView(View):
         ][:15]
 
         return 0, cur_time(), [{
-            'pfid': e.father.encoded_id if e.father is not None and e.father.first_person(u, 'write') else '',
+            'pfid': e.father.encoded_id if e.father is not None and (check_auth(u, e, 'write', False) or check_auth(u, e, 'comment', False) or check_auth(u, e, 'read', False)) else '',
             'name': e.name,
             'dt': dt,
             'type': e.type,
@@ -64,7 +64,7 @@ class WorkbenchStar(View):
 
         ents = [c.ent for c in u.collections.all() if not c.ent.backtrace_deleted]
         return 0, cur_time(), [{
-            'pfid': e.father.encoded_id if e.father is not None and e.father.first_person(u, 'write') else '',
+            'pfid': e.father.encoded_id if e.father is not None and (check_auth(u, e, 'write', False) or check_auth(u, e, 'comment', False) or check_auth(u, e, 'read', False)) else '',
             'name': e.name,
             'create_dt': e.create_dt_str,
             'edit_dt': e.edit_dt_str,
@@ -530,14 +530,14 @@ class FSFoldElem(View):
         if e is None:
             return E.no_f, '', [], []
 
-        if not e.first_person(u, 'write') or not e.first_person(u, 'comment') or not e.first_person(u, 'comment'):
+        if not check_auth(u, e, 'write', False) and not check_auth(u, e, 'comment', False) and not check_auth(u, e, 'read', False):
             return E.no_f
 
         sons: List[Tuple[Entity, str, bool]] = [(s, e.encoded_id, False) for s in e.sons.filter(is_deleted=False).order_by('name')]
         if e.is_user_root():
             sons.extend(
                 sorted([
-                    (lk.ent, lk.ent.father.encoded_id if lk.ent.father is not None and lk.ent.first_person(u, 'write') else '', True)
+                    (lk.ent, lk.ent.father.encoded_id if lk.ent.father is not None and (check_auth(u, e, 'write', False) or check_auth(u, e, 'comment', False) or check_auth(u, e, 'read', False)) else '', True)
                     for lk in Links.objects.filter(user=u)
                     if not lk.ent.backtrace_deleted
                 ], key=lambda tu: tu[0].name)
@@ -605,7 +605,7 @@ class FSFather(View):
             return E.no, ''
         if e.father is None:
             return E.no_father, ''
-        if not e.first_person(u, 'write'):
+        if not check_auth(u, e, 'write', False) and not check_auth(u, e, 'comment', False) and not check_auth(u, e, 'read', False):
             return E.no_father
 
         return 0, e.father.encoded_id
@@ -631,7 +631,7 @@ class FSDocInfo(View):
         if e is None:
             return E.no
 
-        if e.father is None or not e.first_person(u, 'write'):
+        if e.father is None or (not check_auth(u, e, 'write', False) and not check_auth(u, e, 'comment', False) and not check_auth(u, e, 'read', False)):
             return E.no_fa
 
         cnm, cid, cdt = e.create_name_uid_dt_str
@@ -662,7 +662,7 @@ class FSFoldInfo(View):
         if e is None:
             return E.no
 
-        if e.father is None or not e.first_person(u, 'write'):
+        if e.father is None or (not check_auth(u, e, 'write', False) and not check_auth(u, e, 'comment', False) and not check_auth(u, e, 'read', False)):
             return E.no_fa
 
         cnm, cid, cdt = e.create_name_uid_dt_str
