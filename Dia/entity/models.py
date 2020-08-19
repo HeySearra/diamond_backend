@@ -112,7 +112,8 @@ class Entity(models.Model):
         r = q.first()
         u = r.user
         return u.name, u.encoded_id, r.dt_str
-    
+
+    @property
     def read_dt_str(self, user) -> str:
         q = ReadRecord.objects.filter(user_id=user.id, ent_id=self.id)
         if not q.exists():
