@@ -168,6 +168,8 @@ def send_comment_message(comment: Comment, su: User, mu: User):
     # tid:团队id，su:发表评论的用户，mu：文档的拥有者
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     # 这里没有写完，注释的地方需要完善
+    if su == mu:
+        return True
     m = Message()
     m.owner = mu
     m.sender = su
@@ -412,10 +414,13 @@ class AskMessageList(View):
         messages = Message.objects.filter(owner_id=u.id).order_by('-dt')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
-            msg.append({
-                'mid': encode(message.id),
-                'dt': message.dt_str,
-            })
+            if message.sender == message.owner and message.type == 'comment':
+                message.delete()
+            else:
+                msg.append({
+                    'mid': encode(message.id),
+                    'dt': message.dt_str,
+                })
         return 0, cur_time(), len(msg), msg
 
 
