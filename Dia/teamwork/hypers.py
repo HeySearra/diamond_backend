@@ -16,6 +16,8 @@ DOC_AUTH_CHS = (
 )
 DOC_AUTH = namedtuple('___', ['write', 'comment', 'read', 'none'])('write', 'comment', 'read', 'none')
 
+AUTH_DICT = namedtuple('___', ['write', 'comment', 'read', 'none'])(4, 3, 2, 1)
+
 TEAM_NAME_MAX_LENGTH = 60
 TEAM_INTRO_MAX_LENGTH = 1024
 
