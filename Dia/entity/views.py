@@ -458,7 +458,7 @@ class DocLock(View):
                 if l.user == u:
                     l.dt = datetime.now()
                 else:
-                    if (datetime.now() - l.dt).seconds > 300:
+                    if (datetime.now() - l.dt).seconds > LOCK_CONTAIN_TIME:
                         l.user = u
                         l.dt = datetime.now()
                     else:
