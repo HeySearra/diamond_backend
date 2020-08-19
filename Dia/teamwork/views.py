@@ -115,7 +115,7 @@ class Invitation(View):
                 team.root.bfs_apply(func=delete_records_and_workbench(old_user, owner))
                 mem.delete()
         except:
-            Member.objects.create(member=user2, team=team, membership=TEAM_MEM.member, auth=kwargs['auth'])
+            # Member.objects.create(member=user2, team=team, membership=TEAM_MEM.member, auth=kwargs['auth'])
             if not send_team_invite_message(team, user1, user2):
                 return E.uk
         return 0, {'uid': encode(user2.id), 'name': user2.name, 'src': user2.portrait}
@@ -431,7 +431,7 @@ class InvitationConfirm(View):
             if Member.objects.filter(team=team, member=msg.owner).exists():
                 return E.exist, ''
             try:
-                Member.objects.create(team=team, member=msg.owner, auth=TEAM_MEM.member)
+                Member.objects.create(team=team, member=msg.owner, membership=TEAM_MEM.member, auth=TEAM_AUTH.read)
                 if not send_team_accept_message(team=team, su=msg.owner, mu=msg.sender, if_accept=True):
                     return E.uk, ''
             except:
