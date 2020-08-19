@@ -414,7 +414,7 @@ class AskMessageList(View):
         messages = Message.objects.filter(owner_id=u.id).order_by('-dt')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
-            if message.sender == message.owner and message.type == 'comment':
+            if message.sender == message.owner and message.type == 'doc':
                 message.delete()
             else:
                 msg.append({
