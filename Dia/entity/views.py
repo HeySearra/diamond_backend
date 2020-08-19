@@ -1044,6 +1044,17 @@ class DocumentOnline(View):
 
         FocusingRecord.focus(u, e)
         lock = EditLock.objects.filter(ent=e)
+        if lock.exists():
+            l = lock.get()
+            if l.user == u:
+                l.dt = datetime.now()
+                try:
+                    l.save()
+                except:
+                    return E.u
+            else:
+                if (datetime.now() - l.dt).seconds > LOCK_CONTAIN_TIME:
+                    l.delete()
         return 0, [
             {
                 'uid': r.user.encoded_id,
