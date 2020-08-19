@@ -578,7 +578,7 @@ class SetPwd(View):
         if kwargs.keys() != {'old_pwd', 'new_pwd'}:
             return E.key
 
-        u = User.objects.filter(id=request.session['uid'])
+        u = User.objects.filter(id=decode(request.session['uid']))
         if not u.exists():
             return E.uk
         u = u.get()
