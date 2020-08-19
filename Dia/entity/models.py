@@ -263,6 +263,7 @@ class Entity(models.Model):
 
     def first_person(self, p, auth) -> bool:
         """
+        :param auth:
         :param p: User类型
         :return: 是否是第一批写权限者。
         """

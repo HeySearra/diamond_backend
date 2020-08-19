@@ -47,6 +47,10 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         return DOC_AUTH.none
     if ent.first_person(user, 'write'):
         return DOC_AUTH.write
+    if ent.first_person(user, 'comment'):
+        return DOC_AUTH.comment
+    if ent.first_person(user, 'read'):
+        return DOC_AUTH.read
     if ent.is_locked:
         return DOC_AUTH.none
 
