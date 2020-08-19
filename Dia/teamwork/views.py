@@ -152,6 +152,8 @@ class Auth(View):
             # 如果本身是管理员且不在设置的uid_list里，就撤销并发信息
             if member.membership == TEAM_MEM.admin and u.encoded_id not in kwargs['list']:
                 member.membership = TEAM_MEM.member
+                # todo: 来不及了先这么改了
+                member.auth = TEAM_AUTH.read
                 try:
                     member.save()
                 except:
@@ -161,6 +163,8 @@ class Auth(View):
                 # print('==' * 10, 'to_member')
             elif member.membership == TEAM_MEM.member and u.encoded_id in kwargs['list']:
                 member.membership = TEAM_MEM.admin
+                # todo: 来不及了先这么改了
+                member.auth = TEAM_AUTH.write
                 try:
                     member.save()
                 except:
