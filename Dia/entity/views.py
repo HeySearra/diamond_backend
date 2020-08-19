@@ -8,7 +8,7 @@ from teamwork.hypers import DOC_AUTH
 from user.models import User
 from datetime import datetime
 from entity.models import Entity
-from fusion.models import Collection, Links, Trajectory
+from fusion.models import Collection, Links, Trajectory, EditLock
 from record.models import upd_record_create, upd_record_write, FocusingRecord, upd_record_comment, upd_record_read
 from utils.cast import decode, cur_time
 from utils.meta_wrapper import JSR
@@ -335,7 +335,7 @@ class DocEdit(View):
 
 class DocAll(View):
     # todo: upd record
-    @JSR('status', 'ver', 'name', 'content')
+    @JSR('status', 'ver', 'name', 'content', 'locked_uid')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -366,8 +366,8 @@ class DocAll(View):
             return E.no_ent
         traj: Trajectory = q.get()
         upd_record_read(u, e)
-
-        return 0, e.cur_ver_id, e.name, traj.updated_content
+        lock = EditLock.objects.filter(ent=e)
+        return 0, e.cur_ver_id, e.name, traj.updated_content, lock.get().user.encoded_id if lock.exists() else ''
 
 
 class DocInfo(View):
@@ -402,51 +402,73 @@ class DocInfo(View):
 
 
 class DocLock(View):
-    @JSR('status', 'is_locked')
-    def get(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        E.au, E.no_ent = 2, 3
-        if not request.session.get('is_login', False):
-            return E.au
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return E.au
-        kwargs: dict = request.GET
-        if kwargs.keys() != {'did'}:
-            return E.k
-
-        did = kwargs.get('did')
-
-        e = Entity.get_via_encoded_id(did)
-        if e is None:
-            return E.no_ent
-        return 0, e.is_locked
+    # @JSR('status', 'is_locked')
+    # def get(self, request):
+    #     E = ED()
+    #     E.u, E.k = -1, 1
+    #     E.au, E.no_ent = 2, 3
+    #     if not request.session.get('is_login', False):
+    #         return E.au
+    #     u = User.get_via_encoded_id(request.session['uid'])
+    #     if u is None:
+    #         return E.au
+    #     kwargs: dict = request.GET
+    #     if kwargs.keys() != {'did'}:
+    #         return E.k
+    #
+    #     did = kwargs.get('did')
+    #
+    #     e = Entity.get_via_encoded_id(did)
+    #     if e is None:
+    #         return E.no_ent
+    #     return 0, e.is_locked
 
     @JSR('status')
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.no_ent = 2, 3
+        E.au, E.no_ent, E.is_locked = 2, 3, 4
         if not request.session.get('is_login', False):
             return E.au
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'did', 'is_locked'}:
+        if kwargs.keys() != {'did', 'op'}:
             return E.k
 
-        did, is_locked = kwargs['did'], kwargs['is_locked']
+        did, op = kwargs['did'], kwargs['op']
 
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        e.is_locked = is_locked
-        try:
-            e.save()
-        except:
-            return E.u
+        if not op:
+            try:
+                lock = EditLock.objects.get(user=u, ent=e)
+            except:
+                return E.is_locked
+            try:
+                lock.delete()
+            except:
+                return E.u
+        else:
+            lock = EditLock.objects.filter(ent=e)
+            if lock.exists():
+                l = lock.get()
+                if l.user == u:
+                    l.dt = datetime.now()
+                else:
+                    if (datetime.now() - l.dt).seconds > 300:
+                        l.user = u
+                        l.dt = datetime.now()
+                    else:
+                        return E.is_locked
+                try:
+                    l.save()
+                except:
+                    return E.u
+            else:
+                EditLock.objects.create(user=u, ent=e)
         return 0
 
 
@@ -1002,7 +1024,7 @@ class FSStarCondition(View):
 
 
 class DocumentOnline(View):
-    @JSR('status', 'list')
+    @JSR('status', 'list', 'locked_uid')
     def get(self, request):
         E = ED()
         E.u, E.k, E.au, E.no_ent = -1, 1, 2, 3
@@ -1021,7 +1043,7 @@ class DocumentOnline(View):
             return E.no_ent
 
         FocusingRecord.focus(u, e)
-
+        lock = EditLock.objects.filter(ent=e)
         return 0, [
             {
                 'uid': r.user.encoded_id,
@@ -1031,7 +1053,7 @@ class DocumentOnline(View):
             }
             for r in e.focusing_records.all()
             if r.obj_focusing()
-        ]
+        ], lock.get().user.encoded_id if lock.exists() else ''
 
 
 class VersionQuery(View):
@@ -1074,7 +1096,7 @@ class DocumentHistory(View):
         e: Entity = Entity.get_via_encoded_id(kwargs.get('did'))
         if e is None:
             return E.no_ent
-        
+
         trajs = e.trajectories.filter(initial=False)
         trajs, too_old = trajs[15:], trajs[:15]
         too_old.delete()

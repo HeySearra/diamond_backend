@@ -122,7 +122,7 @@ class Entity(models.Model):
     delete_dt = models.DateTimeField(null=True)
     is_deleted = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
-    is_edit_locked = models.BooleanField(default=False)
+    # is_edit_locked = models.BooleanField(default=False)
 
     @property
     def delete_dt_str(self) -> str:
