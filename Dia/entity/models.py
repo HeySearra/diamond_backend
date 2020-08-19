@@ -271,6 +271,9 @@ class Entity(models.Model):
         u = self.backtrace_root_user
         if u is not None:
             return u.id == p.id
+        team = self.backtrace_root_team
+        if team is not None:
+            return team.owner == p
         else:
             t = self.backtrace_root_team
             if t is not None:

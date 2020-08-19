@@ -12,7 +12,7 @@ from teamwork.models import Team, Member, ROOT_SUFFIX
 from user.models import User, Message
 from user.views import send_team_invite_message, send_team_out_message, send_team_dismiss_message, \
     send_team_accept_message, send_team_admin_message, send_team_admin_cancel_message, send_team_member_out_message, send_team_all_message
-from utils.cast import encode
+from utils.cast import encode, decode
 from utils.meta_wrapper import JSR
 
 

@@ -530,7 +530,7 @@ class FSFoldElem(View):
         if e is None:
             return E.no_f, '', [], []
 
-        if not check_auth(u, e, 'write', False) and not check_auth(u, e, 'comment', False) and not check_auth(u, e, 'read', False):
+        if get_auth(u, e,) == 'none':
             return E.no_f
 
         sons: List[Tuple[Entity, str, bool]] = [(s, e.encoded_id, False) for s in e.sons.filter(is_deleted=False).order_by('name')]
