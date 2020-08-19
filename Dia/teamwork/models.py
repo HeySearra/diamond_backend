@@ -80,5 +80,5 @@ class Member(models.Model):
     team = models.ForeignKey(to=Team, on_delete=models.CASCADE)
     member = models.ForeignKey(to=User, on_delete=models.CASCADE)
     membership = models.CharField(verbose_name='身份', choices=TEAM_MEM_CHS, default='member', max_length=AUTH_MAX_LENGTH)
-    auth = models.CharField(verbose_name='个人权限', choices=TEAM_AUTH_CHS, default='wirte', max_length=AUTH_MAX_LENGTH)
+    auth = models.CharField(verbose_name='个人权限', choices=TEAM_AUTH_CHS, default='write', max_length=AUTH_MAX_LENGTH)
     join_dt = models.DateTimeField(verbose_name='参与团队时间', auto_now_add=True)

@@ -100,12 +100,12 @@ class Invitation(View):
             mem = Member.objects.get(member=user2, team=team)
             if mem.membership == TEAM_MEM.admin and user1 != team.owner:
                 return E.admin
-            if mem.membership != kwargs['auth'] and kwargs['auth'] != 'no_share':
-                mem.membership = kwargs['auth']
+            if mem.auth != kwargs['auth'] and kwargs['auth'] != 'no_share':
+                mem.auth = kwargs['auth']
                 mem.save()
                 if not send_team_invite_message(team, user1, user2, False, kwargs['auth']):
                     return E.uk
-            elif mem.membership == kwargs['auth']:
+            elif mem.auth == kwargs['auth']:
                 return E.is_auth
             elif kwargs['auth'] == 'no_share':
                 if not send_team_out_message(team, user2):
@@ -194,11 +194,11 @@ class Remove(View):
             return E.uid
 
         try:
-            auth1 = Member.objects.get(member=user1, team=team).auth1
-            auth2 = Member.objects.get(member=user2, team=team).auth2
+            mem1 = Member.objects.get(member=user1, team=team).membership
+            mem2 = Member.objects.get(member=user2, team=team).membership
         except:
             return E.auth
-        if auth1 == TEAM_MEM.member or (auth1 == TEAM_MEM.admin and auth2 == TEAM_MEM.admin):
+        if mem1 == TEAM_MEM.member or (mem1 == TEAM_MEM.admin and mem2 == TEAM_MEM.admin):
             return E.auth
         m = Member.objects.filter(member=user2, team=team)
         if not m.exists():
@@ -523,10 +523,10 @@ class SendAll(View):
             return E.tid
 
         try:
-            auth = Member.objects.get(team=team, member=user).membership
+            mem = Member.objects.get(team=team, member=user).membership
         except:
             return E.tid
-        if auth != 'admin' and auth != 'owner':
+        if mem != 'admin' and mem != 'owner':
             return E.auth
         if not 0 <= len(kwargs['content']) <= 1024:
             return E.content
