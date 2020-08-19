@@ -166,7 +166,7 @@ class FSShareKey(View):
         else:
             sa = sa.get()
         if sa.can_share(u):
-            return 0, sa.key, sa.membership
+            return 0, sa.key, sa.auth
         else:
             return E.au, '', 'no_share'
 
