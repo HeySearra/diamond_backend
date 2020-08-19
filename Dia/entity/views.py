@@ -138,6 +138,7 @@ class WorkbenchShare(View):
             'id': e.encoded_id,
             'cname': e.creator.name,
             'is_starred': Collection.objects.filter(user=u, ent=e).exists(),
+            'create_dt': e.create_dt_str
         } for e in ents if e.creator != u]
 
 
