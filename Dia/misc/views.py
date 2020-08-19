@@ -292,7 +292,7 @@ class ChangeMemberAuth(View):
             return E.k
         if me != e.creator and ((me != e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return E.au
-        if u == me or ((me == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
+        if u == me or ((u == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return 5
 
         wa = WriteAuth.objects.filter(ent=e)

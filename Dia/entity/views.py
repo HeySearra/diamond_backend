@@ -354,7 +354,7 @@ class DocAll(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        if not check_auth(u, e, DOC_AUTH.read):
+        if not check_auth(u, e, DOC_AUTH.read) and e.backtrace_root_team is None:
             return E.au
 
         cvi = e.cur_ver_id
