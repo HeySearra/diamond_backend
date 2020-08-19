@@ -3,12 +3,12 @@ from django.views import View
 from easydict import EasyDict as ED
 import json
 
-from misc.views import check_auth, get_auth, WriteMem, CommentMem, ReadMem
+from misc.views import check_auth, get_auth, WriteMem, CommentMem, ReadMem, ShareMem
 from teamwork.hypers import DOC_AUTH
 from user.models import User
 from datetime import datetime
 from entity.models import Entity
-from fusion.models import Collection, Links, Trajectory
+from fusion.models import Collection, Links, Trajectory, EditLock
 from record.models import upd_record_create, upd_record_write, FocusingRecord, upd_record_comment, upd_record_read
 from utils.cast import decode, cur_time
 from utils.meta_wrapper import JSR
@@ -123,15 +123,16 @@ class WorkbenchShare(View):
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
-        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.write_auth.ent.backtrace_deleted]
-        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.comment_auth.ent.backtrace_deleted]
-        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.read_auth.ent.backtrace_deleted]
-        ents = sorted(ws + cs + rs, key=lambda e: e.dt)
-        ents = [a.write_auth.ent if isinstance(a, WriteMem) else a.comment_auth.ent if isinstance(a, CommentMem) else a.read_auth.ent for a in ents]
+        ws = [a for a in WriteMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        cs = [a for a in CommentMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        rs = [a for a in ReadMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        ss = [a for a in ShareMem.objects.filter(user=u).all() if not a.membership.ent.backtrace_deleted]
+        ents = sorted(ws + cs + rs + ss, key=lambda e: e.dt)
+        ents = set([a.auth.ent if isinstance(a, WriteMem) else a.auth.ent if isinstance(a, CommentMem) else a.membership.ent for a in ents])
         return 0, cur_time(), [{
             'type': e.type,
-            'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, write_auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, comment_auth__ent=e).exists() else 'read',
-            'view_dt': e.read_dt_str,
+            'auth': DOC_AUTH.write if WriteMem.objects.filter(user=u, auth__ent=e).exists() else 'comment' if CommentMem.objects.filter(user=u, auth__ent=e).exists() else 'read',
+            'view_dt': e.read_dt_str(u),
             'edit_dt': e.edit_dt_str,
             'name': e.name,
             'id': e.encoded_id,
@@ -237,11 +238,10 @@ class WorkbenchSearch(View):
             res_set.reverse()
 
         res_set = list(filter(lambda e: not e.backtrace_deleted, res_set))
-
         return 0, cur_time(), [{
-            'pfid': e.father.encoded_id if e.father is not None else '',
+            'pfid': e.father.encoded_id if e.father else '',
             'name': e.name,
-            'content': e.trajectories.first().updated_content[:400] if e.type == 'doc' and e.trajectories.first() else '',
+            'content': e.plain_content[:400] if e.type == 'doc' and e.trajectories.all().count() else '',
             'create_dt': e.create_dt_str,
             'edit_dt': e.edit_dt_str,
             'type': e.type,
@@ -270,7 +270,7 @@ class DocAuth(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-
+        # print(get_auth(u, e))
         return 0, get_auth(u, e)
 
 
@@ -335,7 +335,7 @@ class DocEdit(View):
 
 class DocAll(View):
     # todo: upd record
-    @JSR('status', 'ver', 'name', 'content')
+    @JSR('status', 'ver', 'name', 'content', 'locked_uid')
     def get(self, request):
         E = ED()
         E.u, E.k = -1, 1
@@ -366,8 +366,8 @@ class DocAll(View):
             return E.no_ent
         traj: Trajectory = q.get()
         upd_record_read(u, e)
-
-        return 0, e.cur_ver_id, e.name, traj.updated_content
+        lock = EditLock.objects.filter(ent=e)
+        return 0, e.cur_ver_id, e.name, traj.updated_content, lock.get().user.encoded_id if lock.exists() else ''
 
 
 class DocInfo(View):
@@ -402,51 +402,73 @@ class DocInfo(View):
 
 
 class DocLock(View):
-    @JSR('status', 'is_locked')
-    def get(self, request):
-        E = ED()
-        E.u, E.k = -1, 1
-        E.au, E.no_ent = 2, 3
-        if not request.session.get('is_login', False):
-            return E.au
-        u = User.get_via_encoded_id(request.session['uid'])
-        if u is None:
-            return E.au
-        kwargs: dict = request.GET
-        if kwargs.keys() != {'did'}:
-            return E.k
-
-        did = kwargs.get('did')
-
-        e = Entity.get_via_encoded_id(did)
-        if e is None:
-            return E.no_ent
-        return 0, e.is_locked
+    # @JSR('status', 'is_locked')
+    # def get(self, request):
+    #     E = ED()
+    #     E.u, E.k = -1, 1
+    #     E.au, E.no_ent = 2, 3
+    #     if not request.session.get('is_login', False):
+    #         return E.au
+    #     u = User.get_via_encoded_id(request.session['uid'])
+    #     if u is None:
+    #         return E.au
+    #     kwargs: dict = request.GET
+    #     if kwargs.keys() != {'did'}:
+    #         return E.k
+    #
+    #     did = kwargs.get('did')
+    #
+    #     e = Entity.get_via_encoded_id(did)
+    #     if e is None:
+    #         return E.no_ent
+    #     return 0, e.is_locked
 
     @JSR('status')
     def post(self, request):
         E = ED()
         E.u, E.k = -1, 1
-        E.au, E.no_ent = 2, 3
+        E.au, E.no_ent, E.is_locked = 2, 3, 4
         if not request.session.get('is_login', False):
             return E.au
         u = User.get_via_encoded_id(request.session['uid'])
         if u is None:
             return E.au
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'did', 'is_locked'}:
+        if kwargs.keys() != {'did', 'op'}:
             return E.k
 
-        did, is_locked = kwargs['did'], kwargs['is_locked']
+        did, op = kwargs['did'], kwargs['op']
 
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        e.is_locked = is_locked
-        try:
-            e.save()
-        except:
-            return E.u
+        if not op:
+            try:
+                lock = EditLock.objects.get(user=u, ent=e)
+            except:
+                return E.is_locked
+            try:
+                lock.delete()
+            except:
+                return E.u
+        else:
+            lock = EditLock.objects.filter(ent=e)
+            if lock.exists():
+                l = lock.get()
+                if l.user == u:
+                    l.dt = datetime.now()
+                else:
+                    if (datetime.now() - l.dt).seconds > LOCK_CONTAIN_TIME:
+                        l.user = u
+                        l.dt = datetime.now()
+                    else:
+                        return E.is_locked
+                try:
+                    l.save()
+                except:
+                    return E.u
+            else:
+                EditLock.objects.create(user=u, ent=e)
         return 0
 
 
@@ -528,7 +550,7 @@ class FSFoldElem(View):
 
         # print(f'time cost: {time.time()-st:.2f}\t\t' * 100)
         sons_s = [{
-            'pfid': pfid,
+            'pfid': pfid, 'can_share': False if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else False) else True,
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
             'create_dt': cdt, 'cuid': cuid, 'cname': cnm,
@@ -1002,7 +1024,7 @@ class FSStarCondition(View):
 
 
 class DocumentOnline(View):
-    @JSR('status', 'list')
+    @JSR('status', 'list', 'locked_uid')
     def get(self, request):
         E = ED()
         E.u, E.k, E.au, E.no_ent = -1, 1, 2, 3
@@ -1021,7 +1043,18 @@ class DocumentOnline(View):
             return E.no_ent
 
         FocusingRecord.focus(u, e)
-
+        lock = EditLock.objects.filter(ent=e)
+        if lock.exists():
+            l = lock.get()
+            if l.user == u:
+                l.dt = datetime.now()
+                try:
+                    l.save()
+                except:
+                    return E.u
+            else:
+                if (datetime.now() - l.dt).seconds > LOCK_CONTAIN_TIME:
+                    l.delete()
         return 0, [
             {
                 'uid': r.user.encoded_id,
@@ -1031,7 +1064,7 @@ class DocumentOnline(View):
             }
             for r in e.focusing_records.all()
             if r.obj_focusing()
-        ]
+        ], lock.get().user.encoded_id if lock.exists() else ''
 
 
 class VersionQuery(View):
@@ -1074,10 +1107,12 @@ class DocumentHistory(View):
         e: Entity = Entity.get_via_encoded_id(kwargs.get('did'))
         if e is None:
             return E.no_ent
-        
-        trajs = e.trajectories.filter(initial=False)
-        trajs, too_old = trajs[15:], trajs[:15]
-        too_old.delete()
+
+        trajs = list(e.trajectories.filter(ent=e, initial=False))
+        trajs, too_old = trajs[-15:], trajs[:-15]
+        # too_old.delete()
+        for e in too_old:
+            e.delete()
 
         return 0, cur_time(), [
             {

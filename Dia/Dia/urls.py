@@ -22,6 +22,7 @@ urlpatterns = [
     path('user_info', UserInfo.as_view(), name='user_info'),  # 用户信息
     path('search_user', SearchUser.as_view(), name='search_user'),  # 关键词搜索用户
     path('user/edit_info', UserEditInfo.as_view(), name='edit_info'),  # 修改个人信息
+    path('user/user_info', GetUserInfo.as_view(), name='get_user_info'),
 
     # 用户登录注册找回密码
     path('user/login/submit', Login.as_view(), name='login_submit'),  # 登录
@@ -51,9 +52,9 @@ urlpatterns = [
     path('document/comment/add', CommentAdd.as_view(), name='document_comment_add'),
     path('document/comment/update', CommentUpdate.as_view(), name='document_comment_update'),
     path('document/comment/remove', CommentRemove.as_view(), name='document_comment_remove'),
-    path('document/add_read', AddReadAuth.as_view(), name='add_read_auth'),
-    path('document/add_comment', AddCommentAuth.as_view(), name='add_comment_auth'),
-    path('document/add_write', AddWriteAuth.as_view(), name='add_write_auth'),
+    path('document/share', AddShare.as_view(), name='add_read_auth'),
+    # path('document/add_comment', AddCommentAuth.as_view(), name='add_comment_auth'),
+    # path('document/add_write', AddWriteAuth.as_view(), name='add_write_auth'),
     path('document/online', DocumentOnline.as_view(), name='online'),
     path('document/ver_condition', VersionQuery.as_view(), name='version_query'),
     path('document/history', DocumentHistory.as_view(), name='document_history'),
@@ -78,7 +79,6 @@ urlpatterns = [
     path('fs/copy', FSCopy.as_view(), name='fs_copy'), # 复制文档
     path('fs/delete', FSDelete.as_view(), name='fs_delete'), # 删除文档or文件夹
     path('fs/delete_link', FSDeleteLink.as_view(), name='fs_delete_link'), # 从桌面移除快捷方式
-    path('fs/share', FSShareKey.as_view(), name='fs_share_key'), # 请求分享内容
     path('fs/star', FSStar.as_view(), name='fs_star'), # 收藏文件or夹
     path('fs/user/root', FSUserRoot.as_view(), name='fs_user_root'), # 请求个人根文件夹fid
     path('fs/team/root', FSTeamRoot.as_view(), name='fs_team_root'), # 请求团队根文件夹fid
@@ -86,12 +86,17 @@ urlpatterns = [
     path('fs/recycle/delete', FSRecycleDelete.as_view(), name='fs_recycle_delete'), # 彻底删除回收站的内容
     path('fs/recycle/clear', FSRecycleClear.as_view(), name='fs_recycle_clear'), # 彻底删回收站库
     path('fs/star_condition', FSStarCondition.as_view(), name='fs_star_condition'),
+    path('fs/share_link', FSShareKey.as_view(), name='fs_share_key'), # 请求分享内容
+    path('fs/share_change_auth', ChangeShareAuth.as_view(), name="fs_share_change_auth"),
+    path('fs/share_reset', ResetKey.as_view(), name='reset_key'),
+    path('fs/share_dtd_list', AuthFileList.as_view(), name='reset_key'),
+    path('fs/share_dtd_change', ChangeMemberAuth.as_view(), name='change_member_auth'),
 
     # 团队相关
     path('team/new_from_fold', NewFromFold.as_view(), name='team_new_from_fold'),
     path('team/invitation', Invitation.as_view(), name='team_invitation'),
     path('team/auth', Auth.as_view(), name='team_auth'),
-    path('team/remove', Remove.as_view(), name='team_remove'),
+    # path('team/remove', Remove.as_view(), name='team_remove'),
     path('team/info', Info.as_view(), name='team_info'),
     path('team/delete', Delete.as_view(), name='team_delete'),
     path('team/new', New.as_view(), name='team_new'),

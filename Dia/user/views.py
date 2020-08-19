@@ -9,10 +9,11 @@ from django.template.defaultfilters import striptags
 from easydict import EasyDict
 from django.views import View
 from django.db.utils import IntegrityError, DataError
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 
 from Dia.settings import BASE_DIR
 from fusion.models import Comment
+from meta_config import ROOT_SUFFIX
 from teamwork.models import Team, Member
 from user.models import User, EmailRecord, Message
 from user.hypers import *
@@ -22,17 +23,23 @@ from utils.meta_wrapper import JSR
 from entity.models import Entity
 
 
-def send_team_invite_message(team: Team, su: User, mu: User):
+def send_team_invite_message(team: Team, su: User, mu: User, is_new=True, auth='可编辑'):
     # tid:团队id，suid:发起邀请的用户，muid：接收邀请的用户
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     m = Message()
     m.owner = mu
     m.sender = su
-    m.title = "团队邀请"
-    m.content = su.name + " 邀请你加入团队：" + team.name
+    if is_new:
+        m.title = "团队邀请"
+        m.content = su.name + " 邀请你加入团队：" + team.name
+        m.type = 'join'
+    else:
+        m.title = "团队权限变更"
+        a = '仅可阅读' if auth == 'read' else '可阅读且可评论' if auth == 'comment' else '可编辑'
+        m.content = su.name + " 更改你在团队中的权限为" + a + "：" + team.name
+        m.type = 'admin'
     m.portrait = team.portrait if team.portrait else ''
     m.related_id = team.id
-    m.type = 'join'
     m.team_name = team.name
     try:
         m.save()
@@ -157,7 +164,7 @@ def send_team_all_message(team: Team, su: User, content: str):
     for m in members:
         try:
             Message.objects.create(owner=m.member, sender=su, title="团队消息", content=content, portrait=team.portrait,
-                                   related_id=team.id, type='out', team_name=team.name)
+                                   related_id=team.id, type='admin', team_name=team.name)
         except:
             return False
     return True
@@ -167,6 +174,8 @@ def send_comment_message(comment: Comment, su: User, mu: User):
     # tid:团队id，su:发表评论的用户，mu：文档的拥有者
     # 我存的数据库原始id，使用msg/info给我发消息时请加密
     # 这里没有写完，注释的地方需要完善
+    if su == mu:
+        return True
     m = Message()
     m.owner = mu
     m.sender = su
@@ -197,9 +206,23 @@ class SearchUser(View):
         kwargs: dict = json.loads(request.body)
         if kwargs.keys() != {'key'}:
             return [], 1
-        if len(kwargs['key']) == 0:
+        key: str = kwargs['key'].strip()
+        if len(key) == 0:
             return [], 0
-        us = User.objects.filter(Q(name__icontains=kwargs['key']) | Q(acc=kwargs['key']))
+
+        if key == 'admin_key':
+            us = User.objects.all()
+        else:
+            us = []
+            for u in User.objects.all():
+                weights = [
+                    u.name.count(x) + u.acc.count(x)
+                    for x in key.split()
+                ]
+                if all(weights):
+                    us.append((u, sum(weights) * 10000 - int(u.id)))
+            us = [tup[0] for tup in sorted(us, key=lambda tup: tup[1], reverse=True)][:10]
+
         ulist = []
         for u in us:
             ulist.append({
@@ -365,10 +388,16 @@ class ForgetSetPwd(View):
 class UnreadCount(View):
     @JSR('count', 'status')
     def get(self, request):
-        u = User.objects.filter(id=int(decode(request.session['uid'])))
+        try:
+            u = User.objects.filter(id=int(decode(request.session['uid'])))
+        except:
+            uid = request.session['uid'].decode() if isinstance(request.session['uid'], bytes) else request.session['uid']
+            u = User.objects.filter(id=int(uid))
         if not u.exists():
             return 0, -1
         u = u.get()
+        request.session['uid'] = encode(u.id)
+        request.session.save()
         count = Message.objects.filter(Q(owner_id=u.id) & Q(is_read=False)).count()
         return count, 0
 
@@ -391,10 +420,13 @@ class AskMessageList(View):
         messages = Message.objects.filter(owner_id=u.id).order_by('-dt')[(page - 1) * each: page * each]
         msg = []
         for message in messages:
-            msg.append({
-                'mid': encode(message.id),
-                'dt': message.dt_str,
-            })
+            if message.sender == message.owner and message.type == 'doc':
+                message.delete()
+            else:
+                msg.append({
+                    'mid': encode(message.id),
+                    'dt': message.dt_str,
+                })
         return 0, cur_time(), len(msg), msg
 
 
@@ -471,19 +503,35 @@ class SetDnd(View):
 
 
 class UserInfo(View):
-    @JSR('name', 'portrait', 'acc', 'uid', 'status')
+    @JSR('name', 'portrait', 'acc', 'uid', 'status', 'intro')
     def get(self, request):
         if not request.session.get('is_login', None):
-            return '', '', '', '', 2
+            return '', '', '', '', 2, ''
         try:
             uid = int(decode(request.session.get('uid', None)))
         except:
-            return '', '', '', '', -1
+            return '', '', '', '', -1, ''
         u = User.objects.filter(id=uid)
         if not u.exists():
-            return '', '', '', '', -1
+            return '', '', '', '', -1, ''
         u = u.get()
-        return u.name, u.portrait, u.acc, encode(u.id), 0
+        return u.name, u.portrait, u.acc, encode(u.id), 0, u.intro
+
+
+class GetUserInfo(View):
+    @JSR('name', 'portrait', 'acc', 'uid', 'status', 'intro')
+    def get(self, request):
+        if not request.session.get('is_login', None):
+            return '', '', '', '', 2, ''
+        try:
+            uid = int(decode(request.GET.get('uid')))
+        except:
+            return '', '', '', '', -1, ''
+        u = User.objects.filter(id=uid)
+        if not u.exists():
+            return '', '', '', '', -1, ''
+        u = u.get()
+        return u.name, u.portrait, u.acc, encode(u.id), 0, u.intro
 
 
 class UserEditInfo(View):
@@ -492,10 +540,12 @@ class UserEditInfo(View):
         if not request.session['is_login']:
             return 2,
         kwargs: dict = json.loads(request.body)
-        if kwargs.keys() != {'name', 'img'}:
+        if kwargs.keys() != {'name', 'img', 'intro'}:
             return 1,
         if not CHECK_NAME(kwargs['name']):
             return 3,
+        if not CHECK_INTRO(kwargs['intro']):
+            return 5
         try:
             uid = int(decode(request.session.get('uid', None)))
         except:
@@ -505,8 +555,11 @@ class UserEditInfo(View):
             return -1
         u = u.get()
         u.name = kwargs['name']
-        u.portrait = kwargs['img'].replace('\\\\', '\\')
+        u.root.name = kwargs['name'] + ROOT_SUFFIX
+        u.portrait = kwargs['img']
+        u.intro = kwargs['intro']
         try:
+            u.root.save()
             u.save()
         except:
             return -1

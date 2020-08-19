@@ -9,7 +9,7 @@ class OuterXMLParser(object):
     def __init__(self, xml_content: str):
         self.s = xml_content
 
-    def walk(self, without_tag=True):
+    def walk(self):
         cur, n = 0, len(self.s)
         while cur < n:
             lhs_begin = self.s.find('<', cur)
@@ -26,20 +26,28 @@ class OuterXMLParser(object):
                 raise ValueError
             rhs_end = rhs_begin + len(rhs_str)
 
-            yield self.s[lhs_begin:rhs_end] if without_tag else ((lhs_begin, lhs_end, rhs_begin, rhs_end), clz)
+            yield self.s[lhs_begin:rhs_end]
             cur = rhs_end
+    
+    def filter_comment(self):
+        cur, n, l = 0, len(self.s), []
+        while cur < n:
+            lhs_begin = self.s.find('<comment-', cur)
+            if lhs_begin == -1:
+                break
+            end_tag = '</comment-'
+            rhs_end = self.s.find(end_tag, lhs_begin)
+            if rhs_end == -1:
+                break
+            rhs_end = self.s.find('>', rhs_end) + 1
+            l.append(self.s[cur:lhs_begin])
+            cur = rhs_end
+        l.append(self.s[cur:])
+        return ''.join(l)
 
 
 def filter_comment(xml: str):
-    old_l = list(OuterXMLParser(xml).walk(False))
-    i = 0
-    l = []
-    for (lhs_begin, lhs_end, rhs_begin, rhs_end), clz in old_l:
-        if clz == 'comment-start' or clz == 'comment-end':
-            l.append(xml[i:lhs_begin])
-            i = rhs_end
-    l.append(xml[i:])
-    return ''.join(l)
+    return OuterXMLParser(xml).filter_comment()
 
 
 def unordered_discretization(xml1: str, xml2: str):
@@ -79,5 +87,5 @@ if __name__ == '__main__':
     #     '<p>1</p><p>3</p><p>2</p>',
     #     '<p>1</p><p>3</p>')
     # )
-    print(filter_comment('''<p><comment-start name="e6ad5b8ddc49aeb18f86404b9f9f654dd:93a8b"></comment-start>123123<comment-end name="e6ad5b8ddc49aeb18f86404b9f9f654dd:93a8b"></comment-end></p><p>&nbsp;</p><p>12<comment-start name="e6b3cd85057f9854b08c3329f2615a447:4e6bb"></comment-start>32<comment-end name="e6b3cd85057f9854b08c3329f2615a447:4e6bb"></comment-end>13</p><p>&nbsp;</p><figure class="table"><table><tbody><tr><td><comment-start name="eac7ef18726c24ac4f37d57baf34cdb07:2f5b0"></comment-start>abcv<comment-end name="eac7ef18726c24ac4f37d57baf34cdb07:2f5b0"></comment-end></td></tr></tbody></table></figure><p>&nbsp;</p>'''))
+    print(filter_comment("""<p>&nbsp;</p><p>12<comment-start name="aaa:4e6bb"></comment-start>32<comment-end name="aaa:4e6bb"></comment-end>13</p><p>&nbsp;</p>"""))
 
