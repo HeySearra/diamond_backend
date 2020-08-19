@@ -27,7 +27,7 @@ def check_auth(user: User, ent: Entity, auth: str, double_check_deleted: bool = 
     if ent.is_locked:
         return False
     assert auth in list(zip(*DOC_AUTH_CHS))[0]
-    
+
     wt, ct, rt = (WriteMem, 'write'), (CommentMem, 'comment'), (ReadMem, 'read')
     cfgs = {
         DOC_AUTH.write: (wt, ),
@@ -203,6 +203,7 @@ class ChangeShareAuth(View):
             return E.u
         return 0
 
+
 class AuthFileList(View):
     @JSR('status', 'list')
     def get(self, request):
@@ -235,20 +236,20 @@ class AuthFileList(View):
             ul = ul.union(set(wu))
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'write'
-            }for u in wu if (u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team)]])
+            }for u in wu if (u != e.creator and (u != e.backtrace_root_team.owner if e.backtrace_root_team else True))])
         if ca.exists():
             ca = ca.get()
             cu = ca.get_user_list()
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'comment'
-            }for u in cu if u not in ul and (u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team)]])
+            }for u in cu if u not in ul and (u != e.creator and (u != e.backtrace_root_team.owner if e.backtrace_root_team else True))])
             ul = ul.union(set(cu))
         if ra.exists():
             ra = ra.get()
             ru = ra.get_user_list()
             res.extend([{
                 'uid': encode(u.id), 'name': u.name, 'src': u.portrait, 'acc': u.acc, 'auth': 'read'
-            }for u in ra.get_user_list() if u not in ul and (u != e.creator and (u != e.backtrace_root_team.owner) if e.backtrace_root_team)]])
+            }for u in ra.get_user_list() if u not in ul and (u != e.creator and (u != e.backtrace_root_team.owner if e.backtrace_root_team else True))])
         return 0, res
 
 
