@@ -402,11 +402,11 @@ class AddShare(View):
         if ra.auth == 'write':
             return redirect('/doc/' + ra.ent.encoded_id)
         elif ra.auth == 'comment':
-            return redirect('/doc/comment_only' + ra.ent.encoded_id)
+            return redirect('/doc/comment_only/' + ra.ent.encoded_id)
         elif ra.auth == 'read':
-            return redirect('/doc/read_only' + ra.ent.encoded_id)
+            return redirect('/doc/read_only/' + ra.ent.encoded_id)
         else:
-            return redirect('/workbench/recent_view')
+            return redirect('/workbench/recent_view/')
 
 
 # class AddCommentAuth(View):
