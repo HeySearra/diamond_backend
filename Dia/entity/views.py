@@ -14,7 +14,7 @@ from utils.cast import decode, cur_time
 from utils.meta_wrapper import JSR
 from entity.hypers import *
 from typing import List, Tuple
-from teamwork.models import Team
+from teamwork.models import Team, Member
 from utils.xml import xml_auto_merge
 
 
@@ -906,7 +906,7 @@ class FSTeamRoot(View):
         if t is None:
             return E.u
 
-        if not t.write_contains_user(u) and not t.comment_contains_user(u) and not t.read_contains_user(u):
+        if not Member.objects.filter(member=u, team=t).exists():
             return E.au
         return 0, t.root.encoded_id
 
