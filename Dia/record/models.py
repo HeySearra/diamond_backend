@@ -53,8 +53,8 @@ def upd_record(auth: str, user, ent, delete):
                 r = c.objects.create(**kwargs)
                 r.upd_dt()
             else:
-                recs[1:].delete()
-                [o.upd_dt() for o in recs]
+                [x.delete() for x in recs[1:]]
+                recs[0].upd_dt()
 
 
 def upd_record_create(user, ent, delete=False):
