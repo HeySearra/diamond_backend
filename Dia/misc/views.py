@@ -70,8 +70,10 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         res3 = 'read'
     if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
         res3 = 'comment'
-    auth_judge_dict = {'comment': 2, 'read': 1, 'none': 0}
+    auth_judge_dict = {'write': 3, 'comment': 2, 'read': 1, 'none': 0}
     res_max = max(auth_judge_dict[res1], auth_judge_dict[res2], auth_judge_dict[res3])
+    if res_max == 3:
+        return 'write'
     if res_max == 2:
         return 'comment'
     else:
