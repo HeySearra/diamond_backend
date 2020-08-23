@@ -1112,8 +1112,7 @@ class DocumentHistory(View):
             return E.no_ent
 
         trajs = list(e.trajectories.filter(ent=e, initial=False))
-        trajs, too_old = trajs[-15:], trajs[:-15]
-        # too_old.delete()
+        trajs, too_old = trajs[:15], trajs[15:]
         for e in too_old:
             e.delete()
 
