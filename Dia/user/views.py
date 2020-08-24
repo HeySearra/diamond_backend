@@ -5,6 +5,7 @@ import hashlib
 
 from datetime import datetime, date
 
+from django.http import FileResponse
 from django.template.defaultfilters import striptags
 from easydict import EasyDict
 from django.views import View
@@ -620,3 +621,13 @@ class ChangeProfile(View):
         with open(file_path, 'wb') as dest:
             [dest.write(chunk) for chunk in file.chunks()]
         return 'http://47.96.109.229/static/upload/portrait/' + file_name, 0
+
+
+class Help(View):
+    def get(self, request):
+        file = open('frontend/dist/static/upload/用户帮助手册.pdf', 'rb')
+        response = FileResponse(file)
+        response['Content-Type'] = 'application/octet-stream'
+        file_name = 'attachment;filename="{file_name}"'.format(file_name='用户帮助手册.pdf')
+        response['Content-Disposition'] = file_name.encode('utf-8', 'ISO-8859-1')
+        return response

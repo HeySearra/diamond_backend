@@ -127,6 +127,8 @@ urlpatterns = [
     # ckeditor image upload
     path('uploadImg', UploadImg.as_view(), name='uploadImg'),
 
+    path('help', Help.as_view(), name='help'),
+
     re_path(r'.*', TemplateView.as_view(template_name='index.html')),
 ]
 
