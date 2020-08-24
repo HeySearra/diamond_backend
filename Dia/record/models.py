@@ -47,11 +47,14 @@ def upd_record(auth: str, user, ent, delete):
     if delete:
         [c.objects.filter(**kwargs).delete() for c in clz[pos:]]
     else:  # update
-        for o in [
-            c.objects.get_or_create(**kwargs)[0]
-            for c in clz[pos:]
-        ]:
-            o.upd_dt()
+        for c in clz[pos:]:
+            recs = c.objects.filter(**kwargs)
+            if not recs.exists():
+                r = c.objects.create(**kwargs)
+                r.upd_dt()
+            else:
+                [x.delete() for x in recs[1:]]
+                recs[0].upd_dt()
 
 
 def upd_record_create(user, ent, delete=False):

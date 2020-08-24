@@ -47,34 +47,37 @@ def get_auth(user: User, ent: Entity, double_check_deleted: bool = True) -> str:
         return DOC_AUTH.none
     if ent.first_person(user, 'write'):
         return DOC_AUTH.write
-    if ent.first_person(user, 'comment'):
-        return DOC_AUTH.comment
+    res1 = 'none'
     if ent.first_person(user, 'read'):
-        return DOC_AUTH.read
+        res1 = DOC_AUTH.read
+    if ent.first_person(user, 'comment'):
+        res1 = DOC_AUTH.comment
     if ent.is_locked:
         return DOC_AUTH.none
 
     if ShareMem.objects.filter(user=user, auth__ent=ent).exists():
         try:
             s:ShareMem = ShareMem.objects.get(user=user, auth__ent=ent)
-            res = s.auth.auth if s.auth.auth != 'no_share' else 'none'
+            res2 = s.auth.auth if s.auth.auth != 'no_share' else 'none'
         except:
-            res = 'none'
+            res2 = 'none'
     else:
-        res = 'none'
+        res2 = 'none'
+    res3 = 'none'
     if WriteMem.objects.filter(user=user, auth__ent=ent).exists():
         return DOC_AUTH.write
-    if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
-        if res == 'write':
-            return res
-        else:
-            return DOC_AUTH.comment
     if ReadMem.objects.filter(user=user, auth__ent=ent).exists():
-        if res == 'write' or res == 'comment':
-            return res
-        else:
-            return DOC_AUTH.read
-    return res
+        res3 = 'read'
+    if CommentMem.objects.filter(user=user, auth__ent=ent).exists():
+        res3 = 'comment'
+    auth_judge_dict = {'write': 3, 'comment': 2, 'read': 1, 'none': 0}
+    res_max = max(auth_judge_dict[res1], auth_judge_dict[res2], auth_judge_dict[res3])
+    if res_max == 3:
+        return 'write'
+    if res_max == 2:
+        return 'comment'
+    else:
+        return 'read' if res_max == 1 else 'none'
 
 
 class HellWords(View):
@@ -295,7 +298,7 @@ class ChangeMemberAuth(View):
             return E.k
         if me != e.creator and ((me != e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return E.au
-        if u == me or ((u == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
+        if u == me or u == e.creator or ((u == e.backtrace_root_team.owner) if e.backtrace_root_team else False):
             return 5
 
         wa = WriteAuth.objects.filter(ent=e)

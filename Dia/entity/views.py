@@ -271,7 +271,7 @@ class DocAuth(View):
         e = Entity.get_via_encoded_id(did)
         if e is None:
             return E.no_ent
-        # print(get_auth(u, e))
+        print(get_auth(u, e))
         return 0, get_auth(u, e)
 
 
@@ -551,7 +551,7 @@ class FSFoldElem(View):
 
         # print(f'time cost: {time.time()-st:.2f}\t\t' * 100)
         sons_s = [{
-            'pfid': pfid, 'can_share': False if u != e.creator and ((u != e.backtrace_root_team.owner) if e.backtrace_root_team else False) else True,
+            'pfid': pfid, 'can_share': True if f.type == 'doc' and (f.creator == u or (f.backtrace_root_team and u == f.backtrace_root_team.owner)) else False,
             'type': f.type, 'id': f.encoded_id, 'name': f.name,
             'is_link': is_link, 'is_starred': Collection.objects.filter(user=u, ent=f).exists(),
             'create_dt': cdt, 'cuid': cuid, 'cname': cnm,
@@ -1112,8 +1112,7 @@ class DocumentHistory(View):
             return E.no_ent
 
         trajs = list(e.trajectories.filter(ent=e, initial=False))
-        trajs, too_old = trajs[-15:], trajs[:-15]
-        # too_old.delete()
+        trajs, too_old = trajs[:15], trajs[15:]
         for e in too_old:
             e.delete()
 
