@@ -625,9 +625,9 @@ class ChangeProfile(View):
 
 class Help(View):
     def get(self, request):
-        file = open('frontend/dist/static/upload/用户帮助手册.pdf', 'rb')
+        file = open('frontend/dist/static/upload/DiaDoc用户帮助手册.pdf', 'rb')
         response = FileResponse(file)
         response['Content-Type'] = 'application/octet-stream'
-        file_name = 'attachment;filename="{file_name}"'.format(file_name='用户帮助手册.pdf')
+        file_name = 'attachment;filename="{file_name}"'.format(file_name='DiaDoc用户帮助手册.pdf')
         response['Content-Disposition'] = file_name.encode('utf-8', 'ISO-8859-1')
         return response
