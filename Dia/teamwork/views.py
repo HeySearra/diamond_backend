@@ -44,7 +44,7 @@ class NewFromFold(View):
             return None, E.auth
         if entity is None:
             return None, E.uk
-        if not entity.can_convert_to_team():
+        if not entity.team_convertable():
             return None, E.root
 
         try:
@@ -336,7 +336,7 @@ class New(View):
             return E.name
         try:
             # 创建新根文件夹
-            root = Entity.locate_root(kwargs['name'])
+            root = Entity.alloca_rt(kwargs['name'])
             team = Team.objects.create(name=kwargs['name'], root=root, portrait="team.jpg")
             Member.objects.create(team=team, member=owner, auth=TEAM_AUTH.write, membership=TEAM_MEM.owner)
         except:

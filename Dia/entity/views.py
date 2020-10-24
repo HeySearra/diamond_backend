@@ -112,7 +112,7 @@ class WorkbenchCreate(View):
 
 
 class WorkbenchShare(View):
-    # todo: tky double-check
+    # todo: tky needs to double-check
     @JSR('status', 'cur_dt', 'list')
     def get(self, request):
         E = ED()

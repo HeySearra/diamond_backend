@@ -7,20 +7,10 @@ from django.db.models import Q
 from django.template.defaultfilters import striptags
 
 from entity.hypers import *
+from teamwork.hypers import DOC_AUTH
 from meta_config import KB, TIME_FMT, ROOT_SUFFIX
 from record.models import upd_record_create, CreateRecord, WriteRecord, ReadRecord
 from utils.cast import encode, decode
-
-
-# def auto_merge_available(xml1: str, xml2: str):
-#     from xmldiff.actions import DeleteNode, InsertNode
-#     from xmldiff.main import diff_texts
-#     xml1 = f'<diadoc>{xml1}</diadoc>'
-#     xml2 = f'<diadoc>{xml2}</diadoc>'
-#     return all(
-#         isinstance(n, DeleteNode) or isinstance(n, InsertNode)
-#         for n in diff_texts(xml1, xml2)
-#     )
 
 
 class Entity(models.Model):
@@ -49,22 +39,18 @@ class Entity(models.Model):
         return encode(self.id)
 
     @staticmethod
-    def locate_root(name):
+    def alloca_rt(name):
         return Entity.objects.create(name=name + ROOT_SUFFIX, type=ENT_TYPE.fold, father=None)
 
     name = models.CharField(unique=False, max_length=BASIC_DATA_MAX_LEN)
     type = models.CharField(null=False, default=ENT_TYPE.doc, choices=ENT_TYPE_CHS, max_length=BASIC_DATA_MAX_LEN)
-    content = RichTextField(default='', max_length=32 * KB)  # todo: REMOVE THIS!!!
+    content = RichTextField(default='', max_length=32 * KB)
 
     @property
     def plain_content(self) -> str:
         return striptags(self.content)
 
     father = models.ForeignKey(null=True, to='self', related_name='sons', on_delete=models.SET_NULL)
-    # creator = models.ForeignKey(null=True, to='user.User', related_name='created_ents', on_delete=models.CASCADE)
-    # create_dt = models.DateTimeField(auto_now_add=True)
-    # editor = models.ForeignKey(null=True, to='user.User', related_name='edited_ents', on_delete=models.CASCADE)
-    # edit_dt = models.DateTimeField(default=datetime.now)
     row = models.IntegerField(default=-1)
 
     @property
@@ -225,7 +211,7 @@ class Entity(models.Model):
         t = self.root.root_team
         return t.get() if t.exists() else None
 
-    def can_convert_to_team(self) -> bool:
+    def team_convertable(self) -> bool:
         r = self.backtrace_root_user
         return all((
             not self.backtrace_deleted,
@@ -277,10 +263,9 @@ class Entity(models.Model):
             team = self.backtrace_root_team
             if team.owner == p:
                 return True
-
-            if auth == 'write':
-                return team.write_contains_user(p.id)
-            if auth == 'comment':
-                return team.comment_contains_user(p.id)
-            if auth == 'read':
-                return team.read_contains_user(p.id)
+            
+            return {
+                DOC_AUTH.write: team.write_contains_user,
+                DOC_AUTH.comment: team.comment_contains_user,
+                DOC_AUTH.read: team.read_contains_user,
+            }[auth](p.id)
