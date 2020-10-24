@@ -6,7 +6,7 @@ A toy backend for a file-sharing website (**DiaDoc**) based on django 3.1.
 ### Installation
 
 All the dependencies are listed in `req.txt`.
-You can run `install.sh` to install them.
+Run `install.sh` to install them.
 
 **PLEASE NOTE THIS**: You need to add a virtual python environment's name `YOUR_VENV_NAME` into your environment variables, and its key is `DJ_CONDA_ENV`.
 Otherwise, all the shell scripts will use `dj` as the name of virtual environment by default.
